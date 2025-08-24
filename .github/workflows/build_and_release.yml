@@ -1,0 +1,171 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  release:
+    types: [created]
+  workflow_dispatch:
+
+# Default to least privilege; elevate only where needed
+permissions:
+  contents: read
+
+env:
+  # Default; will be overwritten on release
+  VERSION: ci-${{ github.sha }}
+
+jobs:
+  compute-version:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.setver.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: setver
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            # Prefer tag_name; fall back to name
+            VER="${{ github.event.release.tag_name || github.event.release.name }}"
+          else
+            # Try nearest tag if present, else short SHA
+            VER="$(git describe --tags --always --dirty || echo "${GITHUB_SHA::7}")"
+            VER="ci-${VER}"
+          fi
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+
+  # Only needed for release packaging. Skipped during CI.
+  prepare-source:
+    needs: compute-version
+    if: github.event_name == 'release'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          # Consider using 'stable' or a supported range
+          go-version: '^1.25.0'
+
+      - name: Prepare source tarball
+        env:
+          VERSION: ${{ needs.compute-version.outputs.version }}
+        run: |
+          # If this repo is 'schollz/221e', you don't need to clone; use the local checkout instead.
+          # If you truly need to clone from another repo at a tag, keep this line:
+          git clone -b "${{ github.event.release.tag_name || github.event.release.name }}" --depth 1 https://github.com/schollz/221e "221e-${{ github.event.release.tag_name || github.event.release.name }}"
+          cd "221e-${{ github.event.release.tag_name || github.event.release.name }}" && go mod tidy && go mod vendor
+          cd .. && tar -czvf "221e_${VERSION}_src.tar.gz" "221e-${{ github.event.release.tag_name || github.event.release.name }}"
+
+      - name: Upload source artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-tarball
+          path: "*.tar.gz"
+
+  build:
+    needs: compute-version
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        include:
+          # Windows
+          - goos: windows; goarch: amd64;  name: Windows-64bit; ext: .exe; archive: zip
+          - goos: windows; goarch: "386";  name: Windows-32bit; ext: .exe; archive: zip
+          - goos: windows; goarch: arm;    name: Windows-ARM;   ext: .exe; archive: zip
+          - goos: windows; goarch: arm64;  name: Windows-ARM64; ext: .exe; archive: zip
+          # Linux
+          - goos: linux; goarch: amd64;  name: Linux-64bit;  ext: ""; archive: tar.gz
+          - goos: linux; goarch: "386";  name: Linux-32bit;  ext: ""; archive: tar.gz
+          - goos: linux; goarch: arm;    name: Linux-ARM;    ext: ""; archive: tar.gz
+          - goos: linux; goarch: arm; goarm: "5"; name: Linux-ARMv5; ext: ""; archive: tar.gz
+          - goos: linux; goarch: arm64;  name: Linux-ARM64;  ext: ""; archive: tar.gz
+          # macOS
+          - goos: darwin; goarch: amd64; name: macOS-64bit;  ext: ""; archive: tar.gz
+          - goos: darwin; goarch: arm64; name: macOS-ARM64;  ext: ""; archive: tar.gz
+          # BSDs
+          - goos: dragonfly; goarch: amd64; name: DragonFlyBSD-64bit; ext: ""; archive: tar.gz
+          - goos: freebsd;   goarch: amd64; name: FreeBSD-64bit;      ext: ""; archive: tar.gz
+          - goos: freebsd;   goarch: arm64; name: FreeBSD-ARM64;      ext: ""; archive: tar.gz
+          - goos: netbsd;    goarch: "386"; name: NetBSD-32bit;       ext: ""; archive: tar.gz
+          - goos: netbsd;    goarch: amd64; name: NetBSD-64bit;       ext: ""; archive: tar.gz
+          - goos: netbsd;    goarch: arm64; name: NetBSD-ARM64;       ext: ""; archive: tar.gz
+          - goos: openbsd;   goarch: amd64; name: OpenBSD-64bit;      ext: ""; archive: tar.gz
+          - goos: openbsd;   goarch: arm64; name: OpenBSD-ARM64;      ext: ""; archive: tar.gz
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '^1.24.0'
+
+      - name: Build
+        env:
+          CGO_ENABLED: 0
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          GOARM: ${{ matrix.goarm }}
+        run: |
+          case "${{ matrix.goos }}" in
+            darwin)
+              LDFLAGS='-s -extldflags "-sectcreate __TEXT __info_plist Info.plist"'
+              ;;
+            dragonfly|freebsd|netbsd|openbsd)
+              LDFLAGS=""
+              ;;
+            *)
+              LDFLAGS='-extldflags "-static"'
+              ;;
+          esac
+          echo "Building for ${{ matrix.goos }}/${{ matrix.goarch }} with LDFLAGS: $LDFLAGS"
+          go build -ldflags "$LDFLAGS" -o 221e${{ matrix.ext }}
+
+      - name: Create archive
+        env:
+          VERSION: ${{ needs.compute-version.outputs.version }}
+        run: |
+          if [ "${{ matrix.archive }}" = "zip" ]; then
+            zip "221e_${VERSION}_${{ matrix.name }}.zip" "221e${{ matrix.ext }}" LICENSE
+          else
+            tar -czvf "221e_${VERSION}_${{ matrix.name }}.tar.gz" "221e${{ matrix.ext }}" LICENSE
+          fi
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.name }}
+          path: |
+            *.zip
+            *.tar.gz
+
+  release:
+    needs: [prepare-source, build, compute-version]
+    if: github.event_name == 'release'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v5
+        with:
+          merge-multiple: true
+
+      - name: Generate checksums
+        env:
+          VERSION: ${{ needs.compute-version.outputs.version }}
+        run: |
+          sha256sum *.zip *.tar.gz > "221e_${VERSION}_checksums.txt"
+          cat "221e_${VERSION}_checksums.txt"
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            *.zip
+            *.tar.gz
+            *_checksums.txt
