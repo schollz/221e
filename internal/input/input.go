@@ -269,8 +269,8 @@ func handleShiftRight(m *model.Model) tea.Cmd {
 			storage.AutoSave(m)
 		}
 	} else if m.ViewMode == types.PhraseView {
-		// Check if we're on the RT column (column 5)
-		if m.CurrentCol == 5 {
+		// Check if we're on the RT column 
+		if m.CurrentCol == int(types.ColRetrigger)+1 {
 			// Navigate to retrigger view only if a retrigger is selected (not -1)
 			retriggerIndex := m.PhrasesData[m.CurrentPhrase][m.CurrentRow][types.ColRetrigger]
 			if retriggerIndex == -1 {
@@ -287,8 +287,8 @@ func handleShiftRight(m *model.Model) tea.Cmd {
 			return nil
 		}
 
-		// Check if we're on the TS column (column 6)
-		if m.CurrentCol == 6 {
+		// Check if we're on the TS column 
+		if m.CurrentCol == int(types.ColTimestretch)+1 {
 			// Navigate to timestretch view only if a timestretch is selected (not -1)
 			timestrechIndex := m.PhrasesData[m.CurrentPhrase][m.CurrentRow][types.ColTimestretch]
 			if timestrechIndex == -1 {
@@ -307,6 +307,7 @@ func handleShiftRight(m *model.Model) tea.Cmd {
 
 		// Navigate to file view from any other column in phrase view
 		m.FileSelectRow = m.CurrentRow // Remember which row we're selecting for
+		m.FileSelectCol = m.CurrentCol // Remember which column we were on
 
 		// Try to navigate to the folder containing the current row's file
 		selectedFilename := ""
@@ -486,14 +487,14 @@ func handleShiftLeft(m *model.Model) tea.Cmd {
 		m.ScrollOffset = 0
 		storage.AutoSave(m)
 	} else if m.ViewMode == types.FileView {
-		// Navigate back to phrase view
-		switchToView(m, phraseViewConfig(m.FileSelectRow, int(types.ColFilename)+1)) // Go back to FI column (UI index)
+		// Navigate back to phrase view - return to the column we came from
+		switchToView(m, phraseViewConfig(m.FileSelectRow, m.FileSelectCol)) // Go back to original column
 	} else if m.ViewMode == types.RetriggerView {
 		// Navigate back to phrase view
-		switchToViewWithVisibilityCheck(m, phraseViewConfig(m.LastPhraseRow, 5)) // Go back to RT column
+		switchToViewWithVisibilityCheck(m, phraseViewConfig(m.LastPhraseRow, int(types.ColRetrigger)+1)) // Go back to RT column
 	} else if m.ViewMode == types.TimestrechView {
 		// Navigate back to phrase view
-		switchToViewWithVisibilityCheck(m, phraseViewConfig(m.LastPhraseRow, 6)) // Go back to TS column
+		switchToViewWithVisibilityCheck(m, phraseViewConfig(m.LastPhraseRow, int(types.ColTimestretch)+1)) // Go back to TS column
 	}
 	return nil
 }
