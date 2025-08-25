@@ -199,6 +199,7 @@ func (m *Model) initializeDefaultData() {
 			m.PhrasesData[p][i] = make([]int, int(types.ColCount)) // Use ColCount for array size
 			m.PhrasesData[p][i][types.ColPlayback] = 0             // Playback flag (0=off, 1=on)
 			m.PhrasesData[p][i][types.ColNote] = -1                // Note value (-1 means no data "--")
+			m.PhrasesData[p][i][types.ColPitch] = 128              // Pitch value (128 = 0x80 = 0.0 pitch, default)
 			m.PhrasesData[p][i][types.ColDeltaTime] = -1           // Delta time (-1 means no data "--")
 			m.PhrasesData[p][i][types.ColGate] = 128               // Gate value (128 = 1.0, default)
 			m.PhrasesData[p][i][types.ColRetrigger] = -1           // Retrigger index (-1 means no retrigger)
@@ -276,6 +277,7 @@ type SamplerOSCParams struct {
 	SliceDuration         float32 // Duration multiplier (default 1.0)
 	BPMSource             float32 // Source BPM from file metadata
 	BPMTarget             float32 // Target BPM from global settings
+	Pitch                 float32 // Pitch value (-24 to +24, default 0.0 when hex 80)
 	RetriggerNumTotal     int     // Retrigger Settings "Times"
 	RetriggerBeats        float32 // Retrigger Settings "Beats"
 	RetriggerRateStart    float32 // Retrigger Settings "Starting Rate"
@@ -303,6 +305,7 @@ func NewSamplerOSCParams(filename string, trackId int, sliceCount, sliceNumber i
 		SliceDuration:         sliceDuration,
 		BPMSource:             bpmSource,
 		BPMTarget:             bpmTarget,
+		Pitch:                 0.0, // Default pitch (hex 80 = 0.0 pitch)
 		RetriggerNumTotal:     0,
 		RetriggerBeats:        0,
 		RetriggerRateStart:    0,
@@ -332,6 +335,7 @@ func NewSamplerOSCParamsWithRetrigger(filename string, trackId, sliceCount, slic
 		SliceDuration:         sliceDuration,
 		BPMSource:             bpmSource,
 		BPMTarget:             bpmTarget,
+		Pitch:                 0.0, // Default pitch (hex 80 = 0.0 pitch)
 		RetriggerNumTotal:     retrigTimes,
 		RetriggerBeats:        retrigBeats,
 		RetriggerRateStart:    retrigRateStart,
@@ -370,6 +374,8 @@ func (m *Model) SendOSCSamplerMessage(params SamplerOSCParams) {
 	msg.Append(float32(params.BPMSource))
 	msg.Append("bpmTarget")
 	msg.Append(float32(params.BPMTarget))
+	msg.Append("pitch")
+	msg.Append(float32(params.Pitch))
 	msg.Append("retrigNumTotal")
 	msg.Append(int32(params.RetriggerNumTotal))
 	msg.Append("retrigRateChangeBeats")
