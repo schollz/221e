@@ -218,7 +218,7 @@ s.waitForBoot({
 			var sndDry = In.ar(busDry,2);
 			var sndComb = In.ar(busComb,2);
 			var snd = 				sndDry;
-			SendReply.kr(Impulse.kr(30),'/track_volume',[0,Lag.kr(Amplitude.kr(snd[0],0.3,0.3).ampdb,3).poll]);
+			SendReply.kr(Impulse.kr(30),'/track_volume',[0,Lag.kr(Amplitude.kr(snd[0],0.3,0.3).ampdb,3)]);
 
 			// add in comb
 			snd = snd + ((0.5*sndComb)+
