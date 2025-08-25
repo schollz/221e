@@ -1147,108 +1147,182 @@ func RenderWaveform(width, height int, data []float64) string {
 	return b.String()
 }
 
-// RenderMixerView renders the mixer view with 8 track volume bars
-func RenderMixerView(m *model.Model) string {
-	styles := getCommonStyles()
-
-	// Content builder
-	var content strings.Builder
-
-	// Render header
-	leftHeader := fmt.Sprintf("MIXER | Track %d", m.CurrentMixerTrack+1)
-	rightHeader := fmt.Sprintf("%.1f BPM", m.BPM)
-	content.WriteString(RenderHeader(m, leftHeader, rightHeader))
-	content.WriteString("\n")
-
-	// Track headers
-	content.WriteString("  ")
-	for track := 0; track < 8; track++ {
-		trackHeader := fmt.Sprintf(" T%d ", track+1)
-		if track == m.CurrentMixerTrack {
-			content.WriteString(styles.Selected.Render(trackHeader))
+// getLevelColor returns the appropriate terminal color for a dB level
+func getLevelColor(dbLevel float32) string {
+	if dbLevel > 0 {
+		// Clipping - red colors (faster transition to red)
+		if dbLevel > 3 {
+			return "196" // Bright red for moderate clipping
 		} else {
-			content.WriteString(styles.Normal.Render(trackHeader))
+			return "160" // Dark red for light clipping
 		}
-		content.WriteString(" ")
+	} else if dbLevel > -6 {
+		// Hot levels - faster transition to red
+		return "202" // Orange-red
+	} else if dbLevel > -12 {
+		// Approaching hot - subtle yellow
+		return "227" // Subtle yellow (less bright)
+	} else if dbLevel > -24 {
+		// Normal levels - white/light gray
+		return "255" // White
+	} else if dbLevel > -48 {
+		// Lower levels - gray
+		return "248" // Light gray
+	} else {
+		// Very low levels - dark gray
+		return "240" // Dark gray
 	}
-	content.WriteString("\n\n")
+}
 
-	// Volume bars (scale -96 to +12 dB)
-	barHeight := 10
-	for row := 0; row < barHeight; row++ {
-		content.WriteString("  ")
+// createVerticalBar creates a vertical level meter bar 2 characters wide
+func createVerticalBar(currentLevel, setLevel float32, height int) []string {
+	// Convert dB range (-96 to +12) to bar height scale
+	currentPos := int((float64(currentLevel) + 96.0) / 108.0 * float64(height))
+	setPos := int((float64(setLevel) + 96.0) / 108.0 * float64(height))
+	
+	// Clamp positions to valid range
+	if currentPos < 0 { currentPos = 0 }
+	if currentPos > height { currentPos = height }
+	if setPos < 0 { setPos = 0 }
+	if setPos > height { setPos = height }
+
+	lines := make([]string, height)
+	
+	// Fill from bottom to top (invert the display)
+	for row := 0; row < height; row++ {
+		displayRow := height - 1 - row  // Invert so 0dB is at top
+		
+		var barContent string
+		var barStyle lipgloss.Style
+		
+		// Determine what to show at this row
+		if displayRow == setPos && displayRow != currentPos {
+			// Set level marker (horizontal line)
+			barContent = "━━"
+			barStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("246")).Bold(true)
+		} else if displayRow <= currentPos {
+			// Current level (filled) - use <= so we fill up to the current level
+			barContent = "██"
+			// Get color based on the actual current level, not the position
+			color := getLevelColor(currentLevel)
+			barStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(color))
+		} else {
+			// Empty space
+			barContent = "░░"
+			barStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("235"))
+		}
+		
+		lines[row] = barStyle.Render(barContent)
+	}
+	
+	return lines
+}
+
+// dbToHex converts dB value (-96 to +24) to hex (00 to FE)
+func dbToHex(db float32) int {
+	// Clamp to valid range
+	if db < -96.0 { db = -96.0 }
+	if db > 24.0 { db = 24.0 }
+	
+	// Map -96 to +24 dB (120 dB range) to 0 to 254 (255 values)
+	hex := int(((db + 96.0) * 254.0) / 120.0)
+	if hex < 0 { hex = 0 }
+	if hex > 254 { hex = 254 }
+	return hex
+}
+
+// hexToDb converts hex value (0 to 254) back to dB (-96 to +24)
+func hexToDb(hex int) float32 {
+	if hex < 0 { hex = 0 }
+	if hex > 254 { hex = 254 }
+	
+	// Map 0 to 254 back to -96 to +24 dB
+	return ((float32(hex) * 120.0) / 254.0) - 96.0
+}
+
+// getMixerStatusMessage returns the status message for mixer view
+func getMixerStatusMessage(m *model.Model) string {
+	track := m.CurrentMixerTrack
+	setLevel := m.TrackSetLevels[track]
+	
+	statusMsg := fmt.Sprintf("Track %d: Set %.1fdB (Hex %02X)", 
+		track+1, setLevel, dbToHex(setLevel))
+	statusMsg += " | Left/Right: Select track │ Ctrl+Arrow: Adjust set level │ Shift+Up: Back to previous view"
+	
+	return statusMsg
+}
+
+// RenderMixerView renders a modern, sleek mixer view with vertical level meters
+func RenderMixerView(m *model.Model) string {
+	// Column headers (matching song view format)
+	columnHeader := "    " // 4 spaces for left padding like song view row numbers
+	for track := 0; track < 8; track++ {
+		columnHeader += fmt.Sprintf("  T%d", track+1)
+	}
+	mixerHeader := fmt.Sprintf("Track %d", m.CurrentMixerTrack+1)
+
+	return renderViewWithCommonPattern(m, columnHeader, mixerHeader, func(styles ViewStyles) string {
+		var content strings.Builder
+
+		// Calculate bar height - smaller to fit with waveform
+		barHeight := 8
+		if m.TermHeight > 25 {
+			barHeight = 10
+		}
+
+		// Create vertical bars for all tracks
+		trackBars := make([][]string, 8)
 		for track := 0; track < 8; track++ {
-			currentVol := m.TrackVolumes[track] // Current volume from SuperCollider
-			setLevel := m.TrackSetLevels[track] // User-controllable set level
+			trackBars[track] = createVerticalBar(m.TrackVolumes[track], m.TrackSetLevels[track], barHeight)
+		}
 
-			// Map volume to bar position (reverse row order, 0 is top)
-			// Volume range: -96 to +12 dB = 108 dB range
-			currentPos := int((currentVol + 96.0) / 108.0 * float32(barHeight))
-			setPos := int((setLevel + 96.0) / 108.0 * float32(barHeight))
-
-			// Display character for this position
-			barRow := barHeight - 1 - row // Invert so 0dB is at top
-			var char string
-
-			if barRow == setPos {
-				// Show set level marker
-				char = "━"
-			} else if barRow < currentPos {
-				// Show current volume level
-				char = "█"
-			} else {
-				// Empty space
-				char = " "
+		// Render the vertical bars row by row
+		for row := 0; row < barHeight; row++ {
+			content.WriteString("    ") // Left padding like song view
+			for track := 0; track < 8; track++ {
+				content.WriteString("  ") // 2 spaces before each track (like song view)
+				
+				// Add selection highlighting
+				if track == m.CurrentMixerTrack {
+					selectionStyle := lipgloss.NewStyle().Background(lipgloss.Color("240"))
+					content.WriteString(selectionStyle.Render(trackBars[track][row]))
+				} else {
+					content.WriteString(trackBars[track][row])
+				}
 			}
+			content.WriteString("\n")
+		}
 
-			// Apply styling
-			barText := fmt.Sprintf(" %s ", char)
+		// Current level values row (hex codes)
+		content.WriteString("    ")
+		for track := 0; track < 8; track++ {
+			content.WriteString("  ")
+			currentLevel := m.TrackVolumes[track]
+			levelHex := fmt.Sprintf("%02X", dbToHex(currentLevel))
+			
 			if track == m.CurrentMixerTrack {
-				content.WriteString(styles.Selected.Render(barText))
-			} else if barRow < currentPos {
-				content.WriteString(styles.Playback.Render(barText))
-			} else if barRow == setPos {
-				content.WriteString(styles.Label.Render(barText))
+				content.WriteString(styles.Selected.Render(levelHex))
 			} else {
-				content.WriteString(styles.Normal.Render(barText))
+				content.WriteString(styles.Normal.Render(levelHex))
 			}
-			content.WriteString(" ")
 		}
 		content.WriteString("\n")
-	}
 
-	content.WriteString("\n")
-
-	// Volume values
-	content.WriteString("  ")
-	for track := 0; track < 8; track++ {
-		volText := fmt.Sprintf("%4.1f", m.TrackVolumes[track])
-		if track == m.CurrentMixerTrack {
-			content.WriteString(styles.Selected.Render(volText))
-		} else {
-			content.WriteString(styles.Normal.Render(volText))
+		// Set level values row (hex codes)
+		content.WriteString("    ")
+		for track := 0; track < 8; track++ {
+			content.WriteString("  ")
+			setLevel := m.TrackSetLevels[track]
+			setHex := fmt.Sprintf("%02X", dbToHex(setLevel))
+			
+			if track == m.CurrentMixerTrack {
+				content.WriteString(styles.Selected.Render(setHex))
+			} else {
+				content.WriteString(styles.Label.Render(setHex))
+			}
 		}
-		content.WriteString("  ")
-	}
-	content.WriteString("\n")
+		content.WriteString("\n\n")
 
-	// Set level values
-	content.WriteString("  ")
-	for track := 0; track < 8; track++ {
-		setText := fmt.Sprintf("%4.1f", m.TrackSetLevels[track])
-		if track == m.CurrentMixerTrack {
-			content.WriteString(styles.Selected.Render(setText))
-		} else {
-			content.WriteString(styles.Label.Render(setText))
-		}
-		content.WriteString("  ")
-	}
-	content.WriteString("\n\n")
-
-	// Instructions
-	statusMsg := "Left/Right: Select track | Ctrl+Arrow: Adjust set level | Shift+Up: Back to previous view"
-	content.WriteString(RenderFooter(m, barHeight+6, statusMsg))
-
-	// Apply container padding
-	return styles.Container.Render(content.String())
+		return content.String()
+	}, getMixerStatusMessage(m), 14)
 }
