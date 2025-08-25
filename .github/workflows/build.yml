@@ -134,47 +134,6 @@ jobs:
             ext: ""
             archive: tar.gz
 
-          # BSDs
-          - goos: dragonfly
-            goarch: amd64
-            name: DragonFlyBSD-64bit
-            ext: ""
-            archive: tar.gz
-          - goos: freebsd
-            goarch: amd64
-            name: FreeBSD-64bit
-            ext: ""
-            archive: tar.gz
-          - goos: freebsd
-            goarch: arm64
-            name: FreeBSD-ARM64
-            ext: ""
-            archive: tar.gz
-          - goos: netbsd
-            goarch: "386"
-            name: NetBSD-32bit
-            ext: ""
-            archive: tar.gz
-          - goos: netbsd
-            goarch: amd64
-            name: NetBSD-64bit
-            ext: ""
-            archive: tar.gz
-          - goos: netbsd
-            goarch: arm64
-            name: NetBSD-ARM64
-            ext: ""
-            archive: tar.gz
-          - goos: openbsd
-            goarch: amd64
-            name: OpenBSD-64bit
-            ext: ""
-            archive: tar.gz
-          - goos: openbsd
-            goarch: arm64
-            name: OpenBSD-ARM64
-            ext: ""
-            archive: tar.gz
 
     steps:
       - uses: actions/checkout@v5
