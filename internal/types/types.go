@@ -93,6 +93,7 @@ type SaveData struct {
 	ScrollOffset       int                     `json:"scrollOffset"`
 	CurrentPhrase      int                     `json:"currentPhrase"`
 	FileSelectRow      int                     `json:"fileSelectRow"`
+	FileSelectCol      int                     `json:"fileSelectCol"`
 	ChainsData         [][]int                 `json:"chainsData"`
 	PhrasesData        [255][][]int            `json:"phrasesData"`
 	LastEditRow        int                     `json:"lastEditRow"`

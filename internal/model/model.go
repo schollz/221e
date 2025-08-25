@@ -31,6 +31,7 @@ type Model struct {
 	CurrentChain     int                 // Which chain we're viewing/editing
 	CurrentTrack     int                 // Which track context we're viewing (0-7)
 	FileSelectRow    int                 // Which phrase row we're selecting a file for
+	FileSelectCol    int                 // Which phrase column we were on when navigating to file browser
 	Clipboard        types.ClipboardData // Cell clipboard
 	CurrentDir       string              // Current directory for file browser
 	Files            []string            // Files in current directory
