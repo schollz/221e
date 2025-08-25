@@ -198,7 +198,6 @@ s.waitForBoot({
 
 				// Feedback
 				LocalOut.ar(retrigCount);
-				SendReply.kr(Impulse.kr(30),'/track_volume',[trackId,Lag.kr(Amplitude.kr(Mix.new(snd),0.3,0.3).ampdb,3)]);
 				Out.ar(effectDryOut, snd*effectDry);
 				Out.ar(effectCombOut, snd*XLine.kr(0.001,effectComb,sliceDurationBeats*beatDuration/2));
 				Out.ar(effectReverbOut, snd*XLine.kr(0.001,effectReverb,sliceDurationBeats*beatDuration/2));
@@ -219,6 +218,7 @@ s.waitForBoot({
 			var sndDry = In.ar(busDry,2);
 			var sndComb = In.ar(busComb,2);
 			var snd = 				sndDry;
+			SendReply.kr(Impulse.kr(30),'/track_volume',[0,Lag.kr(Amplitude.kr(snd[0],0.3,0.3).ampdb,3).poll]);
 
 			// add in comb
 			snd = snd + ((0.5*sndComb)+
