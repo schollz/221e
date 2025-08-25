@@ -20,17 +20,12 @@ _IMPORTANT NOTE: this software is currently in development and is definetly unst
 
 This program is heavily inspired by my norns tracker, [zxcvbn](https://zxcvbn.norns.online/) and the [dirtywave m8](https://dirtywave.com/) (which itself is inspired by countless trackers before it). While it may look similar, this is not **m8**! The **m8** is incredible, much better than this poc. This thing, **2n**, is based heavily on my own SuperCollider scripts I've written over the years, using an interface modeled after the **m8**, created in a cross-platform terminal user interface.
 
-## Download
-
-- 
-
 
 ## Prerequisites
 
 - **SuperCollider** (required; extensions are checked at launch). Download [here](https://supercollider.github.io/downloads.html). 
 - **JACK (jackd)** must be running with the output to your favorite speaker. Download [here](https://jackaudio.org/downloads/).
 - **2n** binary. Grab the latest build from **[Releases](https://github.com/schollz/2n/releases/latest)**.
----
 
 ## Run
 
