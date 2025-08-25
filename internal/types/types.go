@@ -33,17 +33,18 @@ type PhraseColumn int
 const (
 	ColPlayback       PhraseColumn = iota // Column 0: Playback flag (0 or 1)
 	ColNote                               // Column 1: Note value (hex)
-	ColDeltaTime                          // Column 2: Delta time (hex)
-	ColGate                               // Column 3: Gate value (hex, default 128/0x80)
-	ColRetrigger                          // Column 4: Retrigger setting index (hex, 00-FE)
-	ColTimestretch                        // Column 5: Timestretch setting index (hex, 00-FE)
-	ColEffectReverse                      // Column 6: Я (reverse) 0/1
-	ColPan                                // Column 7: PA (pan) (hex, default 128/0x80, 00-FE maps -1.0 to 1.0)
-	ColLowPassFilter                      // Column 8: LP (low pass filter) (hex, default -1/null, 00-FE maps 20kHz to 20Hz exponentially)
-	ColHighPassFilter                     // Column 9: HP (high pass filter) (hex, default -1/null, 00-FE maps 20Hz to 20kHz exponentially)
-	ColEffectComb                         // Column 10: CO (00-FE)
-	ColEffectReverb                       // Column 11: VE (00-FE)
-	ColFilename                           // Column 12: Filename index
+	ColPitch                              // Column 2: Pitch value (hex, default 80/0x80 = 0.0 pitch)
+	ColDeltaTime                          // Column 3: Delta time (hex)
+	ColGate                               // Column 4: Gate value (hex, default 128/0x80)
+	ColRetrigger                          // Column 5: Retrigger setting index (hex, 00-FE)
+	ColTimestretch                        // Column 6: Timestretch setting index (hex, 00-FE)
+	ColEffectReverse                      // Column 7: Я (reverse) 0/1
+	ColPan                                // Column 8: PA (pan) (hex, default 128/0x80, 00-FE maps -1.0 to 1.0)
+	ColLowPassFilter                      // Column 9: LP (low pass filter) (hex, default -1/null, 00-FE maps 20kHz to 20Hz exponentially)
+	ColHighPassFilter                     // Column 10: HP (high pass filter) (hex, default -1/null, 00-FE maps 20Hz to 20kHz exponentially)
+	ColEffectComb                         // Column 11: CO (00-FE)
+	ColEffectReverb                       // Column 12: VE (00-FE)
+	ColFilename                           // Column 13: Filename index
 	ColCount                              // Total number of columns
 )
 

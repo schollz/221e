@@ -867,16 +867,10 @@ func handleBackspace(m *model.Model) tea.Cmd {
 		colIndex := m.CurrentCol - 1 // Convert to data array index
 		if colIndex >= 0 && colIndex < int(types.ColCount) {
 			if colIndex == int(types.ColPlayback) {
-				// Reset playback to 0
+				// Reset playback to 0 (special case - 0 means off)
 				m.PhrasesData[m.CurrentPhrase][m.CurrentRow][colIndex] = 0
-			} else if colIndex == int(types.ColGate) {
-				// Reset gate to default (128 = 1.0)
-				m.PhrasesData[m.CurrentPhrase][m.CurrentRow][colIndex] = 128
-			} else if colIndex == int(types.ColRetrigger) {
-				// Clear retrigger (set to -1 for no retrigger)
-				m.PhrasesData[m.CurrentPhrase][m.CurrentRow][colIndex] = -1
 			} else {
-				// Clear note, deltatime, or filename
+				// Clear all other columns to -1 (including GT, PI, RT, etc.)
 				m.PhrasesData[m.CurrentPhrase][m.CurrentRow][colIndex] = -1
 			}
 			log.Printf("Cleared phrase %d row %d col %d", m.CurrentPhrase, m.CurrentRow, colIndex)
@@ -896,6 +890,7 @@ func handleCtrlH(m *model.Model) tea.Cmd {
 		// Delete entire phrase row (clear all columns)
 		m.PhrasesData[m.CurrentPhrase][m.CurrentRow][int(types.ColPlayback)] = 0   // Reset playback to 0
 		m.PhrasesData[m.CurrentPhrase][m.CurrentRow][int(types.ColNote)] = -1      // Clear note
+		m.PhrasesData[m.CurrentPhrase][m.CurrentRow][int(types.ColPitch)] = 128    // Reset pitch to default (hex 80)
 		m.PhrasesData[m.CurrentPhrase][m.CurrentRow][int(types.ColDeltaTime)] = -1 // Clear deltatime
 		m.PhrasesData[m.CurrentPhrase][m.CurrentRow][int(types.ColGate)] = 128     // Reset gate to default
 		m.PhrasesData[m.CurrentPhrase][m.CurrentRow][int(types.ColRetrigger)] = -1 // Clear retrigger

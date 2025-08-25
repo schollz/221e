@@ -1175,6 +1175,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 	// Raw values
 	rawPlayback := rowData[types.ColPlayback]
 	rawNote := rowData[types.ColNote]
+	rawPitch := rowData[types.ColPitch]
 	rawDeltaTime := rowData[types.ColDeltaTime]
 	rawGate := rowData[types.ColGate]
 	rawRetrigger := rowData[types.ColRetrigger]
@@ -1301,6 +1302,15 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 		)
 	} else {
 		oscParams = model.NewSamplerOSCParams(effectiveFilename, trackId, sliceCount, sliceNumber, bpmSource, m.BPM, sliceDuration)
+	}
+
+	// Pitch conversion from hex to float: 128 (0x80) = 0.0, range 0-254 maps to -24 to +24
+	if rawPitch != -1 {
+		// Map 0-254 to -24 to +24, with 128 as center (0.0)
+		oscParams.Pitch = ((float32(rawPitch) - 128.0) / 128.0) * 24.0
+	} else {
+		// Default pitch is 0.0 when cleared (-1)
+		oscParams.Pitch = 0.0
 	}
 
 	// Timestretch
@@ -1944,6 +1954,21 @@ func FillSequentialPhrase(m *model.Model) {
 			value := startValue + (row - startRow)
 			if value > maxValue {
 				value = value % (maxValue + 1) // Wrap: 0, 1, 0, 1, ...
+			}
+			m.PhrasesData[m.CurrentPhrase][row][colIndex] = value
+		}
+	} else if colIndex == int(types.ColPitch) {
+		// Pitch column has default of 128, not -1
+		if startValue == 0 && startRow == 0 {
+			// Special case: if all above are empty, start with default pitch (128)
+			startValue = 128
+		}
+		// Hex columns (0-254) 
+		maxValue := 254
+		for row := startRow; row <= currentRow; row++ {
+			value := startValue + (row - startRow)
+			if value > maxValue {
+				value = value % (maxValue + 1) // Wrap: 0-254, 0-254, ...
 			}
 			m.PhrasesData[m.CurrentPhrase][row][colIndex] = value
 		}
