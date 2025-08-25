@@ -1845,3 +1845,131 @@ func ModifyMixerSetLevel(m *model.Model, delta float32) {
 
 	storage.AutoSave(m)
 }
+
+// FillSequential fills from the last null cell to the current cell in increments of 1
+func FillSequential(m *model.Model) {
+	if m.ViewMode == types.SongView {
+		FillSequentialSong(m)
+	} else if m.ViewMode == types.ChainView {
+		FillSequentialChain(m)
+	} else if m.ViewMode == types.PhraseView {
+		FillSequentialPhrase(m)
+	}
+}
+
+// FillSequentialSong fills chain IDs in song view
+func FillSequentialSong(m *model.Model) {
+	track := m.CurrentCol
+	currentRow := m.CurrentRow
+	
+	// Find the last non-null value going upward
+	var startValue int = 0
+	var startRow int = 0
+	
+	for row := currentRow - 1; row >= 0; row-- {
+		if m.SongData[track][row] != -1 {
+			startValue = m.SongData[track][row] + 1
+			startRow = row + 1
+			break
+		}
+	}
+	
+	// Fill from startRow to currentRow
+	for row := startRow; row <= currentRow; row++ {
+		value := startValue + (row - startRow)
+		if value > 254 {
+			value = value % 255 // Wrap around (0-254)
+		}
+		m.SongData[track][row] = value
+	}
+	
+	log.Printf("Filled song track %d from row %d to %d, starting with %d", track, startRow, currentRow, startValue)
+}
+
+// FillSequentialChain fills phrase IDs in chain view
+func FillSequentialChain(m *model.Model) {
+	currentRow := m.CurrentRow
+	
+	// Find the last non-null value going upward
+	var startValue int = 0
+	var startRow int = 0
+	
+	for row := currentRow - 1; row >= 0; row-- {
+		if m.ChainsData[m.CurrentChain][row] != -1 {
+			startValue = m.ChainsData[m.CurrentChain][row] + 1
+			startRow = row + 1
+			break
+		}
+	}
+	
+	// Fill from startRow to currentRow
+	for row := startRow; row <= currentRow; row++ {
+		value := startValue + (row - startRow)
+		if value > 254 {
+			value = value % 255 // Wrap around (0-254)
+		}
+		m.ChainsData[m.CurrentChain][row] = value
+	}
+	
+	log.Printf("Filled chain %02X from row %d to %d, starting with %d", m.CurrentChain, startRow, currentRow, startValue)
+}
+
+// FillSequentialPhrase fills values in phrase view for the current column
+func FillSequentialPhrase(m *model.Model) {
+	currentRow := m.CurrentRow
+	colIndex := m.CurrentCol - 1 // Convert UI column to data index
+	
+	if colIndex < 0 || colIndex >= int(types.ColCount) {
+		return
+	}
+	
+	// Find the last non-null value going upward
+	var startValue int = 0
+	var startRow int = 0
+	
+	for row := currentRow - 1; row >= 0; row-- {
+		cellValue := m.PhrasesData[m.CurrentPhrase][row][colIndex]
+		if cellValue != -1 {
+			startValue = cellValue + 1
+			startRow = row + 1
+			break
+		}
+	}
+	
+	// Handle different column types
+	if colIndex == int(types.ColPlayback) || colIndex == int(types.ColEffectReverse) {
+		// Binary columns (0-1)
+		maxValue := 1
+		for row := startRow; row <= currentRow; row++ {
+			value := startValue + (row - startRow)
+			if value > maxValue {
+				value = value % (maxValue + 1) // Wrap: 0, 1, 0, 1, ...
+			}
+			m.PhrasesData[m.CurrentPhrase][row][colIndex] = value
+		}
+	} else {
+		// Hex columns (0-254)
+		maxValue := 254
+		for row := startRow; row <= currentRow; row++ {
+			value := startValue + (row - startRow)
+			if value > maxValue {
+				value = value % (maxValue + 1) // Wrap: 0-254, 0-254, ...
+			}
+			m.PhrasesData[m.CurrentPhrase][row][colIndex] = value
+		}
+	}
+	
+	// Auto-enable playback on first note entry (following existing pattern)
+	if colIndex == int(types.ColNote) {
+		for row := startRow; row <= currentRow; row++ {
+			if m.PhrasesData[m.CurrentPhrase][row][types.ColPlayback] == 0 {
+				m.PhrasesData[m.CurrentPhrase][row][types.ColPlayback] = 1
+			}
+		}
+	}
+	
+	// Update last edit row
+	m.LastEditRow = currentRow
+	
+	log.Printf("Filled phrase %02X column %d from row %d to %d, starting with %d", m.CurrentPhrase, colIndex, startRow, currentRow, startValue)
+}

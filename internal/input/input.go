@@ -205,6 +205,9 @@ func HandleKeyInput(m *model.Model, msg tea.KeyMsg) tea.Cmd {
 
 	case "ctrl+r":
 		return handleCtrlR(m)
+
+	case "ctrl+f":
+		return handleCtrlF(m)
 	}
 
 	return nil
@@ -952,4 +955,10 @@ func stopRecording(m *model.Model) {
 	// Reset recording state but keep enabled flag
 	m.RecordingActive = false
 	m.CurrentRecordingFile = ""
+}
+
+func handleCtrlF(m *model.Model) tea.Cmd {
+	FillSequential(m)
+	storage.AutoSave(m)
+	return nil
 }
