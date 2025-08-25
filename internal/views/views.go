@@ -1153,15 +1153,15 @@ func RenderWaveform(width, height int, data []float64) string {
 // getLevelColorSmooth returns a smoothly interpolated color for a dB level
 func getLevelColorSmooth(dbLevel float32) colorful.Color {
 	db := float64(dbLevel)
-	
+
 	// Define color stops for smooth gradient
-	veryLowColor, _ := colorful.Hex("#404040")  // Dark gray
-	lowColor, _ := colorful.Hex("#808080")      // Gray
-	normalColor, _ := colorful.Hex("#FFFFFF")   // White
-	warmColor, _ := colorful.Hex("#FFE135")     // Subtle yellow
-	hotColor, _ := colorful.Hex("#FF6B35")      // Orange-red
-	clipColor, _ := colorful.Hex("#FF0000")     // Red
-	
+	veryLowColor, _ := colorful.Hex("#404040") // Dark gray
+	lowColor, _ := colorful.Hex("#808080")     // Gray
+	normalColor, _ := colorful.Hex("#FFFFFF")  // White
+	warmColor, _ := colorful.Hex("#FFE135")    // Subtle yellow
+	hotColor, _ := colorful.Hex("#FF6B35")     // Orange-red
+	clipColor, _ := colorful.Hex("#FF0000")    // Red
+
 	// Create smooth transitions between color zones
 	if db <= -48 {
 		// Very low: dark gray to gray
@@ -1197,33 +1197,33 @@ func getLevelColorSmooth(dbLevel float32) colorful.Color {
 func getBackgroundColorSmooth(position float64) colorful.Color {
 	// Subtle gradient for empty sections
 	topColor, _ := colorful.Hex("#2A2A2A")    // Darker at top
-	bottomColor, _ := colorful.Hex("#3A3A3A")  // Slightly lighter at bottom
-	
+	bottomColor, _ := colorful.Hex("#3A3A3A") // Slightly lighter at bottom
+
 	t := ease.InOutQuad(position)
 	return topColor.BlendHcl(bottomColor, t)
 }
 
 // createVerticalBarSmooth creates a smooth vertical level meter bar 2 characters wide
 func createVerticalBar(currentLevel, setLevel float32, height int) []string {
-	// Convert dB range (-96 to +24) to bar height scale  
+	// Convert dB range (-96 to +24) to bar height scale
 	currentPos := (float64(currentLevel) + 96.0) / 120.0 * float64(height)
 	setPos := (float64(setLevel) + 96.0) / 120.0 * float64(height)
-	
+
 	// Clamp positions to valid range
 	currentPos = math.Max(0, math.Min(float64(height), currentPos))
 	setPos = math.Max(0, math.Min(float64(height), setPos))
 
 	lines := make([]string, height)
 	profile := termenv.ColorProfile()
-	
+
 	// Fill from bottom to top (invert the display)
 	for row := 0; row < height; row++ {
-		displayRow := float64(height - 1 - row)  // Invert so 0dB is at top
+		displayRow := float64(height - 1 - row)    // Invert so 0dB is at top
 		position := displayRow / float64(height-1) // 0.0 at top, 1.0 at bottom
-		
+
 		var barContent string
 		var color colorful.Color
-		
+
 		// Determine what to show at this row
 		if math.Abs(displayRow-setPos) < 0.5 && math.Abs(displayRow-currentPos) > 0.5 {
 			// Set level marker (horizontal line)
@@ -1232,56 +1232,68 @@ func createVerticalBar(currentLevel, setLevel float32, height int) []string {
 		} else if displayRow <= currentPos {
 			// Current level (filled) - use smooth gradient
 			barContent = "██"
-			
+
 			// Calculate dB value for this position for gradient coloring
 			dbAtPos := ((displayRow / float64(height)) * 120.0) - 96.0
-			
+
 			// Create smooth vertical gradient within the filled area
 			fillRatio := 1.0
 			if currentPos > 0 {
 				fillRatio = displayRow / currentPos
 			}
 			fillRatio = ease.OutQuart(fillRatio) // Smooth easing
-			
+
 			// Blend between the level color and a slightly darker version for depth
 			levelColor := getLevelColorSmooth(float32(dbAtPos))
 			darkLevelColor := levelColor.BlendHcl(colorful.Color{R: 0, G: 0, B: 0}, 0.3)
 			color = darkLevelColor.BlendHcl(levelColor, fillRatio)
 		} else {
 			// Empty space with subtle gradient
-			barContent = "▒▒" // Slightly more visible than ░░
+			barContent = "▒▒"                                // Slightly more visible than ░░
 			color = getBackgroundColorSmooth(1.0 - position) // Reverse for top-darker effect
 		}
-		
+
 		// Apply color using termenv
 		colorHex := color.Hex()
 		termColor := profile.Color(colorHex)
 		styledContent := termenv.String(barContent).Foreground(termColor).String()
-		
+
 		lines[row] = styledContent
 	}
-	
+
 	return lines
 }
 
 // dbToHex converts dB value (-96 to +24) to hex (00 to FE)
 func dbToHex(db float32) int {
 	// Clamp to valid range
-	if db < -96.0 { db = -96.0 }
-	if db > 24.0 { db = 24.0 }
-	
+	if db < -96.0 {
+		db = -96.0
+	}
+	if db > 24.0 {
+		db = 24.0
+	}
+
 	// Map -96 to +24 dB (120 dB range) to 0 to 254 (255 values)
 	hex := int(((db + 96.0) * 254.0) / 120.0)
-	if hex < 0 { hex = 0 }
-	if hex > 254 { hex = 254 }
+	if hex < 0 {
+		hex = 0
+	}
+	if hex > 254 {
+		hex = 254
+	}
 	return hex
 }
 
 // hexToDb converts hex value (0 to 254) back to dB (-96 to +24)
 func hexToDb(hex int) float32 {
-	if hex < 0 { hex = 0 }
-	if hex > 254 { hex = 254 }
-	
+	if hex < 0 {
+		hex = 0
+	}
+	if hex > 254 {
+		hex = 254
+	}
+
 	// Map 0 to 254 back to -96 to +24 dB
 	return ((float32(hex) * 120.0) / 254.0) - 96.0
 }
@@ -1290,11 +1302,11 @@ func hexToDb(hex int) float32 {
 func getMixerStatusMessage(m *model.Model) string {
 	track := m.CurrentMixerTrack
 	setLevel := m.TrackSetLevels[track]
-	
-	statusMsg := fmt.Sprintf("Track %d: Set %.1fdB (Hex %02X)", 
+
+	statusMsg := fmt.Sprintf("Track %d: Set %.1fdB (Hex %02X)",
 		track+1, setLevel, dbToHex(setLevel))
 	statusMsg += " | Left/Right: Select track │ Ctrl+Arrow: Adjust set level │ Shift+Up: Back to previous view"
-	
+
 	return statusMsg
 }
 
@@ -1327,7 +1339,7 @@ func RenderMixerView(m *model.Model) string {
 			content.WriteString("    ") // Left padding like song view
 			for track := 0; track < 8; track++ {
 				content.WriteString("  ") // 2 spaces before each track (like song view)
-				
+
 				// Add selection highlighting
 				if track == m.CurrentMixerTrack {
 					selectionStyle := lipgloss.NewStyle().Background(lipgloss.Color("240"))
@@ -1345,7 +1357,7 @@ func RenderMixerView(m *model.Model) string {
 			content.WriteString("  ")
 			currentLevel := m.TrackVolumes[track]
 			levelHex := fmt.Sprintf("%02X", dbToHex(currentLevel))
-			
+
 			if track == m.CurrentMixerTrack {
 				content.WriteString(styles.Selected.Render(levelHex))
 			} else {
@@ -1360,7 +1372,7 @@ func RenderMixerView(m *model.Model) string {
 			content.WriteString("  ")
 			setLevel := m.TrackSetLevels[track]
 			setHex := fmt.Sprintf("%02X", dbToHex(setLevel))
-			
+
 			if track == m.CurrentMixerTrack {
 				content.WriteString(styles.Selected.Render(setHex))
 			} else {
