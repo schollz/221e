@@ -56,9 +56,9 @@ jobs:
         env:
           VERSION: ${{ needs.compute-version.outputs.version }}
         run: |
-          git clone -b "${{ github.event.release.tag_name || github.event.release.name }}" --depth 1 https://github.com/schollz/221e "221e-${{ github.event.release.tag_name || github.event.release.name }}"
-          cd "221e-${{ github.event.release.tag_name || github.event.release.name }}" && go mod tidy && go mod vendor
-          cd .. && tar -czvf "221e_${VERSION}_src.tar.gz" "221e-${{ github.event.release.tag_name || github.event.release.name }}"
+          git clone -b "${{ github.event.release.tag_name || github.event.release.name }}" --depth 1 https://github.com/schollz/2n "2n-${{ github.event.release.tag_name || github.event.release.name }}"
+          cd "2n-${{ github.event.release.tag_name || github.event.release.name }}" && go mod tidy && go mod vendor
+          cd .. && tar -czvf "2n_${VERSION}_src.tar.gz" "2n-${{ github.event.release.tag_name || github.event.release.name }}"
 
       - name: Upload source artifact
         uses: actions/upload-artifact@v4
@@ -202,16 +202,16 @@ jobs:
               ;;
           esac
           echo "Building for ${{ matrix.goos }}/${{ matrix.goarch }} with LDFLAGS: $LDFLAGS"
-          go build -ldflags "$LDFLAGS" -o 221e${{ matrix.ext }}
+          go build -ldflags "$LDFLAGS" -o 2n${{ matrix.ext }}
 
       - name: Create archive
         env:
           VERSION: ${{ needs.compute-version.outputs.version }}
         run: |
           if [ "${{ matrix.archive }}" = "zip" ]; then
-            zip "221e_${VERSION}_${{ matrix.name }}.zip" "221e${{ matrix.ext }}" LICENSE
+            zip "2n_${VERSION}_${{ matrix.name }}.zip" "2n${{ matrix.ext }}" LICENSE
           else
-            tar -czvf "221e_${VERSION}_${{ matrix.name }}.tar.gz" "221e${{ matrix.ext }}" LICENSE
+            tar -czvf "2n_${VERSION}_${{ matrix.name }}.tar.gz" "2n${{ matrix.ext }}" LICENSE
           fi
 
       - name: Upload build artifact
@@ -238,8 +238,8 @@ jobs:
         env:
           VERSION: ${{ needs.compute-version.outputs.version }}
         run: |
-          sha256sum *.zip *.tar.gz > "221e_${VERSION}_checksums.txt"
-          cat "221e_${VERSION}_checksums.txt"
+          sha256sum *.zip *.tar.gz > "2n_${VERSION}_checksums.txt"
+          cat "2n_${VERSION}_checksums.txt"
 
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
