@@ -20,6 +20,7 @@ func AutoSave(m *model.Model) {
 		ScrollOffset:       m.ScrollOffset,
 		CurrentPhrase:      m.CurrentPhrase,
 		FileSelectRow:      m.FileSelectRow,
+		FileSelectCol:      m.FileSelectCol,
 		ChainsData:         m.ChainsData,
 		PhrasesData:        m.PhrasesData,
 		LastEditRow:        m.LastEditRow,
@@ -87,6 +88,7 @@ func LoadState(m *model.Model, oscPort int, saveFile string) error {
 	m.ScrollOffset = saveData.ScrollOffset
 	m.CurrentPhrase = saveData.CurrentPhrase
 	m.FileSelectRow = saveData.FileSelectRow
+	m.FileSelectCol = saveData.FileSelectCol
 	m.LastEditRow = saveData.LastEditRow
 	m.CurrentDir = saveData.CurrentDir
 	m.BPM = saveData.BPM
