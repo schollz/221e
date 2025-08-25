@@ -95,10 +95,8 @@ func main() {
 	d.AddMsgHandler("/track_volume", func(msg *osc.Message) {
 		// argument 0: track number (0 to 7)
 		// argument 1: volume in dB (floating point)
-		log.Printf("Received /track_volume OSC message: %v", msg.Arguments)
 		trackNum := int(msg.Arguments[0].(float32))
 		volume := msg.Arguments[1].(float32)
-		log.Printf("SuperCollider Track Volume: %d (%.2f dB)", trackNum, volume)
 
 		// Store the track volume in the model if available
 		if tm != nil && trackNum >= 0 && trackNum < 8 {
