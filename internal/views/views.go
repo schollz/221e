@@ -7,6 +7,9 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/fogleman/ease"
+	"github.com/lucasb-eyer/go-colorful"
+	"github.com/muesli/termenv"
 
 	"github.com/schollz/2n/internal/model"
 	"github.com/schollz/2n/internal/types"
@@ -1147,72 +1150,115 @@ func RenderWaveform(width, height int, data []float64) string {
 	return b.String()
 }
 
-// getLevelColor returns the appropriate terminal color for a dB level
-func getLevelColor(dbLevel float32) string {
-	if dbLevel > 0 {
-		// Clipping - red colors (faster transition to red)
-		if dbLevel > 3 {
-			return "196" // Bright red for moderate clipping
-		} else {
-			return "160" // Dark red for light clipping
-		}
-	} else if dbLevel > -6 {
-		// Hot levels - faster transition to red
-		return "202" // Orange-red
-	} else if dbLevel > -12 {
-		// Approaching hot - subtle yellow
-		return "227" // Subtle yellow (less bright)
-	} else if dbLevel > -24 {
-		// Normal levels - white/light gray
-		return "255" // White
-	} else if dbLevel > -48 {
-		// Lower levels - gray
-		return "248" // Light gray
+// getLevelColorSmooth returns a smoothly interpolated color for a dB level
+func getLevelColorSmooth(dbLevel float32) colorful.Color {
+	db := float64(dbLevel)
+	
+	// Define color stops for smooth gradient
+	veryLowColor, _ := colorful.Hex("#404040")  // Dark gray
+	lowColor, _ := colorful.Hex("#808080")      // Gray
+	normalColor, _ := colorful.Hex("#FFFFFF")   // White
+	warmColor, _ := colorful.Hex("#FFE135")     // Subtle yellow
+	hotColor, _ := colorful.Hex("#FF6B35")      // Orange-red
+	clipColor, _ := colorful.Hex("#FF0000")     // Red
+	
+	// Create smooth transitions between color zones
+	if db <= -48 {
+		// Very low: dark gray to gray
+		t := (db + 96.0) / 48.0
+		t = math.Max(0, math.Min(1, t))
+		t = ease.OutQuad(t)
+		return veryLowColor.BlendHcl(lowColor, t)
+	} else if db <= -24 {
+		// Low: gray to white
+		t := (db + 48.0) / 24.0
+		t = ease.OutQuad(t)
+		return lowColor.BlendHcl(normalColor, t)
+	} else if db <= -12 {
+		// Normal: white to subtle yellow
+		t := (db + 24.0) / 12.0
+		t = ease.InQuad(t)
+		return normalColor.BlendHcl(warmColor, t)
+	} else if db <= -3 {
+		// Approaching hot: subtle yellow to orange
+		t := (db + 12.0) / 9.0
+		t = ease.InCubic(t)
+		return warmColor.BlendHcl(hotColor, t)
 	} else {
-		// Very low levels - dark gray
-		return "240" // Dark gray
+		// Hot to clipping: orange to red
+		t := (db + 3.0) / 27.0 // -3 to +24
+		t = math.Max(0, math.Min(1, t))
+		t = ease.InExpo(t)
+		return hotColor.BlendHcl(clipColor, t)
 	}
 }
 
-// createVerticalBar creates a vertical level meter bar 2 characters wide
+// getBackgroundColorSmooth returns a smooth background/empty color
+func getBackgroundColorSmooth(position float64) colorful.Color {
+	// Subtle gradient for empty sections
+	topColor, _ := colorful.Hex("#2A2A2A")    // Darker at top
+	bottomColor, _ := colorful.Hex("#3A3A3A")  // Slightly lighter at bottom
+	
+	t := ease.InOutQuad(position)
+	return topColor.BlendHcl(bottomColor, t)
+}
+
+// createVerticalBarSmooth creates a smooth vertical level meter bar 2 characters wide
 func createVerticalBar(currentLevel, setLevel float32, height int) []string {
-	// Convert dB range (-96 to +12) to bar height scale
-	currentPos := int((float64(currentLevel) + 96.0) / 108.0 * float64(height))
-	setPos := int((float64(setLevel) + 96.0) / 108.0 * float64(height))
+	// Convert dB range (-96 to +24) to bar height scale  
+	currentPos := (float64(currentLevel) + 96.0) / 120.0 * float64(height)
+	setPos := (float64(setLevel) + 96.0) / 120.0 * float64(height)
 	
 	// Clamp positions to valid range
-	if currentPos < 0 { currentPos = 0 }
-	if currentPos > height { currentPos = height }
-	if setPos < 0 { setPos = 0 }
-	if setPos > height { setPos = height }
+	currentPos = math.Max(0, math.Min(float64(height), currentPos))
+	setPos = math.Max(0, math.Min(float64(height), setPos))
 
 	lines := make([]string, height)
+	profile := termenv.ColorProfile()
 	
 	// Fill from bottom to top (invert the display)
 	for row := 0; row < height; row++ {
-		displayRow := height - 1 - row  // Invert so 0dB is at top
+		displayRow := float64(height - 1 - row)  // Invert so 0dB is at top
+		position := displayRow / float64(height-1) // 0.0 at top, 1.0 at bottom
 		
 		var barContent string
-		var barStyle lipgloss.Style
+		var color colorful.Color
 		
 		// Determine what to show at this row
-		if displayRow == setPos && displayRow != currentPos {
+		if math.Abs(displayRow-setPos) < 0.5 && math.Abs(displayRow-currentPos) > 0.5 {
 			// Set level marker (horizontal line)
 			barContent = "━━"
-			barStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("246")).Bold(true)
+			color, _ = colorful.Hex("#CCCCCC") // Light gray for set marker
 		} else if displayRow <= currentPos {
-			// Current level (filled) - use <= so we fill up to the current level
+			// Current level (filled) - use smooth gradient
 			barContent = "██"
-			// Get color based on the actual current level, not the position
-			color := getLevelColor(currentLevel)
-			barStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(color))
+			
+			// Calculate dB value for this position for gradient coloring
+			dbAtPos := ((displayRow / float64(height)) * 120.0) - 96.0
+			
+			// Create smooth vertical gradient within the filled area
+			fillRatio := 1.0
+			if currentPos > 0 {
+				fillRatio = displayRow / currentPos
+			}
+			fillRatio = ease.OutQuart(fillRatio) // Smooth easing
+			
+			// Blend between the level color and a slightly darker version for depth
+			levelColor := getLevelColorSmooth(float32(dbAtPos))
+			darkLevelColor := levelColor.BlendHcl(colorful.Color{R: 0, G: 0, B: 0}, 0.3)
+			color = darkLevelColor.BlendHcl(levelColor, fillRatio)
 		} else {
-			// Empty space
-			barContent = "░░"
-			barStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("235"))
+			// Empty space with subtle gradient
+			barContent = "▒▒" // Slightly more visible than ░░
+			color = getBackgroundColorSmooth(1.0 - position) // Reverse for top-darker effect
 		}
 		
-		lines[row] = barStyle.Render(barContent)
+		// Apply color using termenv
+		colorHex := color.Hex()
+		termColor := profile.Color(colorHex)
+		styledContent := termenv.String(barContent).Foreground(termColor).String()
+		
+		lines[row] = styledContent
 	}
 	
 	return lines
