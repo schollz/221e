@@ -1226,8 +1226,8 @@ func getUnicodeBlock(fillRatio float64) string {
 	}
 }
 
-// createVerticalBarSmooth creates a smooth vertical level meter bar with Unicode blocks
-func createVerticalBar(currentLevel, setLevel float32, height int) []string {
+// createVerticalBar creates a simple vertical level meter bar with Unicode blocks
+func createVerticalBar(currentLevel, setLevel float32, height int, isSelected bool) []string {
 	// Convert dB range (-48 to +12) to bar height scale (60 dB range)
 	currentPos := (float64(currentLevel) + 48.0) / 60.0 * float64(height)
 	setPos := (float64(setLevel) + 48.0) / 60.0 * float64(height)
@@ -1239,10 +1239,19 @@ func createVerticalBar(currentLevel, setLevel float32, height int) []string {
 	lines := make([]string, height)
 	profile := termenv.ColorProfile()
 
+	// Choose colors based on selection
+	var fillColor, emptyColor colorful.Color
+	if isSelected {
+		fillColor, _ = colorful.Hex("#FFFFFF") // White for selected
+		emptyColor, _ = colorful.Hex("#808080") // Medium gray for empty parts of selected
+	} else {
+		fillColor, _ = colorful.Hex("#C0C0C0") // Light gray for unselected
+		emptyColor, _ = colorful.Hex("#404040") // Dark gray for empty parts of unselected
+	}
+
 	// Fill from bottom to top (invert the display)
 	for row := 0; row < height; row++ {
-		displayRow := float64(height - 1 - row)    // Invert so 0dB is at top
-		position := displayRow / float64(height-1) // 0.0 at top, 1.0 at bottom
+		displayRow := float64(height - 1 - row) // Invert so 0dB is at top
 
 		var barContent string
 		var color colorful.Color
@@ -1251,43 +1260,28 @@ func createVerticalBar(currentLevel, setLevel float32, height int) []string {
 		if math.Abs(displayRow-setPos) < 0.5 && math.Abs(displayRow-currentPos) > 0.5 {
 			// Set level marker (horizontal line)
 			barContent = "━━"
-			color, _ = colorful.Hex("#CCCCCC") // Light gray for set marker
+			color = fillColor // Use same color as fill for consistency
 		} else if displayRow < currentPos {
-			// Full fill - calculate color based on dB level at this position
-			dbAtPos := ((displayRow / float64(height)) * 60.0) - 48.0
-
-			// Create smooth vertical gradient within the filled area
-			fillRatio := 1.0
-			if currentPos > 0 {
-				fillRatio = displayRow / currentPos
-			}
-			fillRatio = ease.OutQuart(fillRatio) // Smooth easing
-
-			levelColor := getLevelColorSmooth(float32(dbAtPos))
-			darkLevelColor := levelColor.BlendHcl(colorful.Color{R: 0, G: 0, B: 0}, 0.3)
-			color = darkLevelColor.BlendHcl(levelColor, fillRatio)
+			// Full fill
+			color = fillColor
 			barContent = "██"
 		} else if displayRow >= currentPos && displayRow < currentPos+1 {
 			// Partial fill - use Unicode blocks for smooth edges
 			partialFill := currentPos - math.Floor(currentPos) // Fractional part
 			
 			if partialFill > 0 {
-				// Calculate color for this partial level
-				dbAtPos := ((displayRow / float64(height)) * 60.0) - 48.0
-				levelColor := getLevelColorSmooth(float32(dbAtPos))
-				color = levelColor
-				
+				color = fillColor
 				// Use appropriate Unicode block
 				barContent = getUnicodeBlock(partialFill)
 			} else {
-				// Empty with subtle gradient
+				// Empty
 				barContent = "▒▒"
-				color = getBackgroundColorSmooth(1.0 - position)
+				color = emptyColor
 			}
 		} else {
-			// Empty space with subtle gradient
+			// Empty space
 			barContent = "▒▒"
-			color = getBackgroundColorSmooth(1.0 - position)
+			color = emptyColor
 		}
 
 		// Apply color using termenv
@@ -1368,7 +1362,8 @@ func RenderMixerView(m *model.Model) string {
 		// Create vertical bars for all tracks
 		trackBars := make([][]string, 8)
 		for track := 0; track < 8; track++ {
-			trackBars[track] = createVerticalBar(m.TrackVolumes[track], m.TrackSetLevels[track], barHeight)
+			isSelected := track == m.CurrentMixerTrack
+			trackBars[track] = createVerticalBar(m.TrackVolumes[track], m.TrackSetLevels[track], barHeight, isSelected)
 		}
 
 		// Render the vertical bars row by row
@@ -1376,14 +1371,7 @@ func RenderMixerView(m *model.Model) string {
 			content.WriteString("    ") // Left padding like song view
 			for track := 0; track < 8; track++ {
 				content.WriteString("  ") // 2 spaces before each track (like song view)
-
-				// Add selection highlighting
-				if track == m.CurrentMixerTrack {
-					selectionStyle := lipgloss.NewStyle().Background(lipgloss.Color("240"))
-					content.WriteString(selectionStyle.Render(trackBars[track][row]))
-				} else {
-					content.WriteString(trackBars[track][row])
-				}
+				content.WriteString(trackBars[track][row])
 			}
 			content.WriteString("\n")
 		}
