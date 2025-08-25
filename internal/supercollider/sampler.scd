@@ -242,7 +242,6 @@ s.waitForBoot({
 				oversample: 2,
 			);
 			snd = snd * Lag.kr(volumeDB).dbamp * Lag.kr(postgain).dbamp;
-			snd = snd * 0.1;
 
 			SendReply.kr(Impulse.kr(30),'/waveform',Normalizer.ar(LPF.ar(snd,3000)));
 			ReplaceOut.ar(0,snd);

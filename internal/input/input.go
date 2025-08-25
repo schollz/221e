@@ -356,7 +356,7 @@ func handleShiftUp(m *model.Model) tea.Cmd {
 		// Remember where we came from
 		m.PreviousView = m.ViewMode
 
-		// NEW: snapshot row/track for the view we’re leaving
+		// NEW: snapshot row/track for the view we're leaving
 		switch m.ViewMode {
 		case types.SongView:
 			m.LastSongRow = m.CurrentRow
@@ -368,6 +368,20 @@ func handleShiftUp(m *model.Model) tea.Cmd {
 		}
 
 		switchToView(m, settingsViewConfig())
+	} else if m.ViewMode == types.MixerView {
+		// Navigate back to previous view from mixer
+		switch m.PreviousView {
+		case types.SongView:
+			switchToViewWithVisibilityCheck(m, songViewConfig(m.LastSongRow, m.LastSongTrack))
+		case types.ChainView:
+			switchToViewWithVisibilityCheck(m, chainViewConfig(m.LastChainRow))
+		case types.PhraseView:
+			switchToViewWithVisibilityCheck(m, phraseViewConfig(m.LastPhraseRow, 2))
+		default:
+			// Fallback to song view if no previous view is set
+			switchToView(m, songViewConfig(0, 0))
+		}
+		return nil
 	} else if m.ViewMode == types.FileView {
 		// Navigate to file metadata view (only if a file is selected)
 		if len(m.Files) > 0 && m.CurrentRow < len(m.Files) {
@@ -402,20 +416,6 @@ func handleShiftDown(m *model.Model) tea.Cmd {
 
 		// Navigate to mixer view
 		switchToView(m, mixerViewConfig())
-		return nil
-	} else if m.ViewMode == types.MixerView {
-		// Navigate back to previous view
-		switch m.PreviousView {
-		case types.SongView:
-			switchToViewWithVisibilityCheck(m, songViewConfig(m.LastSongRow, m.LastSongTrack))
-		case types.ChainView:
-			switchToViewWithVisibilityCheck(m, chainViewConfig(m.LastChainRow))
-		case types.PhraseView:
-			switchToViewWithVisibilityCheck(m, phraseViewConfig(m.LastPhraseRow, 2))
-		default:
-			// Fallback to song view if no previous view is set
-			switchToView(m, songViewConfig(0, 0))
-		}
 		return nil
 	} else if m.ViewMode == types.SettingsView {
 		// Navigate back to previous view

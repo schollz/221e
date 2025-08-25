@@ -1246,7 +1246,7 @@ func RenderMixerView(m *model.Model) string {
 	content.WriteString("\n\n")
 
 	// Instructions
-	statusMsg := "Left/Right: Select track | Ctrl+Arrow: Adjust set level | Shift+Down: Back to previous view"
+	statusMsg := "Left/Right: Select track | Ctrl+Arrow: Adjust set level | Shift+Up: Back to previous view"
 	content.WriteString(RenderFooter(m, barHeight+6, statusMsg))
 
 	// Apply container padding
