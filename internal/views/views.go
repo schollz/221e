@@ -1069,19 +1069,74 @@ func GetInstrumentPhraseStatusMessage(m *model.Model) string {
 
 	// Use centralized column mapping to determine current column
 	columnMapping := m.GetColumnMapping(m.CurrentCol)
-	if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColNote) { // NOT column
-		// Show note info
-		phrasesData := m.GetCurrentPhrasesData()
+	phrasesData := m.GetCurrentPhrasesData()
+	
+	if columnMapping != nil && (columnMapping.DataColumnIndex == int(types.ColNote) || 
+								columnMapping.DataColumnIndex == int(types.ColChord) || 
+								columnMapping.DataColumnIndex == int(types.ColChordAddition) ||
+								columnMapping.DataColumnIndex == int(types.ColChordTransposition)) { // NOT, C, A, or T columns
+		// Get current row data
 		noteValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColNote]
+		chordValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColChord]
+		chordAddValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColChordAddition]
+		chordTransValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColChordTransposition]
+		
 		if noteValue >= 0 && noteValue <= 127 {
 			noteName := midiToNoteName(noteValue)
-			statusMsg = fmt.Sprintf("Note: %d (%s)", noteValue, noteName)
+			
+			// Check if chord is defined (not null/"-")
+			if chordValue > int(types.ChordNone) {
+				// Extract note name and octave from MIDI note
+				noteNames := []string{"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"}
+				rootNote := noteNames[noteValue%12]
+				octave := (noteValue / 12) - 1
+				
+				// Build chord name
+				var chordName string
+				switch types.ChordType(chordValue) {
+				case types.ChordMajor:
+					chordName = rootNote + "maj"
+				case types.ChordMinor:
+					chordName = rootNote + "min"
+				case types.ChordDominant:
+					chordName = rootNote // Dominant chords have no suffix
+				default:
+					chordName = rootNote
+				}
+				
+				// Add chord addition if defined
+				if chordAddValue > int(types.ChordAddNone) {
+					switch types.ChordAddition(chordAddValue) {
+					case types.ChordAdd7:
+						chordName += "7"
+					case types.ChordAdd9:
+						chordName += "9"
+					case types.ChordAdd4:
+						chordName += "4"
+					}
+				}
+				
+				// Add transposition if defined and not 0
+				if chordTransValue > int(types.ChordTrans0) {
+					transpositionStr := types.ChordTranspositionToString(types.ChordTransposition(chordTransValue))
+					statusMsg = fmt.Sprintf("Chord: %s (octave %d, transpose %s)", chordName, octave, transpositionStr)
+				} else {
+					statusMsg = fmt.Sprintf("Chord: %s (octave %d)", chordName, octave)
+				}
+			} else {
+				// Chord is null, show simple note info with transposition if defined and not 0
+				if chordTransValue > int(types.ChordTrans0) {
+					transpositionStr := types.ChordTranspositionToString(types.ChordTransposition(chordTransValue))
+					statusMsg = fmt.Sprintf("Note: %s (transpose %s)", noteName, transpositionStr)
+				} else {
+					statusMsg = fmt.Sprintf("Note: %s", noteName)
+				}
+			}
 		} else {
 			statusMsg = "No note selected"
 		}
 	} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColPlayback) { // P column
 		// Show playback info
-		phrasesData := m.GetCurrentPhrasesData()
 		playbackValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColPlayback]
 		if playbackValue == 1 {
 			statusMsg = "Playback: ON"

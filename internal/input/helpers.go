@@ -536,7 +536,7 @@ func ModifyValue(m *model.Model, delta int) {
 				(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColPlayback)] = 1
 			}
 		} else if phraseViewType == types.InstrumentPhraseView && colIndex == int(types.ColChord) {
-			// Instrument view chord column: Cycle through chord types
+			// Instrument view chord column: Cycle through chord types, stop at ends
 			var newValue int
 			if currentValue == -1 {
 				// Initialize to ChordNone if unset
@@ -545,15 +545,21 @@ func ModifyValue(m *model.Model, delta int) {
 
 			// Determine direction based on delta (Ctrl+Up/Right = forward, Ctrl+Down/Left = backward)
 			if delta > 0 {
-				// Forward cycling: "-" -> "M" -> "m" -> "d" -> back to "-"
-				newValue = (currentValue + 1) % int(types.ChordTypeCount)
+				// Forward: "-" -> "M" -> "m" -> "d" (stop at "d")
+				newValue = currentValue + 1
+				if newValue >= int(types.ChordTypeCount) {
+					newValue = int(types.ChordTypeCount) - 1 // Stop at last valid value
+				}
 			} else {
-				// Backward cycling: "d" -> "m" -> "M" -> "-" -> back to "d"
-				newValue = (currentValue - 1 + int(types.ChordTypeCount)) % int(types.ChordTypeCount)
+				// Backward: "d" -> "m" -> "M" -> "-" (stop at "-")
+				newValue = currentValue - 1
+				if newValue < 0 {
+					newValue = 0 // Stop at first valid value
+				}
 			}
 			(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newValue
 		} else if phraseViewType == types.InstrumentPhraseView && colIndex == int(types.ColChordAddition) {
-			// Instrument view chord addition column: Cycle through addition types
+			// Instrument view chord addition column: Cycle through addition types, stop at ends
 			var newValue int
 			if currentValue == -1 {
 				// Initialize to ChordAddNone if unset
@@ -562,15 +568,21 @@ func ModifyValue(m *model.Model, delta int) {
 
 			// Determine direction based on delta
 			if delta > 0 {
-				// Forward cycling: "-" -> "7" -> "9" -> "4" -> back to "-"
-				newValue = (currentValue + 1) % int(types.ChordAdditionCount)
+				// Forward: "-" -> "7" -> "9" -> "4" (stop at "4")
+				newValue = currentValue + 1
+				if newValue >= int(types.ChordAdditionCount) {
+					newValue = int(types.ChordAdditionCount) - 1 // Stop at last valid value
+				}
 			} else {
-				// Backward cycling: "4" -> "9" -> "7" -> "-" -> back to "4"
-				newValue = (currentValue - 1 + int(types.ChordAdditionCount)) % int(types.ChordAdditionCount)
+				// Backward: "4" -> "9" -> "7" -> "-" (stop at "-")
+				newValue = currentValue - 1
+				if newValue < 0 {
+					newValue = 0 // Stop at first valid value
+				}
 			}
 			(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newValue
 		} else if phraseViewType == types.InstrumentPhraseView && colIndex == int(types.ColChordTransposition) {
-			// Instrument view chord transposition column: Cycle through transposition values
+			// Instrument view chord transposition column: Cycle through transposition values, stop at ends
 			var newValue int
 			if currentValue == -1 {
 				// Initialize to ChordTransNone if unset
@@ -579,11 +591,17 @@ func ModifyValue(m *model.Model, delta int) {
 
 			// Determine direction based on delta
 			if delta > 0 {
-				// Forward cycling: "-" -> "0" -> "1" -> ... -> "F" -> back to "-"
-				newValue = (currentValue + 1) % int(types.ChordTranspositionCount)
+				// Forward: "-" -> "0" -> "1" -> ... -> "F" (stop at "F")
+				newValue = currentValue + 1
+				if newValue >= int(types.ChordTranspositionCount) {
+					newValue = int(types.ChordTranspositionCount) - 1 // Stop at last valid value
+				}
 			} else {
-				// Backward cycling: "F" -> "E" -> ... -> "0" -> "-" -> back to "F"
-				newValue = (currentValue - 1 + int(types.ChordTranspositionCount)) % int(types.ChordTranspositionCount)
+				// Backward: "F" -> "E" -> ... -> "0" -> "-" (stop at "-")
+				newValue = currentValue - 1
+				if newValue < 0 {
+					newValue = 0 // Stop at first valid value
+				}
 			}
 			(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newValue
 		} else {
