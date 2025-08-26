@@ -675,7 +675,7 @@ func handleRight(m *model.Model) tea.Cmd {
 		phraseViewType := m.GetPhraseViewType()
 		var maxValidCol int
 		if phraseViewType == types.InstrumentPhraseView {
-			maxValidCol = 2 // Instrument: last valid column is 2 (NOT)
+			maxValidCol = 5 // Instrument: last valid column is 5 (T - Chord Transposition)
 		} else {
 			maxValidCol = 14 // Sampler: last valid column is 14 (FI)  
 		}

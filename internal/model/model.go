@@ -208,6 +208,33 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "NOT",
 			}
+		case 3: // C - chord column
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColChord),
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "C",
+			}
+		case 4: // A - chord addition column
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColChordAddition),
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "A",
+			}
+		case 5: // T - chord transposition column
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColChordTransposition),
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "T",
+			}
 		default:
 			return nil // Invalid column
 		}
@@ -348,8 +375,12 @@ func (m *Model) initializeDefaultData() {
 		for i := range m.InstrumentPhrasesData[p] {
 			m.InstrumentPhrasesData[p][i] = make([]int, int(types.ColCount))
 			// For instruments, initialize with minimal defaults
-			m.InstrumentPhrasesData[p][i][types.ColPlayback] = 0  // Off by default
-			m.InstrumentPhrasesData[p][i][types.ColNote] = -1     // No note by default
+			m.InstrumentPhrasesData[p][i][types.ColPlayback] = 0                   // Off by default
+			m.InstrumentPhrasesData[p][i][types.ColNote] = -1                      // No note by default
+			// Initialize chord columns (use int values corresponding to enum defaults)
+			m.InstrumentPhrasesData[p][i][types.ColChord] = int(types.ChordNone)                // Default: "-"
+			m.InstrumentPhrasesData[p][i][types.ColChordAddition] = int(types.ChordAddNone)     // Default: "-"
+			m.InstrumentPhrasesData[p][i][types.ColChordTransposition] = int(types.ChordTransNone) // Default: "-"
 			// Other columns can stay -1 (unused for instruments)
 		}
 	}

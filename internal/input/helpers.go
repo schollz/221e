@@ -535,6 +535,57 @@ func ModifyValue(m *model.Model, delta int) {
 			if newValue != -1 {
 				(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColPlayback)] = 1
 			}
+		} else if phraseViewType == types.InstrumentPhraseView && colIndex == int(types.ColChord) {
+			// Instrument view chord column: Cycle through chord types
+			var newValue int
+			if currentValue == -1 {
+				// Initialize to ChordNone if unset
+				currentValue = int(types.ChordNone)
+			}
+
+			// Determine direction based on delta (Ctrl+Up/Right = forward, Ctrl+Down/Left = backward)
+			if delta > 0 {
+				// Forward cycling: "-" -> "M" -> "m" -> "d" -> back to "-"
+				newValue = (currentValue + 1) % int(types.ChordTypeCount)
+			} else {
+				// Backward cycling: "d" -> "m" -> "M" -> "-" -> back to "d"
+				newValue = (currentValue - 1 + int(types.ChordTypeCount)) % int(types.ChordTypeCount)
+			}
+			(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newValue
+		} else if phraseViewType == types.InstrumentPhraseView && colIndex == int(types.ColChordAddition) {
+			// Instrument view chord addition column: Cycle through addition types
+			var newValue int
+			if currentValue == -1 {
+				// Initialize to ChordAddNone if unset
+				currentValue = int(types.ChordAddNone)
+			}
+
+			// Determine direction based on delta
+			if delta > 0 {
+				// Forward cycling: "-" -> "7" -> "9" -> "4" -> back to "-"
+				newValue = (currentValue + 1) % int(types.ChordAdditionCount)
+			} else {
+				// Backward cycling: "4" -> "9" -> "7" -> "-" -> back to "4"
+				newValue = (currentValue - 1 + int(types.ChordAdditionCount)) % int(types.ChordAdditionCount)
+			}
+			(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newValue
+		} else if phraseViewType == types.InstrumentPhraseView && colIndex == int(types.ColChordTransposition) {
+			// Instrument view chord transposition column: Cycle through transposition values
+			var newValue int
+			if currentValue == -1 {
+				// Initialize to ChordTransNone if unset
+				currentValue = int(types.ChordTransNone)
+			}
+
+			// Determine direction based on delta
+			if delta > 0 {
+				// Forward cycling: "-" -> "0" -> "1" -> ... -> "F" -> back to "-"
+				newValue = (currentValue + 1) % int(types.ChordTranspositionCount)
+			} else {
+				// Backward cycling: "F" -> "E" -> ... -> "0" -> "-" -> back to "F"
+				newValue = (currentValue - 1 + int(types.ChordTranspositionCount)) % int(types.ChordTranspositionCount)
+			}
+			(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newValue
 		} else {
 			// All other hex-ish columns (NN, DT, GT, RT, TS, CO, VE, FI index) - original behavior
 			var newValue int

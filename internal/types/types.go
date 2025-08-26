@@ -52,8 +52,131 @@ const (
 	ColEffectComb                         // Column 11: CO (00-FE)
 	ColEffectReverb                       // Column 12: VE (00-FE)
 	ColFilename                           // Column 13: Filename index
+	ColChord                              // Column 14: Chord (Instrument view only: "-", "M", "m", "d")
+	ColChordAddition                      // Column 15: Chord Addition (Instrument view only: "-", "7", "9", "4")
+	ColChordTransposition                 // Column 16: Chord Transposition (Instrument view only: "-", "0"-"F")
 	ColCount                              // Total number of columns
 )
+
+// ChordType represents different chord types for instrument tracks
+type ChordType int
+
+const (
+	ChordNone ChordType = iota // "-" (default)
+	ChordMajor                 // "M"
+	ChordMinor                 // "m"  
+	ChordDominant              // "d"
+	ChordTypeCount             // Total number of chord types
+)
+
+// ChordAddition represents different chord additions for instrument tracks
+type ChordAddition int
+
+const (
+	ChordAddNone ChordAddition = iota // "-" (default)
+	ChordAdd7                         // "7"
+	ChordAdd9                         // "9"
+	ChordAdd4                         // "4"
+	ChordAdditionCount                // Total number of chord additions
+)
+
+// ChordTransposition represents different chord transpositions for instrument tracks (hex values)
+type ChordTransposition int
+
+const (
+	ChordTransNone ChordTransposition = iota // "-" (default, same as 0)
+	ChordTrans0                              // "0"
+	ChordTrans1                              // "1"
+	ChordTrans2                              // "2"
+	ChordTrans3                              // "3"
+	ChordTrans4                              // "4"
+	ChordTrans5                              // "5"
+	ChordTrans6                              // "6"
+	ChordTrans7                              // "7"
+	ChordTrans8                              // "8"
+	ChordTrans9                              // "9"
+	ChordTransA                              // "A"
+	ChordTransB                              // "B"
+	ChordTransC                              // "C"
+	ChordTransD                              // "D"
+	ChordTransE                              // "E"
+	ChordTransF                              // "F"
+	ChordTranspositionCount                  // Total number of chord transpositions
+)
+
+// ChordTypeToString converts a ChordType enum to its display string
+func ChordTypeToString(chordType ChordType) string {
+	switch chordType {
+	case ChordNone:
+		return "-"
+	case ChordMajor:
+		return "M"
+	case ChordMinor:
+		return "m"
+	case ChordDominant:
+		return "d"
+	default:
+		return "-"
+	}
+}
+
+// ChordAdditionToString converts a ChordAddition enum to its display string
+func ChordAdditionToString(chordAdd ChordAddition) string {
+	switch chordAdd {
+	case ChordAddNone:
+		return "-"
+	case ChordAdd7:
+		return "7"
+	case ChordAdd9:
+		return "9"
+	case ChordAdd4:
+		return "4"
+	default:
+		return "-"
+	}
+}
+
+// ChordTranspositionToString converts a ChordTransposition enum to its display string
+func ChordTranspositionToString(chordTrans ChordTransposition) string {
+	switch chordTrans {
+	case ChordTransNone:
+		return "-"
+	case ChordTrans0:
+		return "0"
+	case ChordTrans1:
+		return "1"
+	case ChordTrans2:
+		return "2"
+	case ChordTrans3:
+		return "3"
+	case ChordTrans4:
+		return "4"
+	case ChordTrans5:
+		return "5"
+	case ChordTrans6:
+		return "6"
+	case ChordTrans7:
+		return "7"
+	case ChordTrans8:
+		return "8"
+	case ChordTrans9:
+		return "9"
+	case ChordTransA:
+		return "A"
+	case ChordTransB:
+		return "B"
+	case ChordTransC:
+		return "C"
+	case ChordTransD:
+		return "D"
+	case ChordTransE:
+		return "E"
+	case ChordTransF:
+		return "F"
+	default:
+		return "-"
+	}
+}
 
 type FileMetadata struct {
 	BPM    float32 `json:"bpm"`    // Source BPM for the file

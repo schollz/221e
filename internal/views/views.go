@@ -628,8 +628,8 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 	// Content builder
 	var content strings.Builder
 
-	// Render header for Instrument view (row, playback, and note)
-	columnHeader := "  SL  P  NOT"
+	// Render header for Instrument view (row, playback, note, and chord columns)
+	columnHeader := "  SL  P  NOT  C  A  T"
 	phraseHeader := fmt.Sprintf("Instrument %02X", m.CurrentPhrase)
 	content.WriteString(RenderHeader(m, columnHeader, phraseHeader))
 
@@ -719,7 +719,58 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 			noteCell = normalStyle.Render(fmt.Sprintf("%3s", noteText))
 		}
 
-		row := fmt.Sprintf("%s %-3s  %s  %s", arrow, sliceCell, playbackCell, noteCell)
+		// Chord (C) - display chord type
+		chordValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColChord]
+		chordText := types.ChordTypeToString(types.ChordType(chordValue))
+		
+		var chordCell string
+		if m.CurrentRow == dataIndex && m.CurrentCol == 3 { // Column 3 is the C column
+			chordCell = selectedStyle.Render(fmt.Sprintf("%1s", chordText))
+		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
+			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == 3) {
+				chordCell = copiedStyle.Render(fmt.Sprintf("%1s", chordText))
+			} else {
+				chordCell = normalStyle.Render(fmt.Sprintf("%1s", chordText))
+			}
+		} else {
+			chordCell = normalStyle.Render(fmt.Sprintf("%1s", chordText))
+		}
+
+		// Chord Addition (A) - display chord addition
+		chordAddValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColChordAddition]
+		chordAddText := types.ChordAdditionToString(types.ChordAddition(chordAddValue))
+		
+		var chordAddCell string
+		if m.CurrentRow == dataIndex && m.CurrentCol == 4 { // Column 4 is the A column
+			chordAddCell = selectedStyle.Render(fmt.Sprintf("%1s", chordAddText))
+		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
+			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == 4) {
+				chordAddCell = copiedStyle.Render(fmt.Sprintf("%1s", chordAddText))
+			} else {
+				chordAddCell = normalStyle.Render(fmt.Sprintf("%1s", chordAddText))
+			}
+		} else {
+			chordAddCell = normalStyle.Render(fmt.Sprintf("%1s", chordAddText))
+		}
+
+		// Chord Transposition (T) - display transposition value
+		chordTransValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColChordTransposition]
+		chordTransText := types.ChordTranspositionToString(types.ChordTransposition(chordTransValue))
+		
+		var chordTransCell string
+		if m.CurrentRow == dataIndex && m.CurrentCol == 5 { // Column 5 is the T column
+			chordTransCell = selectedStyle.Render(fmt.Sprintf("%1s", chordTransText))
+		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
+			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == 5) {
+				chordTransCell = copiedStyle.Render(fmt.Sprintf("%1s", chordTransText))
+			} else {
+				chordTransCell = normalStyle.Render(fmt.Sprintf("%1s", chordTransText))
+			}
+		} else {
+			chordTransCell = normalStyle.Render(fmt.Sprintf("%1s", chordTransText))
+		}
+
+		row := fmt.Sprintf("%s %-3s  %s  %s  %s  %s  %s", arrow, sliceCell, playbackCell, noteCell, chordCell, chordAddCell, chordTransCell)
 		content.WriteString(row)
 		content.WriteString("\n")
 	}
