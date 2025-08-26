@@ -14,6 +14,13 @@ const (
 	MixerView
 )
 
+type PhraseViewType int
+
+const (
+	SamplerPhraseView PhraseViewType = iota
+	InstrumentPhraseView
+)
+
 type CellType int
 
 const (
@@ -96,6 +103,12 @@ type SaveData struct {
 	FileSelectCol      int                     `json:"fileSelectCol"`
 	ChainsData         [][]int                 `json:"chainsData"`
 	PhrasesData        [255][][]int            `json:"phrasesData"`
+	// New separate data pools for Instruments and Samplers
+	InstrumentChainsData  [][]int            `json:"instrumentChainsData"`
+	InstrumentPhrasesData [255][][]int       `json:"instrumentPhrasesData"`
+	SamplerChainsData     [][]int            `json:"samplerChainsData"`
+	SamplerPhrasesData    [255][][]int       `json:"samplerPhrasesData"`
+	SamplerPhrasesFiles   []string           `json:"samplerPhrasesFiles"`
 	LastEditRow        int                     `json:"lastEditRow"`
 	PhrasesFiles       []string                `json:"phrasesFiles"`
 	CurrentDir         string                  `json:"currentDir"`

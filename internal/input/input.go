@@ -238,7 +238,8 @@ func handleShiftRight(m *model.Model) tea.Cmd {
 		}
 	} else if m.ViewMode == types.ChainView {
 		// Navigate to phrase view for the selected chain row's phrase
-		phraseNum := m.ChainsData[m.CurrentChain][m.CurrentRow]
+		chainsData := m.GetCurrentChainsData()
+		phraseNum := (*chainsData)[m.CurrentChain][m.CurrentRow]
 		if phraseNum != -1 {
 			// Remember current chain and row within chain
 			m.LastChainRow = m.CurrentRow
@@ -257,7 +258,13 @@ func handleShiftRight(m *model.Model) tea.Cmd {
 				m.CurrentRow = m.LastPhraseRow
 			}
 
-			m.CurrentCol = 2 // Start on Note column
+			// Set appropriate starting column based on view type
+			phraseViewType := m.GetPhraseViewType()
+			if phraseViewType == types.InstrumentPhraseView {
+				m.CurrentCol = 1 // Instrument: Start on P column
+			} else {
+				m.CurrentCol = 2 // Sampler: Start on Note column 
+			}
 			m.ScrollOffset = 0
 
 			// Ensure the cursor row is visible
@@ -269,10 +276,12 @@ func handleShiftRight(m *model.Model) tea.Cmd {
 			storage.AutoSave(m)
 		}
 	} else if m.ViewMode == types.PhraseView {
-		// Check if we're on the RT column 
-		if m.CurrentCol == int(types.ColRetrigger)+1 {
+		// Use centralized column mapping to check if we're on RT or TS columns
+		columnMapping := m.GetColumnMapping(m.CurrentCol)
+		if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColRetrigger) {
 			// Navigate to retrigger view only if a retrigger is selected (not -1)
-			retriggerIndex := m.PhrasesData[m.CurrentPhrase][m.CurrentRow][types.ColRetrigger]
+			phrasesData := m.GetCurrentPhrasesData()
+			retriggerIndex := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColRetrigger]
 			if retriggerIndex == -1 {
 				return nil // Don't navigate if no retrigger is selected
 			}
@@ -285,12 +294,11 @@ func handleShiftRight(m *model.Model) tea.Cmd {
 			m.ScrollOffset = 0
 			storage.AutoSave(m)
 			return nil
-		}
-
-		// Check if we're on the TS column 
-		if m.CurrentCol == int(types.ColTimestretch)+1 {
+		} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColTimestretch) {
+			// Check if we're on the TS column
 			// Navigate to timestretch view only if a timestretch is selected (not -1)
-			timestrechIndex := m.PhrasesData[m.CurrentPhrase][m.CurrentRow][types.ColTimestretch]
+			phrasesData := m.GetCurrentPhrasesData()
+			timestrechIndex := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColTimestretch]
 			if timestrechIndex == -1 {
 				return nil // Don't navigate if no timestretch is selected
 			}
@@ -305,16 +313,23 @@ func handleShiftRight(m *model.Model) tea.Cmd {
 			return nil
 		}
 
+		// Check if we're in Instrument view - file selection doesn't apply
+		if m.GetPhraseViewType() == types.InstrumentPhraseView {
+			return nil // Shift+Right does nothing in Instrument view
+		}
+
 		// Navigate to file view from any other column in phrase view
 		m.FileSelectRow = m.CurrentRow // Remember which row we're selecting for
 		m.FileSelectCol = m.CurrentCol // Remember which column we were on
 
 		// Try to navigate to the folder containing the current row's file
 		selectedFilename := ""
-		fileIndex := m.PhrasesData[m.CurrentPhrase][m.CurrentRow][types.ColFilename]
-		if fileIndex >= 0 && fileIndex < len(m.PhrasesFiles) && m.PhrasesFiles[fileIndex] != "" {
+		phrasesData := m.GetCurrentPhrasesData()
+		fileIndex := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColFilename]
+		phrasesFiles := m.GetCurrentPhrasesFiles()
+		if phrasesFiles != nil && fileIndex >= 0 && fileIndex < len(*phrasesFiles) && (*phrasesFiles)[fileIndex] != "" {
 			// Get the directory of the current file
-			fullPath := m.PhrasesFiles[fileIndex]
+			fullPath := (*phrasesFiles)[fileIndex]
 			fileDir := filepath.Dir(fullPath)
 			selectedFilename = filepath.Base(fullPath) // Remember just the filename
 			if fileDir != "." && fileDir != "" {
@@ -490,11 +505,25 @@ func handleShiftLeft(m *model.Model) tea.Cmd {
 		// Navigate back to phrase view - return to the column we came from
 		switchToView(m, phraseViewConfig(m.FileSelectRow, m.FileSelectCol)) // Go back to original column
 	} else if m.ViewMode == types.RetriggerView {
-		// Navigate back to phrase view
-		switchToViewWithVisibilityCheck(m, phraseViewConfig(m.LastPhraseRow, int(types.ColRetrigger)+1)) // Go back to RT column
+		// Navigate back to phrase view - find the UI column for RT
+		var rtColumn int
+		phraseViewType := m.GetPhraseViewType()
+		if phraseViewType == types.InstrumentPhraseView {
+			rtColumn = 1 // RT is not accessible in instrument view, default to P column
+		} else {
+			rtColumn = int(types.ColRetrigger) + 1 // Sampler: data column + 1
+		}
+		switchToViewWithVisibilityCheck(m, phraseViewConfig(m.LastPhraseRow, rtColumn))
 	} else if m.ViewMode == types.TimestrechView {
-		// Navigate back to phrase view
-		switchToViewWithVisibilityCheck(m, phraseViewConfig(m.LastPhraseRow, int(types.ColTimestretch)+1)) // Go back to TS column
+		// Navigate back to phrase view - find the UI column for TS
+		var tsColumn int
+		phraseViewType := m.GetPhraseViewType()
+		if phraseViewType == types.InstrumentPhraseView {
+			tsColumn = 1 // TS is not accessible in instrument view, default to P column
+		} else {
+			tsColumn = int(types.ColTimestretch) + 1 // Sampler: data column + 1
+		}
+		switchToViewWithVisibilityCheck(m, phraseViewConfig(m.LastPhraseRow, tsColumn))
 	}
 	return nil
 }
@@ -524,6 +553,10 @@ func handleUp(m *model.Model) tea.Cmd {
 	} else if m.ViewMode == types.TimestrechView {
 		if m.CurrentRow > 0 {
 			m.CurrentRow = m.CurrentRow - 1
+		}
+	} else if m.ViewMode == types.MixerView {
+		if m.CurrentMixerRow > 0 {
+			m.CurrentMixerRow = m.CurrentMixerRow - 1
 		}
 	} else if m.CurrentRow > 0 {
 		m.CurrentRow = m.CurrentRow - 1
@@ -567,6 +600,10 @@ func handleDown(m *model.Model) tea.Cmd {
 		if m.CurrentRow < 2 { // 0=Start, 1=End, 2=Beats
 			m.CurrentRow = m.CurrentRow + 1
 		}
+	} else if m.ViewMode == types.MixerView {
+		if m.CurrentMixerRow < 1 { // 0=level, 1=IN/SA
+			m.CurrentMixerRow = m.CurrentMixerRow + 1
+		}
 	} else if m.CurrentRow < 254 { // 0-254 (FE in hex)
 		m.CurrentRow = m.CurrentRow + 1
 		visibleRows := m.GetVisibleRows()
@@ -597,7 +634,16 @@ func handleLeft(m *model.Model) tea.Cmd {
 			storage.AutoSave(m)
 		}
 	} else if m.ViewMode == types.PhraseView {
-		if m.CurrentCol > 1 { // Column 1 is playback, can't go to column 0 (slice)
+		// Handle different column limits based on view type
+		phraseViewType := m.GetPhraseViewType()
+		minCol := 1 // Both views: Column 1 is the first editable column
+		if phraseViewType == types.InstrumentPhraseView {
+			minCol = 1 // Instrument: Column 1 is NOT (note)
+		} else {
+			minCol = 1 // Sampler: Column 1 is P (playback)
+		}
+		
+		if m.CurrentCol > minCol {
 			m.CurrentCol = m.CurrentCol - 1
 			storage.AutoSave(m)
 		}
@@ -625,9 +671,16 @@ func handleRight(m *model.Model) tea.Cmd {
 			storage.AutoSave(m)
 		}
 	} else if m.ViewMode == types.PhraseView {
-		// UI column numbers are 1..ColCount (data columns are 0..ColCount-1)
-		maxCol := int(types.ColCount)
-		if m.CurrentCol < maxCol {
+		// Handle different column limits based on view type
+		phraseViewType := m.GetPhraseViewType()
+		var maxValidCol int
+		if phraseViewType == types.InstrumentPhraseView {
+			maxValidCol = 2 // Instrument: last valid column is 2 (NOT)
+		} else {
+			maxValidCol = 14 // Sampler: last valid column is 14 (FI)  
+		}
+		
+		if m.CurrentCol < maxValidCol {
 			m.CurrentCol = m.CurrentCol + 1
 			storage.AutoSave(m)
 		}
@@ -654,7 +707,11 @@ func handleCtrlUp(m *model.Model) tea.Cmd {
 	} else if m.ViewMode == types.TimestrechView {
 		ModifyTimestrechValue(m, 1.0)
 	} else if m.ViewMode == types.MixerView {
-		ModifyMixerSetLevel(m, 1.0) // Coarse increment for set level
+		if m.CurrentMixerRow == 0 {
+			ModifyMixerSetLevel(m, 1.0) // Coarse increment for set level
+		} else if m.CurrentMixerRow == 1 {
+			ToggleMixerTrackType(m) // Toggle IN/SA
+		}
 	} else if m.ViewMode != types.FileView {
 		ModifyValue(m, 16)
 	}
@@ -673,7 +730,11 @@ func handleCtrlDown(m *model.Model) tea.Cmd {
 	} else if m.ViewMode == types.TimestrechView {
 		ModifyTimestrechValue(m, -1.0)
 	} else if m.ViewMode == types.MixerView {
-		ModifyMixerSetLevel(m, -1.0) // Coarse decrement for set level
+		if m.CurrentMixerRow == 0 {
+			ModifyMixerSetLevel(m, -1.0) // Coarse decrement for set level
+		} else if m.CurrentMixerRow == 1 {
+			ToggleMixerTrackType(m) // Toggle IN/SA
+		}
 	} else if m.ViewMode != types.FileView {
 		ModifyValue(m, -16)
 	}
@@ -692,7 +753,11 @@ func handleCtrlLeft(m *model.Model) tea.Cmd {
 	} else if m.ViewMode == types.TimestrechView {
 		ModifyTimestrechValue(m, -0.05)
 	} else if m.ViewMode == types.MixerView {
-		ModifyMixerSetLevel(m, -0.05) // Fine decrement for set level
+		if m.CurrentMixerRow == 0 {
+			ModifyMixerSetLevel(m, -0.05) // Fine decrement for set level
+		} else if m.CurrentMixerRow == 1 {
+			ToggleMixerTrackType(m) // Toggle IN/SA
+		}
 	} else if m.ViewMode != types.FileView {
 		ModifyValue(m, -1)
 	}
@@ -713,7 +778,11 @@ func handleCtrlRight(m *model.Model) tea.Cmd {
 	} else if m.ViewMode == types.TimestrechView {
 		ModifyTimestrechValue(m, 0.05)
 	} else if m.ViewMode == types.MixerView {
-		ModifyMixerSetLevel(m, 0.05) // Fine increment for set level
+		if m.CurrentMixerRow == 0 {
+			ModifyMixerSetLevel(m, 0.05) // Fine increment for set level
+		} else if m.CurrentMixerRow == 1 {
+			ToggleMixerTrackType(m) // Toggle IN/SA
+		}
 	} else {
 		ModifyValue(m, 1)
 	}
@@ -766,11 +835,12 @@ func handleC(m *model.Model) tea.Cmd {
 		}
 	} else if m.ViewMode == types.ChainView {
 		// Only fill if the current chain slot is empty
-		if m.ChainsData[m.CurrentChain][m.CurrentRow] == -1 {
-			// Seed: prefer previous row’s phrase, else start so 00 is first checked
+		chainsData := m.GetCurrentChainsData()
+		if (*chainsData)[m.CurrentChain][m.CurrentRow] == -1 {
+			// Seed: prefer previous row's phrase, else start so 00 is first checked
 			seed := 254 // 254 => first check will be 0 (wrap-around)
-			if m.CurrentRow > 0 && m.ChainsData[m.CurrentChain][m.CurrentRow-1] != -1 {
-				seed = m.ChainsData[m.CurrentChain][m.CurrentRow-1]
+			if m.CurrentRow > 0 && (*chainsData)[m.CurrentChain][m.CurrentRow-1] != -1 {
+				seed = (*chainsData)[m.CurrentChain][m.CurrentRow-1]
 			}
 
 			next := FindNextUnusedPhrase(m, seed)
@@ -779,7 +849,7 @@ func handleC(m *model.Model) tea.Cmd {
 				return nil
 			}
 
-			m.ChainsData[m.CurrentChain][m.CurrentRow] = next
+			(*chainsData)[m.CurrentChain][m.CurrentRow] = next
 			log.Printf("Filled Chain %02X Row %02X with next empty phrase %02X",
 				m.CurrentChain, m.CurrentRow, next)
 			storage.AutoSave(m)
@@ -860,19 +930,29 @@ func handleBackspace(m *model.Model) tea.Cmd {
 		storage.AutoSave(m)
 	} else if m.ViewMode == types.ChainView {
 		// Clear phrase number in chain view (works from any column)
-		m.ChainsData[m.CurrentChain][m.CurrentRow] = -1
+		chainsData := m.GetCurrentChainsData()
+		(*chainsData)[m.CurrentChain][m.CurrentRow] = -1
 		log.Printf("Cleared chain %d phrase", m.CurrentRow)
 		storage.AutoSave(m)
 	} else if m.ViewMode == types.PhraseView {
 		// Clear the current cell in phrase view
-		colIndex := m.CurrentCol - 1 // Convert to data array index
+		phrasesData := m.GetCurrentPhrasesData()
+		
+		// Use centralized column mapping system
+		columnMapping := m.GetColumnMapping(m.CurrentCol)
+		if columnMapping == nil || !columnMapping.IsDeletable {
+			return nil // Invalid or non-deletable column
+		}
+		
+		colIndex := columnMapping.DataColumnIndex
+		
 		if colIndex >= 0 && colIndex < int(types.ColCount) {
 			if colIndex == int(types.ColPlayback) {
 				// Reset playback to 0 (special case - 0 means off)
-				m.PhrasesData[m.CurrentPhrase][m.CurrentRow][colIndex] = 0
+				(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = 0
 			} else {
 				// Clear all other columns to -1 (including GT, PI, RT, etc.)
-				m.PhrasesData[m.CurrentPhrase][m.CurrentRow][colIndex] = -1
+				(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = -1
 			}
 			log.Printf("Cleared phrase %d row %d col %d", m.CurrentPhrase, m.CurrentRow, colIndex)
 			storage.AutoSave(m)
@@ -884,18 +964,20 @@ func handleBackspace(m *model.Model) tea.Cmd {
 func handleCtrlH(m *model.Model) tea.Cmd {
 	if m.ViewMode == types.ChainView {
 		// Delete entire chain row (clear phrase, keep chain number)
-		m.ChainsData[m.CurrentChain][m.CurrentRow] = -1
+		chainsData := m.GetCurrentChainsData()
+		(*chainsData)[m.CurrentChain][m.CurrentRow] = -1
 		log.Printf("Deleted chain %d row (cleared phrase)", m.CurrentRow)
 		storage.AutoSave(m)
 	} else if m.ViewMode == types.PhraseView {
 		// Delete entire phrase row (clear all columns)
-		m.PhrasesData[m.CurrentPhrase][m.CurrentRow][int(types.ColPlayback)] = 0   // Reset playback to 0
-		m.PhrasesData[m.CurrentPhrase][m.CurrentRow][int(types.ColNote)] = -1      // Clear note
-		m.PhrasesData[m.CurrentPhrase][m.CurrentRow][int(types.ColPitch)] = 128    // Reset pitch to default (hex 80)
-		m.PhrasesData[m.CurrentPhrase][m.CurrentRow][int(types.ColDeltaTime)] = -1 // Clear deltatime
-		m.PhrasesData[m.CurrentPhrase][m.CurrentRow][int(types.ColGate)] = 128     // Reset gate to default
-		m.PhrasesData[m.CurrentPhrase][m.CurrentRow][int(types.ColRetrigger)] = -1 // Clear retrigger
-		m.PhrasesData[m.CurrentPhrase][m.CurrentRow][int(types.ColFilename)] = -1  // Clear filename
+		phrasesData := m.GetCurrentPhrasesData()
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColPlayback)] = 0   // Reset playback to 0
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColNote)] = -1      // Clear note
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColPitch)] = 128    // Reset pitch to default (hex 80)
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColDeltaTime)] = -1 // Clear deltatime
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColGate)] = 128     // Reset gate to default
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColRetrigger)] = -1 // Clear retrigger
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColFilename)] = -1  // Clear filename
 		log.Printf("Deleted phrase %d row %d (cleared all columns)", m.CurrentPhrase, m.CurrentRow)
 		storage.AutoSave(m)
 	}

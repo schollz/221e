@@ -13,6 +13,14 @@ import (
 	"github.com/schollz/2n/internal/types"
 )
 
+// GetPhrasesDataForTrack returns the appropriate phrases data based on track number
+func GetPhrasesDataForTrack(m *model.Model, track int) *[255][][]int {
+	if track >= 0 && track <= 3 {
+		return &m.InstrumentPhrasesData
+	}
+	return &m.SamplerPhrasesData
+}
+
 // ValueModifier represents a function that modifies a value with bounds checking
 type ValueModifier struct {
 	GetValue         func() interface{}
@@ -431,7 +439,8 @@ func ModifyTimestrechValue(m *model.Model, baseDelta float32) {
 func ModifyValue(m *model.Model, delta int) {
 	if m.ViewMode == types.ChainView {
 		// Chain view now only has phrase editing
-		currentValue := m.ChainsData[m.CurrentChain][m.CurrentRow]
+		chainsData := m.GetCurrentChainsData()
+		currentValue := (*chainsData)[m.CurrentChain][m.CurrentRow]
 
 		var newValue int
 		if currentValue == -1 {
@@ -446,7 +455,7 @@ func ModifyValue(m *model.Model, delta int) {
 		} else if newValue > 254 {
 			newValue = 254
 		}
-		m.ChainsData[m.CurrentChain][m.CurrentRow] = newValue
+		(*chainsData)[m.CurrentChain][m.CurrentRow] = newValue
 
 		log.Printf("Modified chain %02X row %02X phrase: %d -> %d (delta: %d)", m.CurrentChain, m.CurrentRow, currentValue, newValue, delta)
 		storage.AutoSave(m)
@@ -454,8 +463,15 @@ func ModifyValue(m *model.Model, delta int) {
 	}
 
 	// Phrase view: modify cell under cursor
-	colIndex := m.CurrentCol - 1 // data index
-	currentValue := m.PhrasesData[m.CurrentPhrase][m.CurrentRow][colIndex]
+	// Use centralized column mapping system
+	columnMapping := m.GetColumnMapping(m.CurrentCol)
+	if columnMapping == nil || !columnMapping.IsEditable {
+		return // Invalid or non-editable column
+	}
+	
+	colIndex := columnMapping.DataColumnIndex
+	phrasesData := m.GetCurrentPhrasesData()
+	currentValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex]
 
 	if colIndex == int(types.ColPlayback) {
 		// P column: clamp 0..1 (keep existing behavior)
@@ -468,7 +484,7 @@ func ModifyValue(m *model.Model, delta int) {
 		} else if newValue > 1 {
 			newValue = 1
 		}
-		m.PhrasesData[m.CurrentPhrase][m.CurrentRow][colIndex] = newValue
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newValue
 
 	} else if colIndex == int(types.ColEffectReverse) {
 		// Я column: single bit 0..1 (keep existing behavior)
@@ -481,28 +497,65 @@ func ModifyValue(m *model.Model, delta int) {
 		} else if newValue > 1 {
 			newValue = 1
 		}
-		m.PhrasesData[m.CurrentPhrase][m.CurrentRow][colIndex] = newValue
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newValue
 
 	} else {
-		// All other hex-ish columns (NN, DT, GT, RT, TS, CO, VE, FI index)
-		var newValue int
-		if currentValue == -1 {
-			// First edit on an empty cell: initialize to 00 and DO NOT apply delta
-			newValue = 0
-		} else {
-			newValue = currentValue + delta
-		}
+		// Handle different behavior for Instrument vs Sampler views
+		phraseViewType := m.GetPhraseViewType()
+		
+		if phraseViewType == types.InstrumentPhraseView && colIndex == int(types.ColNote) {
+			// Instrument view note column: MIDI notes (0-127) with special increment behavior
+			var newValue int
+			if currentValue == -1 {
+				// First edit on an empty cell: initialize to middle C (60)
+				newValue = 60
+			} else {
+				// Apply special increment logic for instrument notes
+				// Coarse (Ctrl+Up/Down) should increment by 12 (octaves)
+				// Fine (Ctrl+Left/Right) should increment by 1 (semitones)
+				if delta == 4 || delta == -4 {
+					// This is coarse increment - convert to octave increment (12 semitones)
+					octaveDelta := (delta / 4) * 12
+					newValue = currentValue + octaveDelta
+				} else {
+					// This is fine increment (+/-1)
+					newValue = currentValue + delta
+				}
+			}
 
-		if newValue < 0 {
-			newValue = 0
-		} else if newValue > 254 {
-			newValue = 254
+			// Clamp to MIDI range (0-127)
+			if newValue < 0 {
+				newValue = 0
+			} else if newValue > 127 {
+				newValue = 127
+			}
+			(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newValue
+			
+			// Auto-set P=1 when any note is added in Instrument view
+			if newValue != -1 {
+				(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColPlayback)] = 1
+			}
+		} else {
+			// All other hex-ish columns (NN, DT, GT, RT, TS, CO, VE, FI index) - original behavior
+			var newValue int
+			if currentValue == -1 {
+				// First edit on an empty cell: initialize to 00 and DO NOT apply delta
+				newValue = 0
+			} else {
+				newValue = currentValue + delta
+			}
+
+			if newValue < 0 {
+				newValue = 0
+			} else if newValue > 254 {
+				newValue = 254
+			}
+			(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newValue
 		}
-		m.PhrasesData[m.CurrentPhrase][m.CurrentRow][colIndex] = newValue
 
 		// Auto-enable playback on first note entry
-		if colIndex == int(types.ColNote) && m.PhrasesData[m.CurrentPhrase][m.CurrentRow][types.ColPlayback] == 0 {
-			m.PhrasesData[m.CurrentPhrase][m.CurrentRow][types.ColPlayback] = 1
+		if colIndex == int(types.ColNote) && (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColPlayback] == 0 {
+			(*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColPlayback] = 1
 			log.Printf("Auto-enabled playback for phrase %d row %d due to note change", m.CurrentPhrase, m.CurrentRow)
 		}
 	}
@@ -510,7 +563,7 @@ func ModifyValue(m *model.Model, delta int) {
 	m.LastEditRow = m.CurrentRow
 	log.Printf("Modified phrase %d row %d, col %d: %d -> %d (delta: %d)",
 		m.CurrentPhrase, m.CurrentRow, colIndex, currentValue,
-		m.PhrasesData[m.CurrentPhrase][m.CurrentRow][colIndex], delta)
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex], delta)
 	storage.AutoSave(m)
 }
 
@@ -636,10 +689,13 @@ func AdvancePlayback(m *model.Model) {
 
 	if m.PlaybackMode == types.SongView {
 		// Song playback mode - advance each active track independently
+		log.Printf("Song playback advancing - checking %d tracks", 8)
+		activeTrackCount := 0
 		for track := 0; track < 8; track++ {
 			if !m.SongPlaybackActive[track] {
 				continue
 			}
+			activeTrackCount++
 
 			oldPhraseRow := m.SongPlaybackRowInPhrase[track]
 
@@ -647,13 +703,15 @@ func AdvancePlayback(m *model.Model) {
 			var chainID int
 			var nextPhraseFound bool
 			var currentChain int
+			var chainsData *[][]int
 
 			// Advance within current phrase
 			phraseNum := m.SongPlaybackPhrase[track]
 			if phraseNum >= 0 && phraseNum < 255 {
 				// Find next row with playback enabled in current phrase
+				phrasesData := GetPhrasesDataForTrack(m, track)
 				for i := m.SongPlaybackRowInPhrase[track] + 1; i < 255; i++ {
-					if m.PhrasesData[phraseNum][i][types.ColPlayback] == 1 {
+					if (*phrasesData)[phraseNum][i][types.ColPlayback] == 1 {
 						m.SongPlaybackRowInPhrase[track] = i
 						EmitRowDataFor(m, phraseNum, i, track)
 						log.Printf("Song track %d advanced within phrase from row %d to %d", track, oldPhraseRow, i)
@@ -667,12 +725,13 @@ func AdvancePlayback(m *model.Model) {
 
 			// Try to find next phrase slot in current chain
 			nextPhraseFound = false
+			chainsData = m.GetChainsDataForTrack(track)
 			for chainRow := m.SongPlaybackChainRow[track] + 1; chainRow < 16; chainRow++ {
-				if m.ChainsData[currentChain][chainRow] != -1 {
+				if (*chainsData)[currentChain][chainRow] != -1 {
 					// Found next phrase in chain
 					m.SongPlaybackChainRow[track] = chainRow
-					m.SongPlaybackPhrase[track] = m.ChainsData[currentChain][chainRow]
-					m.SongPlaybackRowInPhrase[track] = FindFirstNonEmptyRowInPhrase(m, m.SongPlaybackPhrase[track])
+					m.SongPlaybackPhrase[track] = (*chainsData)[currentChain][chainRow]
+					m.SongPlaybackRowInPhrase[track] = FindFirstNonEmptyRowInPhraseForTrack(m, m.SongPlaybackPhrase[track], track)
 					EmitRowDataFor(m, m.SongPlaybackPhrase[track], m.SongPlaybackRowInPhrase[track], track)
 					log.Printf("Song track %d advanced within chain to chain row %d, phrase %02X", track, chainRow, m.SongPlaybackPhrase[track])
 					nextPhraseFound = true
@@ -694,8 +753,8 @@ func AdvancePlayback(m *model.Model) {
 						// Found valid chain, check if it has phrases
 						firstPhraseID := -1
 						for chainRow := 0; chainRow < 16; chainRow++ {
-							if m.ChainsData[chainID][chainRow] != -1 {
-								firstPhraseID = m.ChainsData[chainID][chainRow]
+							if (*chainsData)[chainID][chainRow] != -1 {
+								firstPhraseID = (*chainsData)[chainID][chainRow]
 								break
 							}
 						}
@@ -730,8 +789,8 @@ func AdvancePlayback(m *model.Model) {
 				firstPhraseID := -1
 				firstChainRow := -1
 				for chainRow := 0; chainRow < 16; chainRow++ {
-					if m.ChainsData[chainID][chainRow] != -1 {
-						firstPhraseID = m.ChainsData[chainID][chainRow]
+					if (*chainsData)[chainID][chainRow] != -1 {
+						firstPhraseID = (*chainsData)[chainID][chainRow]
 						firstChainRow = chainRow
 						break
 					}
@@ -739,7 +798,7 @@ func AdvancePlayback(m *model.Model) {
 
 				m.SongPlaybackChainRow[track] = firstChainRow
 				m.SongPlaybackPhrase[track] = firstPhraseID
-				m.SongPlaybackRowInPhrase[track] = FindFirstNonEmptyRowInPhrase(m, firstPhraseID)
+				m.SongPlaybackRowInPhrase[track] = FindFirstNonEmptyRowInPhraseForTrack(m, firstPhraseID, track)
 				EmitRowDataFor(m, firstPhraseID, m.SongPlaybackRowInPhrase[track], track)
 				log.Printf("Song track %d now at row %02X, chain %02X (chain row %d), phrase %02X", track, m.SongPlaybackRow[track], chainID, firstChainRow, firstPhraseID)
 			}
@@ -747,23 +806,30 @@ func AdvancePlayback(m *model.Model) {
 		nextTrack:
 			continue
 		}
+		log.Printf("Song playback: processed %d active tracks", activeTrackCount)
 	} else if m.PlaybackMode == types.ChainView {
 		// Chain playback mode - advance through phrases in sequence
 		// Find next row with playback enabled (P=1)
-		for i := m.PlaybackRow + 1; i < 255; i++ {
-			if m.PhrasesData[m.PlaybackPhrase][i][types.ColPlayback] == 1 {
-				m.PlaybackRow = i
-				DebugLogRowEmission(m)
-				log.Printf("Chain playback advanced from row %d to %d", oldRow, m.PlaybackRow)
-				return
+		phrasesData := GetPhrasesDataForTrack(m, m.CurrentTrack)
+		
+		// Validate PlaybackPhrase is within bounds before accessing array
+		if m.PlaybackPhrase >= 0 && m.PlaybackPhrase < 255 {
+			for i := m.PlaybackRow + 1; i < 255; i++ {
+				if (*phrasesData)[m.PlaybackPhrase][i][types.ColPlayback] == 1 {
+					m.PlaybackRow = i
+					DebugLogRowEmission(m)
+					log.Printf("Chain playback advanced from row %d to %d", oldRow, m.PlaybackRow)
+					return
+				}
 			}
 		}
 
 		// End of phrase reached, move to next phrase slot in the same chain
 		for i := m.PlaybackChainRow + 1; i < 16; i++ {
-			if m.ChainsData[m.PlaybackChain][i] != -1 {
+			phraseID := m.ChainsData[m.PlaybackChain][i]
+			if phraseID != -1 && phraseID >= 0 && phraseID < 255 {
 				m.PlaybackChainRow = i
-				m.PlaybackPhrase = m.ChainsData[m.PlaybackChain][i]
+				m.PlaybackPhrase = phraseID
 				m.PlaybackRow = FindFirstNonEmptyRowInPhrase(m, m.PlaybackPhrase)
 
 				// Reset inheritance values when changing phrases would be handled in main
@@ -776,9 +842,10 @@ func AdvancePlayback(m *model.Model) {
 
 		// End of chain reached, loop back to first phrase slot in the same chain
 		for i := 0; i < 16; i++ {
-			if m.ChainsData[m.PlaybackChain][i] != -1 {
+			phraseID := m.ChainsData[m.PlaybackChain][i]
+			if phraseID != -1 && phraseID >= 0 && phraseID < 255 {
 				m.PlaybackChainRow = i
-				m.PlaybackPhrase = m.ChainsData[m.PlaybackChain][i]
+				m.PlaybackPhrase = phraseID
 				m.PlaybackRow = FindFirstNonEmptyRowInPhrase(m, m.PlaybackPhrase)
 
 				// Reset inheritance values when changing phrases would be handled in main
@@ -788,11 +855,16 @@ func AdvancePlayback(m *model.Model) {
 				return
 			}
 		}
+
+		// No valid phrases found in this chain - stop playback
+		log.Printf("Chain playback stopped - no valid phrases found in chain %d", m.PlaybackChain)
+		return
 	} else {
 		// Phrase-only playback mode
 		// Find next row with playback enabled (P=1)
+		phrasesData := GetPhrasesDataForTrack(m, m.CurrentTrack)
 		for i := m.PlaybackRow + 1; i < 255; i++ {
-			if m.PhrasesData[m.PlaybackPhrase][i][types.ColPlayback] == 1 {
+			if (*phrasesData)[m.PlaybackPhrase][i][types.ColPlayback] == 1 {
 				m.PlaybackRow = i
 				DebugLogRowEmission(m)
 				log.Printf("Phrase playback advanced from row %d to %d", oldRow, m.PlaybackRow)
@@ -818,9 +890,15 @@ func DebugLogRowEmission(m *model.Model) {
 }
 
 func FindFirstNonEmptyRowInPhrase(m *model.Model, phraseNum int) int {
+	// Use current track context to determine which data pool to search
+	return FindFirstNonEmptyRowInPhraseForTrack(m, phraseNum, m.CurrentTrack)
+}
+
+func FindFirstNonEmptyRowInPhraseForTrack(m *model.Model, phraseNum int, track int) int {
 	if phraseNum >= 0 && phraseNum < 255 {
+		phrasesData := GetPhrasesDataForTrack(m, track)
 		for i := 0; i < 255; i++ {
-			if m.PhrasesData[phraseNum][i][types.ColPlayback] == 1 {
+			if (*phrasesData)[phraseNum][i][types.ColPlayback] == 1 {
 				return i
 			}
 		}
@@ -847,10 +925,14 @@ func CopyLastRowWithIncrement(m *model.Model) {
 
 	log.Printf("copyLastRowWithIncrement called - currentRow: %d", m.CurrentRow)
 
+	// Get the appropriate phrases data based on view type
+	phrasesData := m.GetCurrentPhrasesData()
+	phraseViewType := m.GetPhraseViewType()
+
 	// Check if current row is empty (note, deltatime, filename are -1, playback is 0)
-	if m.PhrasesData[m.CurrentPhrase][m.CurrentRow][types.ColNote] != -1 ||
-		m.PhrasesData[m.CurrentPhrase][m.CurrentRow][types.ColDeltaTime] != -1 ||
-		m.PhrasesData[m.CurrentPhrase][m.CurrentRow][types.ColFilename] != -1 {
+	if (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColNote] != -1 ||
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColDeltaTime] != -1 ||
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColFilename] != -1 {
 		log.Printf("Current row %d is not empty, skipping copy", m.CurrentRow)
 		return
 	}
@@ -858,28 +940,44 @@ func CopyLastRowWithIncrement(m *model.Model) {
 	// Find the first non-null note above the current row
 	var sourceNote int = -1
 	for r := m.CurrentRow - 1; r >= 0; r-- {
-		if m.PhrasesData[m.CurrentPhrase][r][types.ColNote] != -1 {
-			sourceNote = m.PhrasesData[m.CurrentPhrase][r][types.ColNote]
+		if (*phrasesData)[m.CurrentPhrase][r][types.ColNote] != -1 {
+			sourceNote = (*phrasesData)[m.CurrentPhrase][r][types.ColNote]
 			log.Printf("Found non-null note %d at row %d", sourceNote, r)
 			break
 		}
 	}
 
-	// If no non-null note found above, do nothing
+	// If no non-null note found above, use default starting note
 	if sourceNote == -1 {
-		log.Printf("No non-null note found above current row, skipping")
-		return
+		if phraseViewType == types.InstrumentPhraseView {
+			// For Instrument view, start with middle C (60)
+			sourceNote = 59 // Will be incremented to 60
+		} else {
+			// For Sampler view, start with 0
+			sourceNote = -1 // Will be incremented to 0
+		}
+		log.Printf("No non-null note found above current row, using default start")
 	}
 
 	// Set playback flag to 1
-	m.PhrasesData[m.CurrentPhrase][m.CurrentRow][int(types.ColPlayback)] = 1
+	(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColPlayback)] = 1
 
 	// Increment the note and set it
-	newNote := sourceNote + 1
-	if newNote > 254 { // Wrap around if needed
-		newNote = 0
+	var newNote int
+	if phraseViewType == types.InstrumentPhraseView {
+		// For Instrument view: increment MIDI notes (0-127), with chromatic progression
+		newNote = sourceNote + 1
+		if newNote > 127 { // Wrap around MIDI range
+			newNote = 0
+		}
+	} else {
+		// For Sampler view: increment sample/note numbers (0-254)
+		newNote = sourceNote + 1
+		if newNote > 254 { // Wrap around if needed
+			newNote = 0
+		}
 	}
-	m.PhrasesData[m.CurrentPhrase][m.CurrentRow][int(types.ColNote)] = newNote
+	(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColNote)] = newNote
 
 	log.Printf("Set note on row %d: %d->%d, P=1", m.CurrentRow, sourceNote, newNote)
 
@@ -905,7 +1003,8 @@ func CopyCellToClipboard(m *model.Model) {
 		log.Printf("Copied song chain value: %d", value)
 	} else if m.ViewMode == types.ChainView {
 		// Copy phrase number from chain view
-		value := m.ChainsData[m.CurrentChain][m.CurrentRow]
+		chainsData := m.GetCurrentChainsData()
+		value := (*chainsData)[m.CurrentChain][m.CurrentRow]
 		clipboard := types.ClipboardData{
 			Value:           value,
 			CellType:        types.HexCell,
@@ -920,9 +1019,17 @@ func CopyCellToClipboard(m *model.Model) {
 		log.Printf("Copied chain phrase value: %d", value)
 	} else if m.ViewMode == types.PhraseView {
 		// Copy from phrase view
-		colIndex := m.CurrentCol - 1
+		phrasesData := m.GetCurrentPhrasesData()
+		
+		// Use centralized column mapping system
+		columnMapping := m.GetColumnMapping(m.CurrentCol)
+		if columnMapping == nil || !columnMapping.IsCopyable {
+			return // Invalid or non-copyable column
+		}
+		
+		colIndex := columnMapping.DataColumnIndex
 		if colIndex >= 0 && colIndex < int(types.ColCount) {
-			value := m.PhrasesData[m.CurrentPhrase][m.CurrentRow][colIndex]
+			value := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex]
 			var cellType types.CellType
 			if colIndex == int(types.ColFilename) { // Filename column
 				cellType = types.FilenameCell
@@ -966,14 +1073,16 @@ func CutRowToClipboard(m *model.Model) {
 		log.Printf("Cut chain row %d", m.CurrentRow)
 	} else if m.ViewMode == types.PhraseView {
 		// Cut row from phrase view
+		phrasesData := m.GetCurrentPhrasesData()
 		rowData := make([]int, int(types.ColCount))
-		copy(rowData, m.PhrasesData[m.CurrentPhrase][m.CurrentRow])
+		copy(rowData, (*phrasesData)[m.CurrentPhrase][m.CurrentRow])
 
 		// Get filename if exists
 		var filename string
-		fileIndex := m.PhrasesData[m.CurrentPhrase][m.CurrentRow][types.ColFilename]
-		if fileIndex >= 0 && fileIndex < len(m.PhrasesFiles) {
-			filename = m.PhrasesFiles[fileIndex]
+		fileIndex := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColFilename]
+		phrasesFiles := m.GetCurrentPhrasesFiles()
+		if fileIndex >= 0 && fileIndex < len(*phrasesFiles) {
+			filename = (*phrasesFiles)[fileIndex]
 		}
 
 		clipboard := types.ClipboardData{
@@ -989,10 +1098,10 @@ func CutRowToClipboard(m *model.Model) {
 		}
 		m.Clipboard = clipboard
 		// Clear the row
-		m.PhrasesData[m.CurrentPhrase][m.CurrentRow][int(types.ColPlayback)] = 0   // Reset playback to 0
-		m.PhrasesData[m.CurrentPhrase][m.CurrentRow][int(types.ColNote)] = -1      // Clear note
-		m.PhrasesData[m.CurrentPhrase][m.CurrentRow][int(types.ColDeltaTime)] = -1 // Clear deltatime
-		m.PhrasesData[m.CurrentPhrase][m.CurrentRow][int(types.ColFilename)] = -1  // Clear filename
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColPlayback)] = 0   // Reset playback to 0
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColNote)] = -1      // Clear note
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColDeltaTime)] = -1 // Clear deltatime
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColFilename)] = -1  // Clear filename
 		log.Printf("Cut phrase row %d", m.CurrentRow)
 	}
 }
@@ -1022,14 +1131,25 @@ func PasteCellFromClipboard(m *model.Model) {
 	} else if m.ViewMode == types.ChainView {
 		// Paste to chain view (phrase column only)
 		if m.Clipboard.CellType == types.HexCell {
-			m.ChainsData[m.CurrentChain][m.CurrentRow] = m.Clipboard.Value
+			chainsData := m.GetCurrentChainsData()
+			(*chainsData)[m.CurrentChain][m.CurrentRow] = m.Clipboard.Value
 			log.Printf("Pasted to chain %02X row %02X phrase: %d", m.CurrentChain, m.CurrentRow, m.Clipboard.Value)
 		} else {
 			log.Printf("Cannot paste: wrong cell type or position")
 		}
 	} else if m.ViewMode == types.PhraseView {
 		// Paste to phrase view
-		colIndex := m.CurrentCol - 1
+		phrasesData := m.GetCurrentPhrasesData()
+		
+		// Use centralized column mapping system
+		columnMapping := m.GetColumnMapping(m.CurrentCol)
+		if columnMapping == nil || !columnMapping.IsPasteable {
+			log.Printf("Cannot paste: invalid or non-pasteable column at position %d", m.CurrentCol)
+			return
+		}
+		
+		colIndex := columnMapping.DataColumnIndex
+		
 		if colIndex >= 0 && colIndex < int(types.ColCount) {
 			var canPaste bool
 			if colIndex == int(types.ColFilename) { // Filename column
@@ -1039,7 +1159,7 @@ func PasteCellFromClipboard(m *model.Model) {
 			}
 
 			if canPaste {
-				m.PhrasesData[m.CurrentPhrase][m.CurrentRow][colIndex] = m.Clipboard.Value
+				(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = m.Clipboard.Value
 				log.Printf("Pasted to phrase cell: %d", m.Clipboard.Value)
 				// Track this row as the last edited row
 				m.LastEditRow = m.CurrentRow
@@ -1058,15 +1178,16 @@ func PasteRowFromClipboard(m *model.Model) {
 		log.Printf("Pasted chain row to row %d", m.CurrentRow)
 	} else if m.ViewMode == types.PhraseView && m.Clipboard.SourceView == types.PhraseView {
 		// Paste phrase row to phrase row
+		phrasesData := m.GetCurrentPhrasesData()
 		for i, value := range m.Clipboard.RowData {
-			m.PhrasesData[m.CurrentPhrase][m.CurrentRow][i] = value
+			(*phrasesData)[m.CurrentPhrase][m.CurrentRow][i] = value
 		}
 
 		// Handle filename if it exists
 		if m.Clipboard.RowFilename != "" {
 			// Add filename to files array and update index
 			fileIndex := m.AppendPhrasesFile(m.Clipboard.RowFilename)
-			m.PhrasesData[m.CurrentPhrase][m.CurrentRow][int(types.ColFilename)] = fileIndex
+			(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColFilename)] = fileIndex
 		}
 
 		log.Printf("Pasted phrase row to row %d", m.CurrentRow)
@@ -1170,7 +1291,9 @@ func EmitLastSelectedPhraseRowData(m *model.Model) {
 // EmitRowDataFor logs row data (rich debug) and emits OSC if applicable.
 // This is the single canonical emitter used by both manual "c" triggers and playback ("space").
 func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
-	rowData := m.PhrasesData[phrase][row]
+	// Use track-aware data access for correct playback
+	phrasesData := GetPhrasesDataForTrack(m, trackId)
+	rowData := (*phrasesData)[phrase][row]
 
 	// Raw values
 	rawPlayback := rowData[types.ColPlayback]
@@ -1374,8 +1497,22 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 
 	log.Printf("[EmitRowDataFor] oscParams: %+v", oscParams)
 
-	// Emit
-	m.SendOSCSamplerMessage(oscParams)
+	// Determine track type and emit appropriate message
+	if isInstrumentTrack(trackId) {
+		// For instrument tracks, emit simplified instrument message
+		velocity := float32(1.0) // Default velocity - could be derived from Gate in future
+		instrumentParams := model.NewInstrumentOSCParams(trackId, effectiveNote, velocity)
+		m.SendOSCInstrumentMessage(instrumentParams)
+	} else {
+		// For sampler tracks, emit full sampler message
+		m.SendOSCSamplerMessage(oscParams)
+	}
+}
+
+// isInstrumentTrack determines if the given track should use instrument OSC messages
+// Tracks 0-3 (displayed as 1-4) are Instrument tracks, tracks 4-7 (displayed as 5-8) are Sampler tracks
+func isInstrumentTrack(trackId int) bool {
+	return trackId >= 0 && trackId <= 3
 }
 
 // rowDurationMS returns the per-row duration in milliseconds.
@@ -1529,22 +1666,34 @@ func startPlaybackWithConfig(m *model.Model, config PlaybackConfig) tea.Cmd {
 		if config.UseCurrentRow && config.Row >= 0 && config.Row < 16 {
 			startRow = config.Row
 		}
+		log.Printf("Song playback starting from row %02X", startRow)
+		// Debug: show song data for first few rows
+		for r := 0; r < 4 && r < 16; r++ {
+			log.Printf("Song row %02X data: %v", r, [8]int{
+				m.SongData[0][r], m.SongData[1][r], m.SongData[2][r], m.SongData[3][r],
+				m.SongData[4][r], m.SongData[5][r], m.SongData[6][r], m.SongData[7][r],
+			})
+		}
 
 		for track := 0; track < 8; track++ {
 			chainID := m.SongData[track][startRow]
+			log.Printf("Song track %d at row %02X: chainID = %d", track, startRow, chainID)
 			if chainID == -1 {
 				// No chain at this position
 				m.SongPlaybackActive[track] = false
+				log.Printf("Song track %d: no chain data, skipping", track)
 				continue
 			}
 
 			// Check if chain has valid phrase data (find first phrase in chain)
 			firstPhraseID := -1
 			firstChainRow := -1
+			chainsData := m.GetChainsDataForTrack(track)
 			for chainRow := 0; chainRow < 16; chainRow++ {
-				if m.ChainsData[chainID][chainRow] != -1 {
-					firstPhraseID = m.ChainsData[chainID][chainRow]
+				if (*chainsData)[chainID][chainRow] != -1 {
+					firstPhraseID = (*chainsData)[chainID][chainRow]
 					firstChainRow = chainRow
+					log.Printf("Song track %d: found phrase %d in chain %d at row %d", track, firstPhraseID, chainID, chainRow)
 					break
 				}
 			}
@@ -1555,7 +1704,7 @@ func startPlaybackWithConfig(m *model.Model, config PlaybackConfig) tea.Cmd {
 				m.SongPlaybackChain[track] = chainID
 				m.SongPlaybackChainRow[track] = firstChainRow
 				m.SongPlaybackPhrase[track] = firstPhraseID
-				m.SongPlaybackRowInPhrase[track] = FindFirstNonEmptyRowInPhrase(m, firstPhraseID)
+				m.SongPlaybackRowInPhrase[track] = FindFirstNonEmptyRowInPhraseForTrack(m, firstPhraseID, track)
 
 				// Emit initial row for this track
 				EmitRowDataFor(m, firstPhraseID, m.SongPlaybackRowInPhrase[track], track)
@@ -1567,7 +1716,27 @@ func startPlaybackWithConfig(m *model.Model, config PlaybackConfig) tea.Cmd {
 			}
 		}
 
-		log.Printf("Song playback started from row %02X", startRow)
+		// Count how many tracks will be active
+		activeTracks := 0
+		for t := 0; t < 8; t++ {
+			if m.SongPlaybackActive[t] {
+				activeTracks++
+			}
+		}
+		log.Printf("Song playback started from row %02X with %d active tracks", startRow, activeTracks)
+		
+		// If no tracks are active, make track 0 active with chain 0 as fallback
+		if activeTracks == 0 {
+			log.Printf("No active tracks found, activating track 0 with chain 0 as fallback")
+			m.SongPlaybackActive[0] = true
+			m.SongPlaybackRow[0] = startRow
+			m.SongPlaybackChain[0] = 0
+			m.SongPlaybackChainRow[0] = 0
+			m.SongPlaybackPhrase[0] = 0  // Use phrase 0 as fallback
+			m.SongPlaybackRowInPhrase[0] = FindFirstNonEmptyRowInPhraseForTrack(m, 0, 0)
+			EmitRowDataFor(m, 0, m.SongPlaybackRowInPhrase[0], 0)
+			log.Printf("Song track 0 fallback started at phrase 0, row %d", m.SongPlaybackRowInPhrase[0])
+		}
 	} else if config.Mode == types.ChainView {
 		// Chain playback mode - find appropriate starting phrase
 		m.PlaybackChain = config.Chain
@@ -1595,14 +1764,25 @@ func startPlaybackWithConfig(m *model.Model, config PlaybackConfig) tea.Cmd {
 		if m.PlaybackPhrase == -1 {
 			// This chain has no phrases, find a different chain
 			m.PlaybackChain = FindFirstNonEmptyChain(m)
+			log.Printf("Chain playback fallback: switching to chain %d", m.PlaybackChain)
 			m.PlaybackChainRow = 0
 			for row := 0; row < 16; row++ {
 				if m.ChainsData[m.PlaybackChain][row] != -1 {
 					m.PlaybackPhrase = m.ChainsData[m.PlaybackChain][row]
 					m.PlaybackChainRow = row
+					log.Printf("Chain playback fallback: found phrase %d at chain row %d", m.PlaybackPhrase, row)
 					break
 				}
 			}
+		}
+
+		// If still no valid phrase found, just start with phrase 0 as fallback
+		if m.PlaybackPhrase == -1 {
+			log.Printf("Chain playback warning - no valid phrases found, using phrase 0 as fallback (Chain: %d, ChainRow: %d)", m.PlaybackChain, m.PlaybackChainRow)
+			// Let's log the chain data for debugging
+			log.Printf("Chain %d contents: %v", m.PlaybackChain, m.ChainsData[m.PlaybackChain])
+			m.PlaybackPhrase = 0
+			m.PlaybackChainRow = 0
 		}
 
 		if config.UseCurrentRow && config.Row >= 0 {
@@ -1821,8 +2001,9 @@ func IsPhraseUnused(m *model.Model, phraseID int) bool {
 	}
 
 	// Check if phrase has any playback-enabled rows
+	phrasesData := GetPhrasesDataForTrack(m, m.CurrentTrack)
 	for row := 0; row < 255; row++ {
-		if m.PhrasesData[phraseID][row][types.ColPlayback] == 1 {
+		if (*phrasesData)[phraseID][row][types.ColPlayback] == 1 {
 			return false
 		}
 	}
@@ -1853,6 +2034,33 @@ func ModifyMixerSetLevel(m *model.Model, delta float32) {
 	// Send OSC message for track set level
 	m.SendOSCTrackSetLevelMessage(m.CurrentMixerTrack)
 
+	storage.AutoSave(m)
+}
+
+// ToggleMixerTrackType toggles the track type between Instrument (IN) and Sampler (SA)
+func ToggleMixerTrackType(m *model.Model) {
+	// Bounds check
+	if m.CurrentMixerTrack < 0 || m.CurrentMixerTrack >= 8 {
+		return
+	}
+
+	// Toggle the track type
+	oldType := m.TrackTypes[m.CurrentMixerTrack]
+	m.TrackTypes[m.CurrentMixerTrack] = !oldType
+	
+	var oldTypeStr, newTypeStr string
+	if oldType {
+		oldTypeStr = "SA"
+	} else {
+		oldTypeStr = "IN"
+	}
+	if m.TrackTypes[m.CurrentMixerTrack] {
+		newTypeStr = "SA"
+	} else {
+		newTypeStr = "IN"
+	}
+
+	log.Printf("Toggled mixer track %d type: %s -> %s", m.CurrentMixerTrack+1, oldTypeStr, newTypeStr)
 	storage.AutoSave(m)
 }
 
@@ -1927,18 +2135,24 @@ func FillSequentialChain(m *model.Model) {
 // FillSequentialPhrase fills values in phrase view for the current column
 func FillSequentialPhrase(m *model.Model) {
 	currentRow := m.CurrentRow
-	colIndex := m.CurrentCol - 1 // Convert UI column to data index
 	
-	if colIndex < 0 || colIndex >= int(types.ColCount) {
-		return
+	// Use centralized column mapping system
+	columnMapping := m.GetColumnMapping(m.CurrentCol)
+	if columnMapping == nil || !columnMapping.IsEditable {
+		return // Invalid or non-editable column
 	}
+	
+	colIndex := columnMapping.DataColumnIndex
 	
 	// Find the last non-null value going upward
 	var startValue int = 0
 	var startRow int = 0
 	
+	// Use current phrases data based on view type
+	phrasesData := m.GetCurrentPhrasesData()
+	
 	for row := currentRow - 1; row >= 0; row-- {
-		cellValue := m.PhrasesData[m.CurrentPhrase][row][colIndex]
+		cellValue := (*phrasesData)[m.CurrentPhrase][row][colIndex]
 		if cellValue != -1 {
 			startValue = cellValue + 1
 			startRow = row + 1
@@ -1947,15 +2161,42 @@ func FillSequentialPhrase(m *model.Model) {
 	}
 	
 	// Handle different column types
-	if colIndex == int(types.ColPlayback) || colIndex == int(types.ColEffectReverse) {
-		// Binary columns (0-1)
+	if colIndex == int(types.ColPlayback) {
+		// Special bit-flipping logic for P column
+		currentValue := (*phrasesData)[m.CurrentPhrase][currentRow][colIndex]
+		
+		if currentValue == 0 {
+			// Current cell is 0: flip all 0's above (and current) until most recent "1" to 1
+			for row := currentRow; row >= 0; row-- {
+				cellValue := (*phrasesData)[m.CurrentPhrase][row][colIndex]
+				if cellValue == 1 {
+					break // Stop at the most recent "1"
+				}
+				if cellValue == 0 {
+					(*phrasesData)[m.CurrentPhrase][row][colIndex] = 1
+				}
+			}
+		} else {
+			// Current cell is 1: flip all 1's above (and current) until most recent "0" to 0
+			for row := currentRow; row >= 0; row-- {
+				cellValue := (*phrasesData)[m.CurrentPhrase][row][colIndex]
+				if cellValue == 0 {
+					break // Stop at the most recent "0"
+				}
+				if cellValue == 1 {
+					(*phrasesData)[m.CurrentPhrase][row][colIndex] = 0
+				}
+			}
+		}
+	} else if colIndex == int(types.ColEffectReverse) {
+		// Binary columns (0-1) - keep original logic for other binary columns
 		maxValue := 1
 		for row := startRow; row <= currentRow; row++ {
 			value := startValue + (row - startRow)
 			if value > maxValue {
 				value = value % (maxValue + 1) // Wrap: 0, 1, 0, 1, ...
 			}
-			m.PhrasesData[m.CurrentPhrase][row][colIndex] = value
+			(*phrasesData)[m.CurrentPhrase][row][colIndex] = value
 		}
 	} else if colIndex == int(types.ColPitch) {
 		// Pitch column has default of 128, not -1
@@ -1970,7 +2211,7 @@ func FillSequentialPhrase(m *model.Model) {
 			if value > maxValue {
 				value = value % (maxValue + 1) // Wrap: 0-254, 0-254, ...
 			}
-			m.PhrasesData[m.CurrentPhrase][row][colIndex] = value
+			(*phrasesData)[m.CurrentPhrase][row][colIndex] = value
 		}
 	} else {
 		// Hex columns (0-254)
@@ -1980,15 +2221,15 @@ func FillSequentialPhrase(m *model.Model) {
 			if value > maxValue {
 				value = value % (maxValue + 1) // Wrap: 0-254, 0-254, ...
 			}
-			m.PhrasesData[m.CurrentPhrase][row][colIndex] = value
+			(*phrasesData)[m.CurrentPhrase][row][colIndex] = value
 		}
 	}
 	
-	// Auto-enable playback on first note entry (following existing pattern)
+	// Auto-enable playback when filling note column (NN or NOT)
 	if colIndex == int(types.ColNote) {
 		for row := startRow; row <= currentRow; row++ {
-			if m.PhrasesData[m.CurrentPhrase][row][types.ColPlayback] == 0 {
-				m.PhrasesData[m.CurrentPhrase][row][types.ColPlayback] = 1
+			if (*phrasesData)[m.CurrentPhrase][row][types.ColPlayback] == 0 {
+				(*phrasesData)[m.CurrentPhrase][row][types.ColPlayback] = 1
 			}
 		}
 	}

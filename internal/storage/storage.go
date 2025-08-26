@@ -23,6 +23,12 @@ func AutoSave(m *model.Model) {
 		FileSelectCol:      m.FileSelectCol,
 		ChainsData:         m.ChainsData,
 		PhrasesData:        m.PhrasesData,
+		// New separate data pools
+		InstrumentChainsData:  m.InstrumentChainsData,
+		InstrumentPhrasesData: m.InstrumentPhrasesData,
+		SamplerChainsData:     m.SamplerChainsData,
+		SamplerPhrasesData:    m.SamplerPhrasesData,
+		SamplerPhrasesFiles:   m.SamplerPhrasesFiles,
 		LastEditRow:        m.LastEditRow,
 		PhrasesFiles:       m.PhrasesFiles,
 		CurrentDir:         m.CurrentDir,
@@ -115,6 +121,23 @@ func LoadState(m *model.Model, oscPort int, saveFile string) error {
 	// Bulk-assign arrays
 	m.ChainsData = saveData.ChainsData
 	m.PhrasesData = saveData.PhrasesData
+	
+	// Load new separate data pools (with backwards compatibility)
+	if saveData.InstrumentChainsData != nil {
+		m.InstrumentChainsData = saveData.InstrumentChainsData
+	}
+	if len(saveData.InstrumentPhrasesData) > 0 && saveData.InstrumentPhrasesData[0] != nil {
+		m.InstrumentPhrasesData = saveData.InstrumentPhrasesData
+	}
+	if saveData.SamplerChainsData != nil {
+		m.SamplerChainsData = saveData.SamplerChainsData
+	}
+	if len(saveData.SamplerPhrasesData) > 0 && saveData.SamplerPhrasesData[0] != nil {
+		m.SamplerPhrasesData = saveData.SamplerPhrasesData
+	}
+	if saveData.SamplerPhrasesFiles != nil {
+		m.SamplerPhrasesFiles = append([]string(nil), saveData.SamplerPhrasesFiles...)
+	}
 
 	// Restore phrase file list
 	m.PhrasesFiles = append([]string(nil), saveData.PhrasesFiles...)

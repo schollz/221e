@@ -200,7 +200,9 @@ func RenderChainView(m *model.Model) string {
 						m.SongPlaybackChain[m.CurrentTrack] == chainIndex {
 						// Find which chain row contains the current phrase
 						currentPhrase := m.SongPlaybackPhrase[m.CurrentTrack]
-						if m.ChainsData[chainIndex][row] == currentPhrase {
+						// Use track-specific chain data
+						chainsData := m.GetChainsDataForTrack(m.CurrentTrack)
+						if (*chainsData)[chainIndex][row] == currentPhrase {
 							playingOnThisRow = true
 						}
 					}
@@ -219,7 +221,8 @@ func RenderChainView(m *model.Model) string {
 			content.WriteString(rowIndicator)
 
 			// Get phrase ID for this chain row
-			phraseID := m.ChainsData[chainIndex][row]
+			chainsData := m.GetCurrentChainsData()
+			phraseID := (*chainsData)[chainIndex][row]
 			var phraseCell string
 
 			// Format the phrase ID
@@ -256,6 +259,15 @@ func RenderChainView(m *model.Model) string {
 }
 
 func RenderPhraseView(m *model.Model) string {
+	// Route to appropriate sub-view based on track context
+	phraseViewType := m.GetPhraseViewType()
+	if phraseViewType == types.InstrumentPhraseView {
+		return RenderInstrumentPhraseView(m)
+	}
+	return RenderSamplerPhraseView(m)
+}
+
+func RenderSamplerPhraseView(m *model.Model) string {
 	// Styles
 	selectedStyle := lipgloss.NewStyle().Background(lipgloss.Color("7")).Foreground(lipgloss.Color("0")) // Lighter background, dark text
 	normalStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("15"))
@@ -285,9 +297,9 @@ func RenderPhraseView(m *model.Model) string {
 		arrow := " "
 		if m.IsPlaying {
 			if m.PlaybackMode == types.SongView {
-				// Song playback mode - check all tracks to see which ones are playing this phrase at this row
+				// Song playback mode - check only sampler tracks (4-7) for sampler phrase view
 				playingTracksCount := 0
-				for track := 0; track < 8; track++ {
+				for track := 4; track < 8; track++ {
 					if m.SongPlaybackActive[track] &&
 						m.SongPlaybackPhrase[track] == m.CurrentPhrase &&
 						m.SongPlaybackRowInPhrase[track] == dataIndex {
@@ -320,9 +332,10 @@ func RenderPhraseView(m *model.Model) string {
 			sliceCell = sliceStyle.Render(sliceHex)
 		}
 
-		// Playback (P)
+		// Playback (P) - use current phrases data based on view type
+		phrasesData := m.GetCurrentPhrasesData()
 		playbackText := "0"
-		if m.PhrasesData[m.CurrentPhrase][dataIndex][types.ColPlayback] == 1 {
+		if (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColPlayback] == 1 {
 			playbackText = "1"
 		}
 		var playbackCell string
@@ -340,8 +353,8 @@ func RenderPhraseView(m *model.Model) string {
 
 		// Note (NN)
 		noteText := "--"
-		if m.PhrasesData[m.CurrentPhrase][dataIndex][types.ColNote] != -1 {
-			noteText = fmt.Sprintf("%02X", m.PhrasesData[m.CurrentPhrase][dataIndex][types.ColNote])
+		if (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColNote] != -1 {
+			noteText = fmt.Sprintf("%02X", (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColNote])
 		}
 		var noteCell string
 		if m.CurrentRow == dataIndex && m.CurrentCol == 2 {
@@ -358,8 +371,8 @@ func RenderPhraseView(m *model.Model) string {
 
 		// Pitch (PI)
 		pitchText := "--"
-		if m.PhrasesData[m.CurrentPhrase][dataIndex][types.ColPitch] != -1 {
-			pitchText = fmt.Sprintf("%02X", m.PhrasesData[m.CurrentPhrase][dataIndex][types.ColPitch])
+		if (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColPitch] != -1 {
+			pitchText = fmt.Sprintf("%02X", (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColPitch])
 		}
 		var pitchCell string
 		if m.CurrentRow == dataIndex && m.CurrentCol == 3 {
@@ -376,8 +389,8 @@ func RenderPhraseView(m *model.Model) string {
 
 		// Delta Time (DT)
 		dtText := "--"
-		if m.PhrasesData[m.CurrentPhrase][dataIndex][types.ColDeltaTime] != -1 {
-			dtText = fmt.Sprintf("%02X", m.PhrasesData[m.CurrentPhrase][dataIndex][types.ColDeltaTime])
+		if (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColDeltaTime] != -1 {
+			dtText = fmt.Sprintf("%02X", (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColDeltaTime])
 		}
 		var dtCell string
 		if m.CurrentRow == dataIndex && m.CurrentCol == 4 {
@@ -394,8 +407,8 @@ func RenderPhraseView(m *model.Model) string {
 
 		// Gate (GT)
 		gtText := "--"
-		if m.PhrasesData[m.CurrentPhrase][dataIndex][types.ColGate] != -1 {
-			gtText = fmt.Sprintf("%02X", m.PhrasesData[m.CurrentPhrase][dataIndex][types.ColGate])
+		if (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColGate] != -1 {
+			gtText = fmt.Sprintf("%02X", (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColGate])
 		}
 		var gtCell string
 		if m.CurrentRow == dataIndex && m.CurrentCol == 5 {
@@ -412,8 +425,8 @@ func RenderPhraseView(m *model.Model) string {
 
 		// Retrigger (RT)
 		rtText := "--"
-		if m.PhrasesData[m.CurrentPhrase][dataIndex][types.ColRetrigger] != -1 {
-			rtText = fmt.Sprintf("%02X", m.PhrasesData[m.CurrentPhrase][dataIndex][types.ColRetrigger])
+		if (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColRetrigger] != -1 {
+			rtText = fmt.Sprintf("%02X", (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColRetrigger])
 		}
 		var rtCell string
 		if m.CurrentRow == dataIndex && m.CurrentCol == 6 {
@@ -430,8 +443,8 @@ func RenderPhraseView(m *model.Model) string {
 
 		// Timestretch (TS)
 		tsText := "--"
-		if m.PhrasesData[m.CurrentPhrase][dataIndex][types.ColTimestretch] != -1 {
-			tsText = fmt.Sprintf("%02X", m.PhrasesData[m.CurrentPhrase][dataIndex][types.ColTimestretch])
+		if (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColTimestretch] != -1 {
+			tsText = fmt.Sprintf("%02X", (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColTimestretch])
 		}
 		var tsCell string
 		if m.CurrentRow == dataIndex && m.CurrentCol == 7 {
@@ -448,8 +461,8 @@ func RenderPhraseView(m *model.Model) string {
 
 		// Я (EffectReverse) — single char: "-", "0", or "1"
 		revText := "-"
-		if m.PhrasesData[m.CurrentPhrase][dataIndex][types.ColEffectReverse] != -1 {
-			if m.PhrasesData[m.CurrentPhrase][dataIndex][types.ColEffectReverse] != 0 {
+		if (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColEffectReverse] != -1 {
+			if (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColEffectReverse] != 0 {
 				revText = "1"
 			} else {
 				revText = "0"
@@ -470,8 +483,8 @@ func RenderPhraseView(m *model.Model) string {
 
 		// PA (Pan)
 		paText := "--"
-		if m.PhrasesData[m.CurrentPhrase][dataIndex][types.ColPan] != -1 {
-			paText = fmt.Sprintf("%02X", m.PhrasesData[m.CurrentPhrase][dataIndex][types.ColPan])
+		if (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColPan] != -1 {
+			paText = fmt.Sprintf("%02X", (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColPan])
 		}
 		var paCell string
 		if m.CurrentRow == dataIndex && m.CurrentCol == 9 {
@@ -488,8 +501,8 @@ func RenderPhraseView(m *model.Model) string {
 
 		// LP (LowPassFilter)
 		lpText := "--"
-		if m.PhrasesData[m.CurrentPhrase][dataIndex][types.ColLowPassFilter] != -1 {
-			lpText = fmt.Sprintf("%02X", m.PhrasesData[m.CurrentPhrase][dataIndex][types.ColLowPassFilter])
+		if (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColLowPassFilter] != -1 {
+			lpText = fmt.Sprintf("%02X", (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColLowPassFilter])
 		}
 		var lpCell string
 		if m.CurrentRow == dataIndex && m.CurrentCol == 10 {
@@ -506,8 +519,8 @@ func RenderPhraseView(m *model.Model) string {
 
 		// HP (HighPassFilter)
 		hpText := "--"
-		if m.PhrasesData[m.CurrentPhrase][dataIndex][types.ColHighPassFilter] != -1 {
-			hpText = fmt.Sprintf("%02X", m.PhrasesData[m.CurrentPhrase][dataIndex][types.ColHighPassFilter])
+		if (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColHighPassFilter] != -1 {
+			hpText = fmt.Sprintf("%02X", (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColHighPassFilter])
 		}
 		var hpCell string
 		if m.CurrentRow == dataIndex && m.CurrentCol == 11 {
@@ -524,8 +537,8 @@ func RenderPhraseView(m *model.Model) string {
 
 		// CO (EffectComb)
 		combText := "--"
-		if m.PhrasesData[m.CurrentPhrase][dataIndex][types.ColEffectComb] != -1 {
-			combText = fmt.Sprintf("%02X", m.PhrasesData[m.CurrentPhrase][dataIndex][types.ColEffectComb])
+		if (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColEffectComb] != -1 {
+			combText = fmt.Sprintf("%02X", (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColEffectComb])
 		}
 		var combCell string
 		if m.CurrentRow == dataIndex && m.CurrentCol == 12 {
@@ -542,8 +555,8 @@ func RenderPhraseView(m *model.Model) string {
 
 		// VE (EffectReverb)
 		reverbText := "--"
-		if m.PhrasesData[m.CurrentPhrase][dataIndex][types.ColEffectReverb] != -1 {
-			reverbText = fmt.Sprintf("%02X", m.PhrasesData[m.CurrentPhrase][dataIndex][types.ColEffectReverb])
+		if (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColEffectReverb] != -1 {
+			reverbText = fmt.Sprintf("%02X", (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColEffectReverb])
 		}
 		var reverbCell string
 		if m.CurrentRow == dataIndex && m.CurrentCol == 13 {
@@ -560,9 +573,10 @@ func RenderPhraseView(m *model.Model) string {
 
 		// Filename (FI) - first 8 characters (now column 13 in UI)
 		fiText := "--------"
-		fileIndex := m.PhrasesData[m.CurrentPhrase][dataIndex][types.ColFilename]
-		if fileIndex >= 0 && fileIndex < len(m.PhrasesFiles) && m.PhrasesFiles[fileIndex] != "" {
-			fullPath := m.PhrasesFiles[fileIndex]
+		fileIndex := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColFilename]
+		phrasesFiles := m.GetCurrentPhrasesFiles()
+		if fileIndex >= 0 && fileIndex < len(*phrasesFiles) && (*phrasesFiles)[fileIndex] != "" {
+			fullPath := (*phrasesFiles)[fileIndex]
 			filename := filepath.Base(fullPath)
 			if len(filename) > 8 {
 				fiText = filename[:8]
@@ -592,6 +606,126 @@ func RenderPhraseView(m *model.Model) string {
 
 	// Footer with status
 	statusMsg := GetPhraseStatusMessage(m)
+	content.WriteString(RenderFooter(m, visibleRows+1, statusMsg)) // +1 for header
+
+	// Apply container padding to entire content
+	return containerStyle.Render(content.String())
+}
+
+func RenderInstrumentPhraseView(m *model.Model) string {
+	// Styles
+	selectedStyle := lipgloss.NewStyle().Background(lipgloss.Color("7")).Foreground(lipgloss.Color("0")) // Lighter background, dark text
+	normalStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("15"))
+	sliceStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
+	sliceDownbeatStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("7"))                          // Lighter gray for downbeats
+	playbackStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("10"))                              // Green
+	copiedStyle := lipgloss.NewStyle().Background(lipgloss.Color("3")).Foreground(lipgloss.Color("0")) // Yellow background
+
+	// Main container style with padding
+	containerStyle := lipgloss.NewStyle().
+		Padding(1, 2)
+
+	// Content builder
+	var content strings.Builder
+
+	// Render header for Instrument view (row, playback, and note)
+	columnHeader := "  SL  P  NOT"
+	phraseHeader := fmt.Sprintf("Instrument %02X", m.CurrentPhrase)
+	content.WriteString(RenderHeader(m, columnHeader, phraseHeader))
+
+	// Data rows
+	visibleRows := m.GetVisibleRows()
+	for i := 0; i < visibleRows && i+m.ScrollOffset < 255; i++ {
+		dataIndex := i + m.ScrollOffset
+
+		// Arrow for current row or playback
+		arrow := " "
+		if m.IsPlaying {
+			if m.PlaybackMode == types.SongView {
+				// Song playback mode - check only instrument tracks (0-3) for instrument phrase view
+				playingTracksCount := 0
+				for track := 0; track < 4; track++ {
+					if m.SongPlaybackActive[track] &&
+						m.SongPlaybackPhrase[track] == m.CurrentPhrase &&
+						m.SongPlaybackRowInPhrase[track] == dataIndex {
+						playingTracksCount++
+					}
+				}
+				if playingTracksCount == 1 {
+					arrow = playbackStyle.Render("▶")
+				} else if playingTracksCount > 1 {
+					// Multiple tracks playing at this position - show double arrow
+					arrow = playbackStyle.Render("▶▶")
+				}
+			} else {
+				// Chain/Phrase playback mode - use existing logic
+				if m.PlaybackPhrase == m.CurrentPhrase && m.PlaybackRow == dataIndex {
+					arrow = playbackStyle.Render("▶")
+				}
+			}
+		} else if m.CurrentRow == dataIndex {
+			// Not playing - show cursor arrow
+			arrow = "▶"
+		}
+
+		// Slice number (hex)
+		sliceHex := fmt.Sprintf("%02X", dataIndex)
+		var sliceCell string
+		if dataIndex%4 == 0 {
+			sliceCell = sliceDownbeatStyle.Render(sliceHex) // Lighter for downbeats
+		} else {
+			sliceCell = sliceStyle.Render(sliceHex)
+		}
+
+		// Playback (P) column
+		phrasesData := m.GetCurrentPhrasesData()
+		playbackValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColPlayback]
+		playbackText := "0"
+		if playbackValue == 1 {
+			playbackText = "1"
+		}
+		
+		var playbackCell string
+		if m.CurrentRow == dataIndex && m.CurrentCol == 1 { // Column 1 is the P column
+			playbackCell = selectedStyle.Render(playbackText)
+		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
+			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == 1) {
+				playbackCell = copiedStyle.Render(playbackText)
+			} else {
+				playbackCell = normalStyle.Render(playbackText)
+			}
+		} else {
+			playbackCell = normalStyle.Render(playbackText)
+		}
+
+		// Note (NOT) - use ColNote but display as note name
+		// For Instrument view, we're using the Note column to store MIDI note values (0-127)
+		noteValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColNote]
+		noteText := "---"
+		if noteValue != -1 {
+			noteText = midiToNoteName(noteValue)
+		}
+		
+		var noteCell string
+		if m.CurrentRow == dataIndex && m.CurrentCol == 2 { // Column 2 is the NOT column (0=slice, 1=P, 2=NOT)
+			noteCell = selectedStyle.Render(fmt.Sprintf("%3s", noteText))
+		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
+			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == 2) {
+				noteCell = copiedStyle.Render(fmt.Sprintf("%3s", noteText))
+			} else {
+				noteCell = normalStyle.Render(fmt.Sprintf("%3s", noteText))
+			}
+		} else {
+			noteCell = normalStyle.Render(fmt.Sprintf("%3s", noteText))
+		}
+
+		row := fmt.Sprintf("%s %-3s  %s  %s", arrow, sliceCell, playbackCell, noteCell)
+		content.WriteString(row)
+		content.WriteString("\n")
+	}
+
+	// Footer with status
+	statusMsg := GetInstrumentPhraseStatusMessage(m)
 	content.WriteString(RenderFooter(m, visibleRows+1, statusMsg)) // +1 for header
 
 	// Apply container padding to entire content
@@ -731,7 +865,8 @@ func RenderFileView(m *model.Model) string {
 }
 
 func GetChainStatusMessage(m *model.Model) string {
-	phraseID := m.ChainsData[m.CurrentChain][m.CurrentRow]
+	chainsData := m.GetCurrentChainsData()
+	phraseID := (*chainsData)[m.CurrentChain][m.CurrentRow]
 
 	var statusMsg string
 	if phraseID == -1 {
@@ -752,7 +887,8 @@ func GetPhraseStatusMessage(m *model.Model) string {
 
 	if m.CurrentCol == rtUI {
 		// On retrigger column - show retrigger info
-		retriggerIndex := m.PhrasesData[m.CurrentPhrase][m.CurrentRow][types.ColRetrigger]
+		phrasesData := m.GetCurrentPhrasesData()
+		retriggerIndex := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColRetrigger]
 		if retriggerIndex >= 0 && retriggerIndex < 255 {
 			statusMsg = fmt.Sprintf("Retrigger: %02X", retriggerIndex)
 		} else {
@@ -760,22 +896,29 @@ func GetPhraseStatusMessage(m *model.Model) string {
 		}
 	} else if m.CurrentCol == fiUI {
 		// On filename column - show file info
-		fileIndex := m.PhrasesData[m.CurrentPhrase][m.CurrentRow][types.ColFilename]
-		if fileIndex >= 0 && fileIndex < len(m.PhrasesFiles) && m.PhrasesFiles[fileIndex] != "" {
-			statusMsg = fmt.Sprintf("File: %s", m.PhrasesFiles[fileIndex])
+		phrasesData := m.GetCurrentPhrasesData()
+		fileIndex := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColFilename]
+		phrasesFiles := m.GetCurrentPhrasesFiles()
+		if fileIndex >= 0 && fileIndex < len(*phrasesFiles) && (*phrasesFiles)[fileIndex] != "" {
+			statusMsg = fmt.Sprintf("File: %s", (*phrasesFiles)[fileIndex])
 		} else {
 			statusMsg = "No file selected"
 		}
 	} else {
-		// On other columns - show value
-		colIndex := m.CurrentCol - 1
-		value := m.PhrasesData[m.CurrentPhrase][m.CurrentRow][colIndex]
-		if colIndex == int(types.ColPlayback) {
+		// On other columns - show value using centralized column mapping
+		columnMapping := m.GetColumnMapping(m.CurrentCol)
+		if columnMapping == nil || columnMapping.DataColumnIndex == -1 {
+			statusMsg = "Column info not available"
+		} else {
+			phrasesData := m.GetCurrentPhrasesData()
+			colIndex := columnMapping.DataColumnIndex
+			value := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex]
+			if colIndex == int(types.ColPlayback) {
 			statusMsg = fmt.Sprintf("Playback enabled: %d", value)
-		} else if colIndex == int(types.ColGate) {
-			gateFloat := float32(value) / 96.0
-			statusMsg = fmt.Sprintf("Gate: %02X (%.2f)", value, gateFloat)
-		} else if colIndex == int(types.ColPitch) {
+			} else if colIndex == int(types.ColGate) {
+				gateFloat := float32(value) / 96.0
+				statusMsg = fmt.Sprintf("Gate: %02X (%.2f)", value, gateFloat)
+			} else if colIndex == int(types.ColPitch) {
 			// PI (Pitch) column - show -24 to +24 mapping, 128 (0x80) means 0.0 pitch
 			if value == -1 {
 				statusMsg = "Pitch: -- (cleared)"
@@ -850,8 +993,9 @@ func GetPhraseStatusMessage(m *model.Model) string {
 			}
 		} else if value == -1 {
 			statusMsg = "Current value: --"
-		} else {
-			statusMsg = fmt.Sprintf("Current value: %d", value)
+			} else {
+				statusMsg = fmt.Sprintf("Current value: %d", value)
+			}
 		}
 	}
 
@@ -869,11 +1013,56 @@ func GetPhraseStatusMessage(m *model.Model) string {
 	return statusMsg
 }
 
+func GetInstrumentPhraseStatusMessage(m *model.Model) string {
+	var statusMsg string
+
+	// Use centralized column mapping to determine current column
+	columnMapping := m.GetColumnMapping(m.CurrentCol)
+	if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColNote) { // NOT column
+		// Show note info
+		phrasesData := m.GetCurrentPhrasesData()
+		noteValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColNote]
+		if noteValue >= 0 && noteValue <= 127 {
+			noteName := midiToNoteName(noteValue)
+			statusMsg = fmt.Sprintf("Note: %d (%s)", noteValue, noteName)
+		} else {
+			statusMsg = "No note selected"
+		}
+	} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColPlayback) { // P column
+		// Show playback info
+		phrasesData := m.GetCurrentPhrasesData()
+		playbackValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColPlayback]
+		if playbackValue == 1 {
+			statusMsg = "Playback: ON"
+		} else {
+			statusMsg = "Playback: OFF"
+		}
+	} else {
+		// On other columns - show basic info
+		statusMsg = fmt.Sprintf("Instrument Phrase %02X Row %02X", m.CurrentPhrase, m.CurrentRow)
+	}
+
+	if m.IsPlaying {
+		if m.PlaybackMode == types.ChainView {
+			statusMsg += fmt.Sprintf(" | Chain playing (C:%02X P:%02X) (SPACE to stop)", m.PlaybackChain, m.PlaybackPhrase)
+		} else {
+			statusMsg += " | Phrase playing (SPACE to stop)"
+		}
+	} else {
+		statusMsg += " | Stopped (SPACE to play)"
+	}
+
+	statusMsg += " | Shift+Left: Back to chain view"
+	return statusMsg
+}
+
 func IsCurrentRowFile(m *model.Model, filename string) bool {
 	// Check if this file is assigned to the current fileSelectRow
-	fileIndex := m.PhrasesData[m.CurrentPhrase][m.FileSelectRow][types.ColFilename]
-	if fileIndex >= 0 && fileIndex < len(m.PhrasesFiles) && m.PhrasesFiles[fileIndex] != "" {
-		assignedFile := m.PhrasesFiles[fileIndex]
+	phrasesData := m.GetCurrentPhrasesData()
+	fileIndex := (*phrasesData)[m.CurrentPhrase][m.FileSelectRow][types.ColFilename]
+	phrasesFiles := m.GetCurrentPhrasesFiles()
+	if fileIndex >= 0 && fileIndex < len(*phrasesFiles) && (*phrasesFiles)[fileIndex] != "" {
+		assignedFile := (*phrasesFiles)[fileIndex]
 		fullPath := filepath.Join(m.CurrentDir, filename)
 		return assignedFile == filename || assignedFile == fullPath
 	}
@@ -1176,6 +1365,84 @@ func RenderWaveform(width, height int, data []float64) string {
 	return b.String()
 }
 
+// midiToNoteName converts MIDI note number (0-127) to note name like "c-1", "c#4", etc.
+// For negative octaves: natural notes show minus (e.g., "c-1"), sharp notes drop minus (e.g., "f#1") - all stay 3 chars
+// MIDI note 60 = C4, note 21 = A0, etc.
+func midiToNoteName(midiNote int) string {
+	if midiNote < 0 || midiNote > 127 {
+		return "---"
+	}
+
+	noteNames := []string{"c", "c#", "d", "d#", "e", "f", "f#", "g", "g#", "a", "a#", "b"}
+	
+	// Calculate octave (MIDI note 12 = C0)
+	octave := (midiNote / 12) - 1
+	
+	// Get note name
+	noteName := noteNames[midiNote%12]
+	
+	// Always maintain exactly 3 characters for all notes
+	if strings.Contains(noteName, "#") {
+		// Sharp notes: "c#4", "f#1" (already 3 chars for most cases)
+		if octave < 0 {
+			return fmt.Sprintf("%s%d", noteName, -octave)  // "c#1" for negative
+		} else {
+			return fmt.Sprintf("%s%d", noteName, octave)   // "c#4" for positive
+		}
+	} else {
+		// Natural notes: always use minus separator to reach 3 chars
+		if octave < 0 {
+			return fmt.Sprintf("%s-%d", noteName, -octave)  // "c-1" for negative
+		} else {
+			return fmt.Sprintf("%s-%d", noteName, octave)   // "c-4" for positive
+		}
+	}
+}
+
+// noteNameToMidi converts note name back to MIDI note number for validation
+func noteNameToMidi(noteName string) int {
+	if noteName == "---" || len(noteName) < 2 {
+		return -1
+	}
+	
+	noteMap := map[string]int{
+		"c": 0, "c#": 1, "d": 2, "d#": 3, "e": 4, "f": 5,
+		"f#": 6, "g": 7, "g#": 8, "a": 9, "a#": 10, "b": 11,
+	}
+	
+	// Extract note and octave parts
+	var noteStr string
+	var octaveStr string
+	
+	if len(noteName) >= 3 && noteName[1] == '#' {
+		// Sharp note like "c#4"
+		noteStr = noteName[:2]
+		octaveStr = noteName[2:]
+	} else {
+		// Natural note like "c4"
+		noteStr = noteName[:1]
+		octaveStr = noteName[1:]
+	}
+	
+	noteVal, noteExists := noteMap[noteStr]
+	if !noteExists {
+		return -1
+	}
+	
+	// Parse octave
+	var octave int
+	if _, err := fmt.Sscanf(octaveStr, "%d", &octave); err != nil {
+		return -1
+	}
+	
+	midiNote := (octave + 1) * 12 + noteVal
+	if midiNote < 0 || midiNote > 127 {
+		return -1
+	}
+	
+	return midiNote
+}
+
 // getLevelColorSmooth returns a smoothly interpolated color for a dB level
 func getLevelColorSmooth(dbLevel float32) colorful.Color {
 	db := float64(dbLevel)
@@ -1424,10 +1691,29 @@ func RenderMixerView(m *model.Model) string {
 			setLevel := m.TrackSetLevels[track]
 			setHex := fmt.Sprintf("%02X", dbToHex(setLevel))
 
-			if track == m.CurrentMixerTrack {
+			if track == m.CurrentMixerTrack && m.CurrentMixerRow == 0 {
 				content.WriteString(styles.Selected.Render(setHex))
 			} else {
 				content.WriteString(styles.Label.Render(setHex))
+			}
+		}
+		content.WriteString("\n")
+
+		// Track type row (IN/SA)
+		content.WriteString("    ")
+		for track := 0; track < 8; track++ {
+			content.WriteString("  ")
+			var trackType string
+			if m.TrackTypes[track] {
+				trackType = "SA" // Sampler
+			} else {
+				trackType = "IN" // Instrument
+			}
+
+			if track == m.CurrentMixerTrack && m.CurrentMixerRow == 1 {
+				content.WriteString(styles.Selected.Render(trackType))
+			} else {
+				content.WriteString(styles.Normal.Render(trackType))
 			}
 		}
 		content.WriteString("\n\n")
