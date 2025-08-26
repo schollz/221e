@@ -76,7 +76,8 @@ func SelectFile(m *model.Model) {
 	// Select audio file - store the full path
 	fullPath := filepath.Join(m.CurrentDir, selected)
 	fileIndex := m.AppendPhrasesFile(fullPath)
-	m.PhrasesData[m.CurrentPhrase][m.FileSelectRow][int(types.ColFilename)] = fileIndex
+	phrasesData := m.GetCurrentPhrasesData()
+	(*phrasesData)[m.CurrentPhrase][m.FileSelectRow][int(types.ColFilename)] = fileIndex
 
 	// Set initial metadata using sox.GetBPM
 	// BPM should be float, slices should be 2x beats (rounded to int)

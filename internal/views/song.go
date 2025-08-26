@@ -70,9 +70,10 @@ func RenderSongView(m *model.Model) string {
 				} else {
 					// Check if this chain has actual data (any phrase assigned)
 					hasChainData := false
-					if chainID >= 0 && chainID < len(m.ChainsData) {
+					chainsData := m.GetChainsDataForTrack(track)
+					if chainID >= 0 && chainID < len(*chainsData) {
 						for row := 0; row < 16; row++ {
-							if m.ChainsData[chainID][row] != -1 {
+							if (*chainsData)[chainID][row] != -1 {
 								hasChainData = true
 								break
 							}
@@ -112,12 +113,13 @@ func GetSongStatusMessage(m *model.Model) string {
 		// Check if chain has data and get first phrase for display
 		hasChainData := false
 		firstPhraseID := -1
-		if chainID >= 0 && chainID < len(m.ChainsData) {
+		chainsData := m.GetChainsDataForTrack(trackCol)
+		if chainID >= 0 && chainID < len(*chainsData) {
 			for row := 0; row < 16; row++ {
-				if m.ChainsData[chainID][row] != -1 {
+				if (*chainsData)[chainID][row] != -1 {
 					hasChainData = true
 					if firstPhraseID == -1 {
-						firstPhraseID = m.ChainsData[chainID][row]
+						firstPhraseID = (*chainsData)[chainID][row]
 					}
 				}
 			}
