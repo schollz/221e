@@ -51,6 +51,7 @@ func AutoSave(m *model.Model) {
 		CurrentChain:       m.CurrentChain,
 		CurrentTrack:       m.CurrentTrack,
 		TrackSetLevels:     m.TrackSetLevels,
+		TrackTypes:         m.TrackTypes,
 		CurrentMixerTrack:  m.CurrentMixerTrack,
 	}
 
@@ -116,6 +117,7 @@ func LoadState(m *model.Model, oscPort int, saveFile string) error {
 	m.CurrentChain = saveData.CurrentChain
 	m.CurrentTrack = saveData.CurrentTrack
 	m.TrackSetLevels = saveData.TrackSetLevels
+	m.TrackTypes = saveData.TrackTypes
 	m.CurrentMixerTrack = saveData.CurrentMixerTrack
 
 	// Bulk-assign arrays
