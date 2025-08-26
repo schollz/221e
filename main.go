@@ -28,12 +28,14 @@ func main() {
 
 	// Parse command line arguments (no no-splash anymore)
 	var oscPort int
+	var skipJackCheck bool
 	var saveFile string
 	flag.IntVar(&oscPort, "osc-port", 57120, "OSC port for sending playback messages")
 	flag.StringVar(&saveFile, "save-file", "tracker-save.json", "Save file to load from or create")
+	flag.BoolVar(&skipJackCheck, "skip-jack-check", false, "Skip checking for JACK server (for testing only)")
 	flag.Parse()
 
-	if !supercollider.IsJackEnabled() {
+	if !supercollider.IsJackEnabled() && !skipJackCheck {
 		dialog := supercollider.NewJackDialogModel()
 		p := tea.NewProgram(dialog, tea.WithAltScreen())
 		_, _ = p.Run()
@@ -117,19 +119,30 @@ func main() {
 	p := tea.NewProgram(tm, tea.WithAltScreen())
 
 	// Start SuperCollider in the background so it doesn't block the splash
-	go func() {
-		if !supercollider.IsSuperColliderEnabled() {
-			if err := supercollider.StartSuperCollider(); err != nil {
-				log.Printf("Failed to start SuperCollider: %v", err)
+	if supercollider.IsJackEnabled() {
+		go func() {
+			if !supercollider.IsSuperColliderEnabled() {
+				if err := supercollider.StartSuperCollider(); err != nil {
+					log.Printf("Failed to start SuperCollider: %v", err)
+				}
 			}
+		}()
+	} else {
+		if !skipJackCheck {
+			log.Printf("JACK server not enabled; cannot start SuperCollider")
+			os.Exit(1)
 		}
-	}()
+	}
 
 	// When SC signals readiness via /cpuusage, hide the splash
 	go func() {
-		<-readyChannel
-		log.Printf("Received SuperCollider ready; hiding splash")
-		p.Send(scReadyMsg{})
+		if skipJackCheck {
+			p.Send(scReadyMsg{}) // skip splash if skipping JACK check
+		} else {
+			<-readyChannel
+			log.Printf("Received SuperCollider ready; hiding splash")
+			p.Send(scReadyMsg{})
+		}
 	}()
 
 	if _, err := p.Run(); err != nil {
