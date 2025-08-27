@@ -561,7 +561,7 @@ func handleShiftLeft(m *model.Model) tea.Cmd {
 		var arColumn int
 		phraseViewType := m.GetPhraseViewType()
 		if phraseViewType == types.InstrumentPhraseView {
-			arColumn = 6 // AR column is column 6 in instrument view
+			arColumn = 10 // AR column is column 10 in instrument view (after adding ADSR columns)
 		} else {
 			arColumn = 1 // AR is not accessible in sampler view, default to P column
 		}
@@ -733,7 +733,7 @@ func handleRight(m *model.Model) tea.Cmd {
 		phraseViewType := m.GetPhraseViewType()
 		var maxValidCol int
 		if phraseViewType == types.InstrumentPhraseView {
-			maxValidCol = 6 // Instrument: last valid column is 6 (AR - Arpeggio)
+			maxValidCol = 10 // Instrument: last valid column is 10 (AR - Arpeggio) after adding ADSR columns
 		} else {
 			maxValidCol = 14 // Sampler: last valid column is 14 (FI)
 		}

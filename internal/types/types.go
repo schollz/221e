@@ -1,5 +1,7 @@
 package types
 
+import "math"
+
 type ViewMode int
 
 const (
@@ -57,6 +59,10 @@ const (
 	ColChordAddition                          // Column 15: Chord Addition (Instrument view only: "-", "7", "9", "4")
 	ColChordTransposition                     // Column 16: Chord Transposition (Instrument view only: "-", "0"-"F")
 	ColArpeggio                               // Column 17: Arpeggio (Instrument view only: 00-FE)
+	ColAttack                                 // Column 18: Attack (Instrument view only: 00-FE, 0.02-30s exponential, default -1, sticky)
+	ColDecay                                  // Column 19: Decay (Instrument view only: 00-FE, 0.0-30.0s linear, default -1, sticky)
+	ColSustain                                // Column 20: Sustain (Instrument view only: 00-FE, 0.0-1.0 linear, default -1, sticky)
+	ColRelease                                // Column 21: Release (Instrument view only: 00-FE, 0.02-30s exponential, default -1, sticky)
 	ColCount                                  // Total number of columns
 )
 
@@ -272,3 +278,51 @@ type SaveData struct {
 
 const SaveFile = "tracker-save.json"
 const WaveformHeight = 5
+
+// ADSR mapping functions for Instrument view
+
+// AttackToSeconds converts Attack hex value (00-FE) to seconds using exponential mapping
+// 00 maps to 0.02s, FE maps to 30s
+func AttackToSeconds(hexValue int) float32 {
+	if hexValue < 0 || hexValue > 254 {
+		return 0.02 // Default minimum value
+	}
+	// Exponential mapping: 00 -> 0.02s, FE -> 30s
+	minSeconds := float32(0.02)
+	maxSeconds := float32(30.0)
+	ratio := float32(hexValue) / 254.0
+	return minSeconds * float32(math.Pow(float64(maxSeconds/minSeconds), float64(ratio)))
+}
+
+// DecayToSeconds converts Decay hex value (00-FE) to seconds using linear mapping
+// 00 maps to 0.0s, FE maps to 30.0s
+func DecayToSeconds(hexValue int) float32 {
+	if hexValue < 0 || hexValue > 254 {
+		return 0.0 // Default minimum value
+	}
+	// Linear mapping: 00 -> 0.0s, FE -> 30.0s
+	return (float32(hexValue) / 254.0) * 30.0
+}
+
+// SustainToLevel converts Sustain hex value (00-FE) to level using linear mapping
+// 00 maps to 0.0, FE maps to 1.0
+func SustainToLevel(hexValue int) float32 {
+	if hexValue < 0 || hexValue > 254 {
+		return 0.0 // Default minimum value
+	}
+	// Linear mapping: 00 -> 0.0, FE -> 1.0
+	return float32(hexValue) / 254.0
+}
+
+// ReleaseToSeconds converts Release hex value (00-FE) to seconds using exponential mapping
+// 00 maps to 0.02s, FE maps to 30s (same as Attack)
+func ReleaseToSeconds(hexValue int) float32 {
+	if hexValue < 0 || hexValue > 254 {
+		return 0.02 // Default minimum value
+	}
+	// Exponential mapping: 00 -> 0.02s, FE -> 30s
+	minSeconds := float32(0.02)
+	maxSeconds := float32(30.0)
+	ratio := float32(hexValue) / 254.0
+	return minSeconds * float32(math.Pow(float64(maxSeconds/minSeconds), float64(ratio)))
+}

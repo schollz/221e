@@ -629,7 +629,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 	var content strings.Builder
 
 	// Render header for Instrument view (row, playback, note, and chord columns)
-	columnHeader := "  SL  P  NOT  CAT  AR"
+	columnHeader := "  SL  P  NOT  CAT   A   D   S   R  AR"
 	phraseHeader := fmt.Sprintf("Instrument %02X", m.CurrentPhrase)
 	content.WriteString(RenderHeader(m, columnHeader, phraseHeader))
 
@@ -770,6 +770,86 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 			chordTransCell = normalStyle.Render(fmt.Sprintf("%1s", chordTransText))
 		}
 
+		// Attack (A) - display attack value
+		attackValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColAttack]
+		attackText := "--"
+		if attackValue != -1 {
+			attackText = fmt.Sprintf("%02X", attackValue)
+		}
+
+		var attackCell string
+		if m.CurrentRow == dataIndex && m.CurrentCol == 6 { // Column 6 is the A column
+			attackCell = selectedStyle.Render(fmt.Sprintf("%2s", attackText))
+		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
+			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == 6) {
+				attackCell = copiedStyle.Render(fmt.Sprintf("%2s", attackText))
+			} else {
+				attackCell = normalStyle.Render(fmt.Sprintf("%2s", attackText))
+			}
+		} else {
+			attackCell = normalStyle.Render(fmt.Sprintf("%2s", attackText))
+		}
+
+		// Decay (D) - display decay value
+		decayValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColDecay]
+		decayText := "--"
+		if decayValue != -1 {
+			decayText = fmt.Sprintf("%02X", decayValue)
+		}
+
+		var decayCell string
+		if m.CurrentRow == dataIndex && m.CurrentCol == 7 { // Column 7 is the D column
+			decayCell = selectedStyle.Render(fmt.Sprintf("%2s", decayText))
+		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
+			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == 7) {
+				decayCell = copiedStyle.Render(fmt.Sprintf("%2s", decayText))
+			} else {
+				decayCell = normalStyle.Render(fmt.Sprintf("%2s", decayText))
+			}
+		} else {
+			decayCell = normalStyle.Render(fmt.Sprintf("%2s", decayText))
+		}
+
+		// Sustain (S) - display sustain value
+		sustainValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColSustain]
+		sustainText := "--"
+		if sustainValue != -1 {
+			sustainText = fmt.Sprintf("%02X", sustainValue)
+		}
+
+		var sustainCell string
+		if m.CurrentRow == dataIndex && m.CurrentCol == 8 { // Column 8 is the S column
+			sustainCell = selectedStyle.Render(fmt.Sprintf("%2s", sustainText))
+		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
+			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == 8) {
+				sustainCell = copiedStyle.Render(fmt.Sprintf("%2s", sustainText))
+			} else {
+				sustainCell = normalStyle.Render(fmt.Sprintf("%2s", sustainText))
+			}
+		} else {
+			sustainCell = normalStyle.Render(fmt.Sprintf("%2s", sustainText))
+		}
+
+		// Release (R) - display release value
+		releaseValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColRelease]
+		releaseText := "--"
+		if releaseValue != -1 {
+			releaseText = fmt.Sprintf("%02X", releaseValue)
+		}
+
+		var releaseCell string
+		if m.CurrentRow == dataIndex && m.CurrentCol == 9 { // Column 9 is the R column
+			releaseCell = selectedStyle.Render(fmt.Sprintf("%2s", releaseText))
+		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
+			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == 9) {
+				releaseCell = copiedStyle.Render(fmt.Sprintf("%2s", releaseText))
+			} else {
+				releaseCell = normalStyle.Render(fmt.Sprintf("%2s", releaseText))
+			}
+		} else {
+			releaseCell = normalStyle.Render(fmt.Sprintf("%2s", releaseText))
+		}
+
 		// Arpeggio (AR) - display arpeggio index
 		arpeggioValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColArpeggio]
 		arpeggioText := "--"
@@ -778,10 +858,10 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 		}
 
 		var arpeggioCell string
-		if m.CurrentRow == dataIndex && m.CurrentCol == 6 { // Column 6 is the AR column
+		if m.CurrentRow == dataIndex && m.CurrentCol == 10 { // Column 10 is the AR column (was 6, now 10 due to ADSR)
 			arpeggioCell = selectedStyle.Render(fmt.Sprintf("%2s", arpeggioText))
 		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
-			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == 6) {
+			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == 10) {
 				arpeggioCell = copiedStyle.Render(fmt.Sprintf("%2s", arpeggioText))
 			} else {
 				arpeggioCell = normalStyle.Render(fmt.Sprintf("%2s", arpeggioText))
@@ -790,7 +870,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 			arpeggioCell = normalStyle.Render(fmt.Sprintf("%2s", arpeggioText))
 		}
 
-		row := fmt.Sprintf("%s %-3s  %s  %s  %s%s%s  %s", arrow, sliceCell, playbackCell, noteCell, chordCell, chordAddCell, chordTransCell, arpeggioCell)
+		row := fmt.Sprintf("%s %-3s  %s  %s  %s%s%s  %s  %s  %s  %s  %s", arrow, sliceCell, playbackCell, noteCell, chordCell, chordAddCell, chordTransCell, attackCell, decayCell, sustainCell, releaseCell, arpeggioCell)
 		content.WriteString(row)
 		content.WriteString("\n")
 	}
@@ -1162,6 +1242,42 @@ func GetInstrumentPhraseStatusMessage(m *model.Model) string {
 			statusMsg = "Playback: ON"
 		} else {
 			statusMsg = "Playback: OFF"
+		}
+	} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColAttack) { // A column
+		// Show Attack info
+		attackValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColAttack]
+		if attackValue == -1 {
+			statusMsg = "Attack: -- (sticky)"
+		} else {
+			attackSeconds := types.AttackToSeconds(attackValue)
+			statusMsg = fmt.Sprintf("Attack: %02X (%.3fs, sticky)", attackValue, attackSeconds)
+		}
+	} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColDecay) { // D column
+		// Show Decay info
+		decayValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColDecay]
+		if decayValue == -1 {
+			statusMsg = "Decay: -- (sticky)"
+		} else {
+			decaySeconds := types.DecayToSeconds(decayValue)
+			statusMsg = fmt.Sprintf("Decay: %02X (%.3fs, sticky)", decayValue, decaySeconds)
+		}
+	} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColSustain) { // S column
+		// Show Sustain info
+		sustainValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColSustain]
+		if sustainValue == -1 {
+			statusMsg = "Sustain: -- (sticky)"
+		} else {
+			sustainLevel := types.SustainToLevel(sustainValue)
+			statusMsg = fmt.Sprintf("Sustain: %02X (%.3f, sticky)", sustainValue, sustainLevel)
+		}
+	} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColRelease) { // R column
+		// Show Release info
+		releaseValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColRelease]
+		if releaseValue == -1 {
+			statusMsg = "Release: -- (sticky)"
+		} else {
+			releaseSeconds := types.ReleaseToSeconds(releaseValue)
+			statusMsg = fmt.Sprintf("Release: %02X (%.3fs, sticky)", releaseValue, releaseSeconds)
 		}
 	} else {
 		// On other columns - show basic info

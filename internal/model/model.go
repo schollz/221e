@@ -244,7 +244,43 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "T",
 			}
-		case 6: // AR - arpeggio column
+		case 6: // A - attack column
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColAttack),
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "A",
+			}
+		case 7: // D - decay column
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColDecay),
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "D",
+			}
+		case 8: // S - sustain column
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColSustain),
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "S",
+			}
+		case 9: // R - release column
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColRelease),
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "R",
+			}
+		case 10: // AR - arpeggio column
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColArpeggio),
 				IsEditable:      true,
@@ -402,6 +438,11 @@ func (m *Model) initializeDefaultData() {
 			m.InstrumentPhrasesData[p][i][types.ColChordAddition] = int(types.ChordAddNone)        // Default: "-"
 			m.InstrumentPhrasesData[p][i][types.ColChordTransposition] = int(types.ChordTransNone) // Default: "-"
 			m.InstrumentPhrasesData[p][i][types.ColArpeggio] = -1                                  // Default: "--" (no arpeggio)
+			// Initialize ADSR columns (all sticky, default to undefined)
+			m.InstrumentPhrasesData[p][i][types.ColAttack] = -1                                    // Default: "--" (sticky)
+			m.InstrumentPhrasesData[p][i][types.ColDecay] = -1                                     // Default: "--" (sticky)
+			m.InstrumentPhrasesData[p][i][types.ColSustain] = -1                                   // Default: "--" (sticky)
+			m.InstrumentPhrasesData[p][i][types.ColRelease] = -1                                   // Default: "--" (sticky)
 			// Other columns can stay -1 (unused for instruments)
 		}
 	}
