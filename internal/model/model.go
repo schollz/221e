@@ -81,6 +81,9 @@ type Model struct {
 	// Timestretch settings management
 	TimestrechSettings     [255]types.TimestrechSettings // Array of timestretch settings (00-FE)
 	TimestrechEditingIndex int                           // Currently editing timestretch index
+	// Arpeggio settings management
+	ArpeggioSettings     [255]types.ArpeggioSettings // Array of arpeggio settings (00-FE)
+	ArpeggioEditingIndex int                         // Currently editing arpeggio index
 	// View navigation state
 	LastChainRow  int // Last selected row in chain view
 	LastPhraseRow int // Last selected row in phrase view
@@ -154,12 +157,14 @@ func (m *Model) GetCurrentPhrasesFiles() *[]string {
 	return &m.SamplerPhrasesFiles
 }
 
-// GetChainsDataForTrack returns the appropriate chains data based on track number
+// GetChainsDataForTrack returns the appropriate chains data based on track type
 // Used by Song view to check chain contents across different tracks
 func (m *Model) GetChainsDataForTrack(track int) *[][]int {
-	if track >= 0 && track <= 3 {
+	if track >= 0 && track < 8 && !m.TrackTypes[track] {
+		// TrackTypes[track] = false means Instrument
 		return &m.InstrumentChainsData
 	}
+	// TrackTypes[track] = true means Sampler (or invalid track defaults to Sampler)
 	return &m.SamplerChainsData
 }
 
@@ -235,6 +240,15 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "T",
 			}
+		case 6: // AR - arpeggio column
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColArpeggio),
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "AR",
+			}
 		default:
 			return nil // Invalid column
 		}
@@ -298,6 +312,8 @@ func NewModel(oscPort int, saveFile string) *Model {
 		RetriggerEditingIndex: 0,
 		// Initialize timestretch settings
 		TimestrechEditingIndex: 0,
+		// Initialize arpeggio settings
+		ArpeggioEditingIndex: 0,
 		// Initialize view navigation state
 		CurrentChain:  0,
 		CurrentTrack:  0,
@@ -381,6 +397,7 @@ func (m *Model) initializeDefaultData() {
 			m.InstrumentPhrasesData[p][i][types.ColChord] = int(types.ChordNone)                // Default: "-"
 			m.InstrumentPhrasesData[p][i][types.ColChordAddition] = int(types.ChordAddNone)     // Default: "-"
 			m.InstrumentPhrasesData[p][i][types.ColChordTransposition] = int(types.ChordTransNone) // Default: "-"
+			m.InstrumentPhrasesData[p][i][types.ColArpeggio] = -1                               // Default: "--" (no arpeggio)
 			// Other columns can stay -1 (unused for instruments)
 		}
 	}
@@ -446,6 +463,18 @@ func (m *Model) initializeDefaultData() {
 			End:   0.0, // Default end
 			Beats: 0,   // Default beats
 		}
+	}
+
+	// Initialize arpeggio settings with defaults
+	for i := 0; i < 255; i++ {
+		var arpeggioSettings types.ArpeggioSettings
+		for row := 0; row < 16; row++ {
+			arpeggioSettings.Rows[row] = types.ArpeggioRow{
+				Direction: 0,  // Default direction (0 = "--")
+				Count:     -1, // Default count (-1 = "--")
+			}
+		}
+		m.ArpeggioSettings[i] = arpeggioSettings
 	}
 
 	// Initialize song data (8 tracks × 16 rows, all empty initially)

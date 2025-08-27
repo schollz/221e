@@ -309,6 +309,8 @@ func (tm TrackerModel) View() string {
 		return views.RenderRetriggerView(tm.model)
 	case types.TimestrechView:
 		return views.RenderTimestrechView(tm.model)
+	case types.ArpeggioView:
+		return views.RenderArpeggioView(tm.model)
 	case types.MixerView:
 		return views.RenderMixerView(tm.model)
 	default: // FileView

@@ -13,12 +13,24 @@ import (
 	"github.com/schollz/2n/internal/types"
 )
 
-// GetPhrasesDataForTrack returns the appropriate phrases data based on track number
+// GetPhrasesDataForTrack returns the appropriate phrases data based on track type
 func GetPhrasesDataForTrack(m *model.Model, track int) *[255][][]int {
-	if track >= 0 && track <= 3 {
+	if track >= 0 && track < 8 && !m.TrackTypes[track] {
+		// TrackTypes[track] = false means Instrument
 		return &m.InstrumentPhrasesData
 	}
+	// TrackTypes[track] = true means Sampler (or invalid track defaults to Sampler)
 	return &m.SamplerPhrasesData
+}
+
+// GetChainsDataForTrack returns the appropriate chains data based on track type
+func GetChainsDataForTrack(m *model.Model, track int) *[][]int {
+	if track >= 0 && track < 8 && !m.TrackTypes[track] {
+		// TrackTypes[track] = false means Instrument
+		return &m.InstrumentChainsData
+	}
+	// TrackTypes[track] = true means Sampler (or invalid track defaults to Sampler)
+	return &m.SamplerChainsData
 }
 
 // ValueModifier represents a function that modifies a value with bounds checking
@@ -433,6 +445,61 @@ func ModifyTimestrechValue(m *model.Model, baseDelta float32) {
 
 	// Store back the modified settings
 	m.TimestrechSettings[m.TimestrechEditingIndex] = settings
+	storage.AutoSave(m)
+}
+
+func ModifyArpeggioValue(m *model.Model, baseDelta float32) {
+	if m.ArpeggioEditingIndex < 0 || m.ArpeggioEditingIndex >= 255 {
+		return
+	}
+	if m.CurrentRow < 0 || m.CurrentRow >= 16 {
+		return
+	}
+
+	// Get current settings
+	settings := m.ArpeggioSettings[m.ArpeggioEditingIndex]
+	currentRow := &settings.Rows[m.CurrentRow] // Get reference to specific row
+
+	if m.CurrentCol == 0 { // DI (Direction) column
+		// Direction cycles through: 0="--", 1="u-", 2="d-"
+		var delta int
+		if baseDelta > 0 {
+			delta = 1
+		} else {
+			delta = -1
+		}
+		
+		newDirection := currentRow.Direction + delta
+		if newDirection < 0 {
+			newDirection = 2 // Wrap to "d-"
+		} else if newDirection > 2 {
+			newDirection = 0 // Wrap to "--"
+		}
+		currentRow.Direction = newDirection
+		log.Printf("Modified arpeggio %02X row %02X Direction: %d -> %d", m.ArpeggioEditingIndex, m.CurrentRow, currentRow.Direction-delta, currentRow.Direction)
+	} else if m.CurrentCol == 1 { // CO (Count) column
+		// Count: -1="--", 0-254 for hex values 00-FE
+		var delta int
+		if baseDelta == 1.0 || baseDelta == -1.0 {
+			delta = int(baseDelta) * 16 // Coarse control (Ctrl+Up/Down): +/-16
+		} else if baseDelta == 0.05 || baseDelta == -0.05 {
+			delta = int(baseDelta / 0.05) // Fine control (Ctrl+Left/Right): +/-1
+		} else {
+			delta = int(baseDelta) // Fallback
+		}
+
+		newCount := currentRow.Count + delta
+		if newCount < -1 {
+			newCount = -1 // Can't go below "--"
+		} else if newCount > 254 {
+			newCount = 254 // Cap at FE
+		}
+		currentRow.Count = newCount
+		log.Printf("Modified arpeggio %02X row %02X Count: %d -> %d (delta: %d)", m.ArpeggioEditingIndex, m.CurrentRow, currentRow.Count-delta, currentRow.Count, delta)
+	}
+
+	// Store back the modified settings
+	m.ArpeggioSettings[m.ArpeggioEditingIndex] = settings
 	storage.AutoSave(m)
 }
 
@@ -894,8 +961,9 @@ func AdvancePlayback(m *model.Model) {
 		}
 
 		// End of phrase reached, move to next phrase slot in the same chain
+		chainsData := GetChainsDataForTrack(m, m.CurrentTrack)
 		for i := m.PlaybackChainRow + 1; i < 16; i++ {
-			phraseID := m.ChainsData[m.PlaybackChain][i]
+			phraseID := (*chainsData)[m.PlaybackChain][i]
 			if phraseID != -1 && phraseID >= 0 && phraseID < 255 {
 				m.PlaybackChainRow = i
 				m.PlaybackPhrase = phraseID
@@ -911,7 +979,7 @@ func AdvancePlayback(m *model.Model) {
 
 		// End of chain reached, loop back to first phrase slot in the same chain
 		for i := 0; i < 16; i++ {
-			phraseID := m.ChainsData[m.PlaybackChain][i]
+			phraseID := (*chainsData)[m.PlaybackChain][i]
 			if phraseID != -1 && phraseID >= 0 && phraseID < 255 {
 				m.PlaybackChainRow = i
 				m.PlaybackPhrase = phraseID
@@ -966,20 +1034,25 @@ func FindFirstNonEmptyRowInPhrase(m *model.Model, phraseNum int) int {
 func FindFirstNonEmptyRowInPhraseForTrack(m *model.Model, phraseNum int, track int) int {
 	if phraseNum >= 0 && phraseNum < 255 {
 		phrasesData := GetPhrasesDataForTrack(m, track)
+		log.Printf("DEBUG: FindFirstNonEmptyRowInPhraseForTrack - phrase=%d, track=%d", phraseNum, track)
 		for i := 0; i < 255; i++ {
-			if (*phrasesData)[phraseNum][i][types.ColPlayback] == 1 {
+			playbackValue := (*phrasesData)[phraseNum][i][types.ColPlayback]
+			if playbackValue == 1 {
+				log.Printf("DEBUG: Found playback row %d with P=%d", i, playbackValue)
 				return i
 			}
 		}
+		log.Printf("DEBUG: No playback rows found in phrase %d track %d", phraseNum, track)
 	}
 	return 0 // Fallback to row 0 if no playback rows found
 }
 
 func FindFirstNonEmptyChain(m *model.Model) int {
+	chainsData := GetChainsDataForTrack(m, m.CurrentTrack)
 	for i := 0; i < 255; i++ {
 		// Check if any phrase is assigned in this chain
 		for row := 0; row < 16; row++ {
-			if m.ChainsData[i][row] != -1 {
+			if (*chainsData)[i][row] != -1 {
 				return i
 			}
 		}
@@ -1327,9 +1400,16 @@ func IsRowEmpty(m *model.Model) bool {
 
 // GetEffectiveValue searches backwards from the current row to find the first non-null value for a given column
 func GetEffectiveValue(m *model.Model, phrase, row, colIndex int) int {
+	return GetEffectiveValueForTrack(m, phrase, row, colIndex, m.CurrentTrack)
+}
+
+// GetEffectiveValueForTrack searches backwards from the current row to find the first non-null value for a given column
+func GetEffectiveValueForTrack(m *model.Model, phrase, row, colIndex, trackId int) int {
+	// Use track-specific data pool
+	phrasesData := GetPhrasesDataForTrack(m, trackId)
 	// Search backwards from the given row to find first non-null value
 	for r := row; r >= 0; r-- {
-		value := m.PhrasesData[phrase][r][colIndex]
+		value := (*phrasesData)[phrase][r][colIndex]
 		if value != -1 {
 			return value
 		}
@@ -1339,9 +1419,25 @@ func GetEffectiveValue(m *model.Model, phrase, row, colIndex int) int {
 
 // GetEffectiveFilename gets the effective filename for a row
 func GetEffectiveFilename(m *model.Model, phrase, row int) string {
-	effectiveFileIndex := GetEffectiveValue(m, phrase, row, int(types.ColFilename))
-	if effectiveFileIndex >= 0 && effectiveFileIndex < len(m.PhrasesFiles) && m.PhrasesFiles[effectiveFileIndex] != "" {
-		return m.PhrasesFiles[effectiveFileIndex]
+	return GetEffectiveFilenameForTrack(m, phrase, row, m.CurrentTrack)
+}
+
+// GetEffectiveFilenameForTrack gets the effective filename for a row for a specific track
+func GetEffectiveFilenameForTrack(m *model.Model, phrase, row, trackId int) string {
+	effectiveFileIndex := GetEffectiveValueForTrack(m, phrase, row, int(types.ColFilename), trackId)
+	
+	// Use track-specific files array based on track type
+	var phrasesFiles *[]string
+	if trackId >= 0 && trackId < 8 && !m.TrackTypes[trackId] {
+		// TrackTypes[trackId] = false means Instrument - don't use files
+		return "none"
+	} else {
+		// TrackTypes[trackId] = true means Sampler - use SamplerPhrasesFiles
+		phrasesFiles = &m.SamplerPhrasesFiles
+	}
+	
+	if effectiveFileIndex >= 0 && effectiveFileIndex < len(*phrasesFiles) && (*phrasesFiles)[effectiveFileIndex] != "" {
+		return (*phrasesFiles)[effectiveFileIndex]
 	}
 	return "none"
 }
@@ -1391,17 +1487,17 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 	}
 
 	// Get effective values for sticky columns (PA, LP, HP, CO, VE)
-	effectivePan := GetEffectiveValue(m, phrase, row, int(types.ColPan))
-	effectiveLowPassFilter := GetEffectiveValue(m, phrase, row, int(types.ColLowPassFilter))
-	effectiveHighPassFilter := GetEffectiveValue(m, phrase, row, int(types.ColHighPassFilter))
-	effectiveComb := GetEffectiveValue(m, phrase, row, int(types.ColEffectComb))
-	effectiveReverb := GetEffectiveValue(m, phrase, row, int(types.ColEffectReverb))
+	effectivePan := GetEffectiveValueForTrack(m, phrase, row, int(types.ColPan), trackId)
+	effectiveLowPassFilter := GetEffectiveValueForTrack(m, phrase, row, int(types.ColLowPassFilter), trackId)
+	effectiveHighPassFilter := GetEffectiveValueForTrack(m, phrase, row, int(types.ColHighPassFilter), trackId)
+	effectiveComb := GetEffectiveValueForTrack(m, phrase, row, int(types.ColEffectComb), trackId)
+	effectiveReverb := GetEffectiveValueForTrack(m, phrase, row, int(types.ColEffectReverb), trackId)
 
 	// Effective/inherited values
-	effectiveNote := GetEffectiveValue(m, phrase, row, int(types.ColNote))
-	effectiveDeltaTime := GetEffectiveValue(m, phrase, row, int(types.ColDeltaTime))
-	effectiveFilenameIndex := GetEffectiveValue(m, phrase, row, int(types.ColFilename))
-	effectiveFilename := GetEffectiveFilename(m, phrase, row)
+	effectiveNote := GetEffectiveValueForTrack(m, phrase, row, int(types.ColNote), trackId)
+	effectiveDeltaTime := GetEffectiveValueForTrack(m, phrase, row, int(types.ColDeltaTime), trackId)
+	effectiveFilenameIndex := GetEffectiveValueForTrack(m, phrase, row, int(types.ColFilename), trackId)
+	effectiveFilename := GetEffectiveFilenameForTrack(m, phrase, row, trackId)
 
 	// Helper to format hex-ish cells
 	formatHex := func(value int) string {
@@ -1454,9 +1550,17 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 		formatHex(effectiveReverb),
 	)
 
-	// Only emit if we have playback enabled, a concrete note, and a file
-	if rawPlayback != 1 || rawNote == -1 || effectiveFilename == "none" {
-		log.Printf("ROW_EMIT: skipped (P!=1 or NN==null or FN==none)")
+	// Only emit if we have playback enabled and a concrete note
+	// For samplers, also check that we have a filename
+	needsFile := trackId >= 0 && trackId < 8 && m.TrackTypes[trackId] // Sampler tracks need files
+	if rawPlayback != 1 || rawNote == -1 || (needsFile && effectiveFilename == "none") {
+		if rawPlayback != 1 {
+			log.Printf("ROW_EMIT: skipped (P!=1)")
+		} else if rawNote == -1 {
+			log.Printf("ROW_EMIT: skipped (NN==null)")
+		} else if needsFile && effectiveFilename == "none" {
+			log.Printf("ROW_EMIT: skipped (sampler track needs filename)")
+		}
 		return
 	}
 
@@ -1567,7 +1671,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 	log.Printf("[EmitRowDataFor] oscParams: %+v", oscParams)
 
 	// Determine track type and emit appropriate message
-	if isInstrumentTrack(trackId) {
+	if isInstrumentTrack(m, trackId) {
 		// For instrument tracks, emit simplified instrument message
 		velocity := float32(1.0) // Default velocity - could be derived from Gate in future
 		instrumentParams := model.NewInstrumentOSCParams(trackId, effectiveNote, velocity)
@@ -1579,9 +1683,12 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 }
 
 // isInstrumentTrack determines if the given track should use instrument OSC messages
-// Tracks 0-3 (displayed as 1-4) are Instrument tracks, tracks 4-7 (displayed as 5-8) are Sampler tracks
-func isInstrumentTrack(trackId int) bool {
-	return trackId >= 0 && trackId <= 3
+// Uses the track type from mixer settings (false = Instrument, true = Sampler)
+func isInstrumentTrack(m *model.Model, trackId int) bool {
+	if trackId >= 0 && trackId < 8 {
+		return !m.TrackTypes[trackId] // false = Instrument, true = Sampler
+	}
+	return false // Invalid track defaults to Sampler
 }
 
 // rowDurationMS returns the per-row duration in milliseconds.
@@ -1811,19 +1918,20 @@ func startPlaybackWithConfig(m *model.Model, config PlaybackConfig) tea.Cmd {
 		m.PlaybackChain = config.Chain
 		m.PlaybackPhrase = -1
 
+		chainsData := GetChainsDataForTrack(m, m.CurrentTrack)
 		if config.UseCurrentRow && config.Row >= 0 && config.Row < 16 {
 			// Start from specified chain row
-			if m.ChainsData[config.Chain][config.Row] != -1 {
+			if (*chainsData)[config.Chain][config.Row] != -1 {
 				m.PlaybackChainRow = config.Row
-				m.PlaybackPhrase = m.ChainsData[config.Chain][config.Row]
+				m.PlaybackPhrase = (*chainsData)[config.Chain][config.Row]
 			}
 		}
 
 		// If no phrase found yet, find first non-empty phrase slot in this chain
 		if m.PlaybackPhrase == -1 {
 			for row := 0; row < 16; row++ {
-				if m.ChainsData[config.Chain][row] != -1 {
-					m.PlaybackPhrase = m.ChainsData[config.Chain][row]
+				if (*chainsData)[config.Chain][row] != -1 {
+					m.PlaybackPhrase = (*chainsData)[config.Chain][row]
 					m.PlaybackChainRow = row
 					break
 				}
@@ -1836,8 +1944,8 @@ func startPlaybackWithConfig(m *model.Model, config PlaybackConfig) tea.Cmd {
 			log.Printf("Chain playback fallback: switching to chain %d", m.PlaybackChain)
 			m.PlaybackChainRow = 0
 			for row := 0; row < 16; row++ {
-				if m.ChainsData[m.PlaybackChain][row] != -1 {
-					m.PlaybackPhrase = m.ChainsData[m.PlaybackChain][row]
+				if (*chainsData)[m.PlaybackChain][row] != -1 {
+					m.PlaybackPhrase = (*chainsData)[m.PlaybackChain][row]
 					m.PlaybackChainRow = row
 					log.Printf("Chain playback fallback: found phrase %d at chain row %d", m.PlaybackPhrase, row)
 					break
@@ -1849,7 +1957,7 @@ func startPlaybackWithConfig(m *model.Model, config PlaybackConfig) tea.Cmd {
 		if m.PlaybackPhrase == -1 {
 			log.Printf("Chain playback warning - no valid phrases found, using phrase 0 as fallback (Chain: %d, ChainRow: %d)", m.PlaybackChain, m.PlaybackChainRow)
 			// Let's log the chain data for debugging
-			log.Printf("Chain %d contents: %v", m.PlaybackChain, m.ChainsData[m.PlaybackChain])
+			log.Printf("Chain %d contents: %v", m.PlaybackChain, (*chainsData)[m.PlaybackChain])
 			m.PlaybackPhrase = 0
 			m.PlaybackChainRow = 0
 		}
@@ -1867,10 +1975,17 @@ func startPlaybackWithConfig(m *model.Model, config PlaybackConfig) tea.Cmd {
 		m.PlaybackPhrase = config.Phrase
 		m.PlaybackChain = -1
 
+		trackType := "Sampler"
+		if m.CurrentTrack >= 0 && m.CurrentTrack < 8 && !m.TrackTypes[m.CurrentTrack] {
+			trackType = "Instrument"
+		}
+		log.Printf("DEBUG: Phrase playback starting - CurrentTrack=%d (%s), Phrase=%d", m.CurrentTrack, trackType, m.PlaybackPhrase)
+		
 		if config.UseCurrentRow && config.Row >= 0 {
 			m.PlaybackRow = config.Row
 		} else {
 			m.PlaybackRow = FindFirstNonEmptyRowInPhrase(m, m.PlaybackPhrase)
+			log.Printf("DEBUG: FindFirstNonEmptyRowInPhrase returned row %d for track %d", m.PlaybackRow, m.CurrentTrack)
 		}
 
 		DebugLogRowEmission(m)

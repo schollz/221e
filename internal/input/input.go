@@ -117,6 +117,15 @@ func timestrechViewConfig() ViewSwitchConfig {
 	}
 }
 
+func arpeggioViewConfig() ViewSwitchConfig {
+	return ViewSwitchConfig{
+		ViewMode:     types.ArpeggioView,
+		Row:          0,
+		Col:          0,
+		ScrollOffset: 0,
+	}
+}
+
 func mixerViewConfig() ViewSwitchConfig {
 	return ViewSwitchConfig{
 		ViewMode:     types.MixerView,
@@ -308,6 +317,22 @@ func handleShiftRight(m *model.Model) tea.Cmd {
 			m.ViewMode = types.TimestrechView
 			m.CurrentRow = 0 // Start at first setting
 			m.CurrentCol = 0
+			m.ScrollOffset = 0
+			storage.AutoSave(m)
+			return nil
+		} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColArpeggio) {
+			// Navigate to arpeggio view only if an arpeggio is selected (not -1)
+			phrasesData := m.GetCurrentPhrasesData()
+			arpeggioIndex := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColArpeggio]
+			if arpeggioIndex == -1 {
+				return nil // Don't navigate if no arpeggio is selected
+			}
+			// Save current phrase view position
+			m.LastPhraseRow = m.CurrentRow
+			m.ArpeggioEditingIndex = arpeggioIndex
+			m.ViewMode = types.ArpeggioView
+			m.CurrentRow = 0 // Start at first row
+			m.CurrentCol = 0 // Start at DI column
 			m.ScrollOffset = 0
 			storage.AutoSave(m)
 			return nil
@@ -524,6 +549,16 @@ func handleShiftLeft(m *model.Model) tea.Cmd {
 			tsColumn = int(types.ColTimestretch) + 1 // Sampler: data column + 1
 		}
 		switchToViewWithVisibilityCheck(m, phraseViewConfig(m.LastPhraseRow, tsColumn))
+	} else if m.ViewMode == types.ArpeggioView {
+		// Navigate back to phrase view - find the UI column for AR
+		var arColumn int
+		phraseViewType := m.GetPhraseViewType()
+		if phraseViewType == types.InstrumentPhraseView {
+			arColumn = 6 // AR column is column 6 in instrument view
+		} else {
+			arColumn = 1 // AR is not accessible in sampler view, default to P column
+		}
+		switchToViewWithVisibilityCheck(m, phraseViewConfig(m.LastPhraseRow, arColumn))
 	}
 	return nil
 }
@@ -551,6 +586,10 @@ func handleUp(m *model.Model) tea.Cmd {
 			m.CurrentRow = m.CurrentRow - 1
 		}
 	} else if m.ViewMode == types.TimestrechView {
+		if m.CurrentRow > 0 {
+			m.CurrentRow = m.CurrentRow - 1
+		}
+	} else if m.ViewMode == types.ArpeggioView {
 		if m.CurrentRow > 0 {
 			m.CurrentRow = m.CurrentRow - 1
 		}
@@ -600,6 +639,10 @@ func handleDown(m *model.Model) tea.Cmd {
 		if m.CurrentRow < 2 { // 0=Start, 1=End, 2=Beats
 			m.CurrentRow = m.CurrentRow + 1
 		}
+	} else if m.ViewMode == types.ArpeggioView {
+		if m.CurrentRow < 15 { // 0-15 (16 rows total)
+			m.CurrentRow = m.CurrentRow + 1
+		}
 	} else if m.ViewMode == types.MixerView {
 		if m.CurrentMixerRow < 1 { // 0=level, 1=IN/SA
 			m.CurrentMixerRow = m.CurrentMixerRow + 1
@@ -647,6 +690,11 @@ func handleLeft(m *model.Model) tea.Cmd {
 			m.CurrentCol = m.CurrentCol - 1
 			storage.AutoSave(m)
 		}
+	} else if m.ViewMode == types.ArpeggioView {
+		if m.CurrentCol > 0 { // 2 columns: 0=DI, 1=CO
+			m.CurrentCol = m.CurrentCol - 1
+			storage.AutoSave(m)
+		}
 	} else if m.ViewMode == types.MixerView {
 		if m.CurrentMixerTrack > 0 { // Select previous track (0-7)
 			m.CurrentMixerTrack = m.CurrentMixerTrack - 1
@@ -675,12 +723,17 @@ func handleRight(m *model.Model) tea.Cmd {
 		phraseViewType := m.GetPhraseViewType()
 		var maxValidCol int
 		if phraseViewType == types.InstrumentPhraseView {
-			maxValidCol = 5 // Instrument: last valid column is 5 (T - Chord Transposition)
+			maxValidCol = 6 // Instrument: last valid column is 6 (AR - Arpeggio)
 		} else {
 			maxValidCol = 14 // Sampler: last valid column is 14 (FI)  
 		}
 		
 		if m.CurrentCol < maxValidCol {
+			m.CurrentCol = m.CurrentCol + 1
+			storage.AutoSave(m)
+		}
+	} else if m.ViewMode == types.ArpeggioView {
+		if m.CurrentCol < 1 { // 2 columns: 0=DI, 1=CO
 			m.CurrentCol = m.CurrentCol + 1
 			storage.AutoSave(m)
 		}
@@ -706,6 +759,8 @@ func handleCtrlUp(m *model.Model) tea.Cmd {
 		ModifyRetriggerValue(m, 1.0)
 	} else if m.ViewMode == types.TimestrechView {
 		ModifyTimestrechValue(m, 1.0)
+	} else if m.ViewMode == types.ArpeggioView {
+		ModifyArpeggioValue(m, 1.0)
 	} else if m.ViewMode == types.MixerView {
 		if m.CurrentMixerRow == 0 {
 			ModifyMixerSetLevel(m, 1.0) // Coarse increment for set level
@@ -729,6 +784,8 @@ func handleCtrlDown(m *model.Model) tea.Cmd {
 		ModifyRetriggerValue(m, -1.0)
 	} else if m.ViewMode == types.TimestrechView {
 		ModifyTimestrechValue(m, -1.0)
+	} else if m.ViewMode == types.ArpeggioView {
+		ModifyArpeggioValue(m, -1.0)
 	} else if m.ViewMode == types.MixerView {
 		if m.CurrentMixerRow == 0 {
 			ModifyMixerSetLevel(m, -1.0) // Coarse decrement for set level
@@ -752,6 +809,8 @@ func handleCtrlLeft(m *model.Model) tea.Cmd {
 		ModifyRetriggerValue(m, -0.05)
 	} else if m.ViewMode == types.TimestrechView {
 		ModifyTimestrechValue(m, -0.05)
+	} else if m.ViewMode == types.ArpeggioView {
+		ModifyArpeggioValue(m, -0.05)
 	} else if m.ViewMode == types.MixerView {
 		if m.CurrentMixerRow == 0 {
 			ModifyMixerSetLevel(m, -0.05) // Fine decrement for set level
@@ -777,6 +836,8 @@ func handleCtrlRight(m *model.Model) tea.Cmd {
 		ModifyRetriggerValue(m, 0.05)
 	} else if m.ViewMode == types.TimestrechView {
 		ModifyTimestrechValue(m, 0.05)
+	} else if m.ViewMode == types.ArpeggioView {
+		ModifyArpeggioValue(m, 0.05)
 	} else if m.ViewMode == types.MixerView {
 		if m.CurrentMixerRow == 0 {
 			ModifyMixerSetLevel(m, 0.05) // Fine increment for set level
