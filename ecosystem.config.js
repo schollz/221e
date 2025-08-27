@@ -4,8 +4,8 @@ module.exports = {
       name: "jackd",
       script: "jackd",
       //args: "-d alsa -P hw:0",
-      args: "-d dummy",
-      //args: "-d alsa -C hw:5 -P hw:5",
+      //args: "-d dummy",
+      args: "-d alsa -C hw:6 -P hw:6",
       autorestart: true,
       watch: false
     },
