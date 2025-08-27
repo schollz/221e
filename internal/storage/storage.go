@@ -2,19 +2,41 @@ package storage
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/schollz/2n/internal/model"
 	"github.com/schollz/2n/internal/types"
 )
 
+var (
+	mu         sync.Mutex
+	timer      *time.Timer
+	debounceMs = 5 * time.Second
+)
+
 func AutoSave(m *model.Model) {
-	return
+	mu.Lock()
+	defer mu.Unlock()
+
+	if timer != nil {
+		// Stop the previous timer if still running
+		timer.Stop()
+	}
+
+	// Start a new timer
+	timer = time.AfterFunc(debounceMs, func() {
+		// Place your actual save logic here
+		fmt.Println("AutoSave executed at", time.Now())
+	})
 }
+
 func DoSave(m *model.Model) {
 	log.Printf("doing save")
 	saveData := types.SaveData{
