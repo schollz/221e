@@ -629,7 +629,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 	var content strings.Builder
 
 	// Render header for Instrument view (row, playback, note, and chord columns)
-	columnHeader := "  SL  P  NOT  C  A  T  AR"
+	columnHeader := "  SL  P  NOT  CAT  AR"
 	phraseHeader := fmt.Sprintf("Instrument %02X", m.CurrentPhrase)
 	content.WriteString(RenderHeader(m, columnHeader, phraseHeader))
 
@@ -790,7 +790,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 			arpeggioCell = normalStyle.Render(fmt.Sprintf("%2s", arpeggioText))
 		}
 
-		row := fmt.Sprintf("%s %-3s  %s  %s  %s  %s  %s  %s", arrow, sliceCell, playbackCell, noteCell, chordCell, chordAddCell, chordTransCell, arpeggioCell)
+		row := fmt.Sprintf("%s %-3s  %s  %s  %s%s%s  %s", arrow, sliceCell, playbackCell, noteCell, chordCell, chordAddCell, chordTransCell, arpeggioCell)
 		content.WriteString(row)
 		content.WriteString("\n")
 	}
