@@ -36,9 +36,9 @@ func RenderSongView(m *model.Model) string {
 			// We'll use row -1 to represent the type row
 			var typeCell string
 			if m.CurrentRow == -1 && m.CurrentCol == track {
-				typeCell = styles.Selected.Render(" " + trackTypeText)
+				typeCell = " " + styles.Selected.Render(trackTypeText)
 			} else {
-				typeCell = styles.Label.Render(" " + trackTypeText)
+				typeCell = " " + styles.Label.Render(trackTypeText)
 			}
 			content.WriteString(typeCell)
 		}
@@ -82,14 +82,14 @@ func RenderSongView(m *model.Model) string {
 
 				if isSelected {
 					// Selected cell
-					chainCell = styles.Selected.Render(chainCell)
+					content.WriteString(" " + styles.Selected.Render(chainCell))
 				} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.SongView &&
 					m.Clipboard.HighlightRow == row && m.Clipboard.HighlightCol == track {
 					// Copied cell
-					chainCell = styles.Copied.Render(chainCell)
+					content.WriteString(" " + styles.Copied.Render(chainCell))
 				} else if chainID == -1 {
 					// Empty chain - dimmed
-					chainCell = styles.Label.Render(chainCell)
+					content.WriteString(" " + styles.Label.Render(chainCell))
 				} else {
 					// Check if this chain has actual data (any phrase assigned)
 					hasChainData := false
@@ -105,14 +105,12 @@ func RenderSongView(m *model.Model) string {
 
 					if hasChainData {
 						// Chain has data - normal style
-						chainCell = styles.Normal.Render(chainCell)
+						content.WriteString(" " + styles.Normal.Render(chainCell))
 					} else {
 						// Chain exists but is empty - dimmed
-						chainCell = styles.Label.Render(chainCell)
+						content.WriteString(" " + styles.Label.Render(chainCell))
 					}
 				}
-
-				content.WriteString(" " + chainCell)
 			}
 
 			content.WriteString("\n")
