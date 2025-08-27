@@ -6,6 +6,30 @@ s.waitForBoot({
 		~synthRecord = Dictionary.new();
 		~synthsPlaying = Dictionary.new();
 
+
+		SynthDef("synthPad", {
+			arg trackId,
+			trackVolume = 0,
+			pan=0,
+			note=0,
+			attack=1.0,
+			effectDryOut,
+			effectReverb = 0.0, effectReverbOut,
+			effectComb = 0.0, effectCombOut
+			;
+			var snd;
+			var freq = note.midicps;
+			snd = SawDPW.ar(freq * ((-3..2) * 0.05).midiratio * [1, 2, 1, 4, 1, 2]);
+			snd = Splay.ar(snd);
+			snd = MoogFF.ar(snd, XLine.kr(100,rrand(6000,\lpf.kr(18000)),attack*(1/\swell.kr(1))), 0);
+			snd = snd * EnvGen.ar(Env.asr(attack, 1.0, \release.kr(0.5)),\gate.kr(1) * ToggleFF.kr(1-TDelay.kr(DC.kr(1),\duration.kr(1))),doneAction:2);
+			snd = Balance2.ar(snd[0], snd[1], pan);
+			snd = snd * -10.dbamp * trackVolume.dbamp;
+			Out.ar(effectDryOut, snd);
+			Out.ar(effectCombOut, snd*effectComb);
+			Out.ar(effectReverbOut, snd*effectReverb);
+		}).add;
+
 		SynthDef("diskout", { arg bufnum=0, inbus=0, gate=1;
 			var snd = In.ar(inbus,2);
 			snd = snd * EnvGen.ar(Env.adsr(0.001,0.0,1.0,1.0),gate,doneAction:2);
@@ -205,14 +229,15 @@ s.waitForBoot({
 		});
 
 		SynthDef("out",{
-			arg busReverb, busDry, busComb, busDisk, 
-			volumeDB=0.0, 
-			reverbAmt=0.1, 
+			arg busReverb, busDry, busComb, busDisk,
+			volumeDB=0.0,
+			reverbAmt=0.1,
 			pregain=0.0,
 			postgain=0.0,
 			bias=6.0.neg,
 			saturation=6.0.neg,
 			drive=6.0.neg,
+			shimmer=1.0,
 			combAmt=0.0;
 			var sndWet = In.ar(busReverb,2);
 			var sndDry = In.ar(busDry,2);
@@ -226,11 +251,13 @@ s.waitForBoot({
 				Pan2.ar(CombN.ar(sndComb[1], 0.02, Rand(0.01,0.06), Rand(1,2)),1,0.9));
 
 			// add in reverb
-			snd = SelectX.ar(
-				reverbAmt,[
-					snd,
-					snd + Fverb.ar(sndWet[0],sndWet[1],200,tail_density: LFNoise2.ar(1/3).range(50,90),decay: LFNoise2.ar(1/3).range(50,70))
-				]
+			sndWet = DelayN.ar(sndWet, 0.03, 0.03);
+			sndWet = sndWet + PitchShift.ar(sndWet, 0.13, 2,0,1,1*shimmer/2);
+			sndWet = sndWet + PitchShift.ar(sndWet, 0.1, 4,0,1,0.5*shimmer/2);
+			sndWet = sndWet + PitchShift.ar(sndWet, 0.1, 8,0,1,0.125*shimmer/2);
+			snd = snd + Fverb.ar(sndWet[0],sndWet[1],200,
+				tail_density: LFNoise2.ar(1/3).range(50,90),
+				decay: LFNoise2.ar(1/3).range(50,70)
 			);
 
 			snd = RHPF.ar(snd,60,0.303);
@@ -301,7 +328,7 @@ s.waitForBoot({
 					argLast = v;
 				});
 			});
-			
+
 
 			~synthsPlaying.at(track).put(synName,
 				Synth.head(s,"sampler"++(b.numChannels),args).onFree({
@@ -325,7 +352,21 @@ s.waitForBoot({
 				~playFromMsg.(msg,~sampleCache.at(filename));
 			});
 		},'/sampler');
-		OSCFunc({ |msg| 
+		OSCFunc({ |msg|
+			[60, 64, 67].do { |note, i|
+				Synth.head(s, \synthPad, [
+					\effectDryOut,    ~busDry,
+					\effectCombOut,   ~busComb,
+					\effectReverbOut, ~busReverb,
+					\effectReverb, 0.5,
+					\effectDry, 0.2,
+					\duration, 30,
+					\note,            note-12  // comma, not colon; no semicolon inside the array
+				]);
+			};
+		}, '/note_on');
+
+		OSCFunc({ |msg|
 			// stop all currently playing synths in all tracks
 			~synthsPlaying.values.do({
 				arg track;
@@ -333,7 +374,7 @@ s.waitForBoot({
 					if (syn.isPlaying,{
 						if (syn.notNil,{
 							syn.set(\gate,0);
-						});	
+						});
 					});
 				});
 			});
@@ -361,7 +402,7 @@ s.waitForBoot({
 					[synRecord,"stopped"].postln;
 					synRecord.set(\gate,0);
 					~synthRecord.removeAt(filename);
-				["stopping recording",filename].postln;
+					["stopping recording",filename].postln;
 				});
 			});
 			if (doRecord<1,{
@@ -447,6 +488,9 @@ s.waitForBoot({
 		// 		(60/~bpmTarget/2).wait;
 		// 	});
 		// }.play;
+		Routine {
+			NetAddr.new("127.0.0.1", NetAddr.langPort).sendMsg("/note_on");
+		}.play;
 	}.play;
 });
 )
