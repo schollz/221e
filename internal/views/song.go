@@ -140,8 +140,16 @@ func GetSongStatusMessage(m *model.Model) string {
 		// Handle normal data rows
 		chainID := m.SongData[trackCol][songRow]
 
+		// Determine track type
+		var trackType string
+		if m.TrackTypes[trackCol] {
+			trackType = "Sampler"
+		} else {
+			trackType = "Instrument"
+		}
+
 		if chainID == -1 {
-			statusMsg = "No chain selected"
+			statusMsg = fmt.Sprintf("Track %d: %s", trackCol, trackType)
 		} else {
 			// Check if chain has data and get first phrase for display
 			hasChainData := false
@@ -158,10 +166,18 @@ func GetSongStatusMessage(m *model.Model) string {
 				}
 			}
 
-			if hasChainData {
-				statusMsg = fmt.Sprintf("Track %d Row %02X: Chain %02X (First: %02X)", trackCol, songRow, chainID, firstPhraseID)
+			// Determine track type
+			var trackType string
+			if m.TrackTypes[trackCol] {
+				trackType = "Sampler"
 			} else {
-				statusMsg = fmt.Sprintf("Track %d Row %02X: Chain %02X (Empty)", trackCol, songRow, chainID)
+				trackType = "Instrument"
+			}
+
+			if hasChainData {
+				statusMsg = fmt.Sprintf("Track %d: %s", trackCol, trackType)
+			} else {
+				statusMsg = fmt.Sprintf("Track %d: %s (Empty)", trackCol, trackType)
 			}
 		}
 	}
