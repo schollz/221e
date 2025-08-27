@@ -13,46 +13,47 @@ import (
 )
 
 func AutoSave(m *model.Model) {
+	return
 	saveData := types.SaveData{
-		ViewMode:           m.ViewMode,
-		CurrentRow:         m.CurrentRow,
-		CurrentCol:         m.CurrentCol,
-		ScrollOffset:       m.ScrollOffset,
-		CurrentPhrase:      m.CurrentPhrase,
-		FileSelectRow:      m.FileSelectRow,
-		FileSelectCol:      m.FileSelectCol,
-		ChainsData:         m.ChainsData,
-		PhrasesData:        m.PhrasesData,
+		ViewMode:      m.ViewMode,
+		CurrentRow:    m.CurrentRow,
+		CurrentCol:    m.CurrentCol,
+		ScrollOffset:  m.ScrollOffset,
+		CurrentPhrase: m.CurrentPhrase,
+		FileSelectRow: m.FileSelectRow,
+		FileSelectCol: m.FileSelectCol,
+		ChainsData:    m.ChainsData,
+		PhrasesData:   m.PhrasesData,
 		// New separate data pools
 		InstrumentChainsData:  m.InstrumentChainsData,
 		InstrumentPhrasesData: m.InstrumentPhrasesData,
 		SamplerChainsData:     m.SamplerChainsData,
 		SamplerPhrasesData:    m.SamplerPhrasesData,
 		SamplerPhrasesFiles:   m.SamplerPhrasesFiles,
-		LastEditRow:        m.LastEditRow,
-		PhrasesFiles:       m.PhrasesFiles,
-		CurrentDir:         m.CurrentDir,
-		BPM:                m.BPM,
-		PPQ:                m.PPQ,
-		PregainDB:          m.PregainDB,
-		PostgainDB:         m.PostgainDB,
-		BiasDB:             m.BiasDB,
-		SaturationDB:       m.SaturationDB,
-		DriveDB:            m.DriveDB,
-		FileMetadata:       m.FileMetadata,
-		LastChainRow:       m.LastChainRow,
-		LastPhraseRow:      m.LastPhraseRow,
-		RecordingEnabled:   m.RecordingEnabled,
-		RetriggerSettings:  m.RetriggerSettings,
-		TimestrechSettings: m.TimestrechSettings,
-		SongData:           m.SongData,
-		LastSongRow:        m.LastSongRow,
-		LastSongTrack:      m.LastSongTrack,
-		CurrentChain:       m.CurrentChain,
-		CurrentTrack:       m.CurrentTrack,
-		TrackSetLevels:     m.TrackSetLevels,
-		TrackTypes:         m.TrackTypes,
-		CurrentMixerTrack:  m.CurrentMixerTrack,
+		LastEditRow:           m.LastEditRow,
+		PhrasesFiles:          m.PhrasesFiles,
+		CurrentDir:            m.CurrentDir,
+		BPM:                   m.BPM,
+		PPQ:                   m.PPQ,
+		PregainDB:             m.PregainDB,
+		PostgainDB:            m.PostgainDB,
+		BiasDB:                m.BiasDB,
+		SaturationDB:          m.SaturationDB,
+		DriveDB:               m.DriveDB,
+		FileMetadata:          m.FileMetadata,
+		LastChainRow:          m.LastChainRow,
+		LastPhraseRow:         m.LastPhraseRow,
+		RecordingEnabled:      m.RecordingEnabled,
+		RetriggerSettings:     m.RetriggerSettings,
+		TimestrechSettings:    m.TimestrechSettings,
+		SongData:              m.SongData,
+		LastSongRow:           m.LastSongRow,
+		LastSongTrack:         m.LastSongTrack,
+		CurrentChain:          m.CurrentChain,
+		CurrentTrack:          m.CurrentTrack,
+		TrackSetLevels:        m.TrackSetLevels,
+		TrackTypes:            m.TrackTypes,
+		CurrentMixerTrack:     m.CurrentMixerTrack,
 	}
 
 	data, err := json.Marshal(saveData)
@@ -123,7 +124,7 @@ func LoadState(m *model.Model, oscPort int, saveFile string) error {
 	// Bulk-assign arrays
 	m.ChainsData = saveData.ChainsData
 	m.PhrasesData = saveData.PhrasesData
-	
+
 	// Load new separate data pools (with backwards compatibility)
 	if saveData.InstrumentChainsData != nil {
 		m.InstrumentChainsData = saveData.InstrumentChainsData
