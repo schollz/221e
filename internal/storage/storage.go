@@ -2,7 +2,6 @@ package storage
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -18,7 +17,7 @@ import (
 var (
 	mu         sync.Mutex
 	timer      *time.Timer
-	debounceMs = 5 * time.Second
+	debounceMs = 1 * time.Second
 )
 
 func AutoSave(m *model.Model) {
@@ -33,7 +32,8 @@ func AutoSave(m *model.Model) {
 	// Start a new timer
 	timer = time.AfterFunc(debounceMs, func() {
 		// Place your actual save logic here
-		fmt.Println("AutoSave executed at", time.Now())
+		log.Print("AutoSave executed at", time.Now())
+
 	})
 }
 
@@ -93,6 +93,7 @@ func DoSave(m *model.Model) {
 		return
 	}
 }
+
 func LoadState(m *model.Model, oscPort int, saveFile string) error {
 	data, err := os.ReadFile(saveFile)
 	if err != nil {
