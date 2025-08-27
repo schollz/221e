@@ -10,7 +10,7 @@ import (
 
 // RenderSongView renders the new song view with 8 tracks × 16 rows
 func RenderSongView(m *model.Model) string {
-	return renderViewWithCommonPattern(m, "", "", func(styles ViewStyles) string {
+	return renderViewWithCommonPattern(m, "", "", func(styles *ViewStyles) string {
 		var content strings.Builder
 
 		// Render header with song name on the right (like Phrase View)

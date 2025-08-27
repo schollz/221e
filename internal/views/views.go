@@ -31,8 +31,8 @@ type ViewStyles struct {
 }
 
 // getCommonStyles returns the standard style definitions used across views
-func getCommonStyles() ViewStyles {
-	return ViewStyles{
+func getCommonStyles() *ViewStyles {
+	return &ViewStyles{
 		Selected:      lipgloss.NewStyle().Background(lipgloss.Color("7")).Foreground(lipgloss.Color("0")),
 		Normal:        lipgloss.NewStyle().Foreground(lipgloss.Color("15")),
 		Label:         lipgloss.NewStyle().Foreground(lipgloss.Color("8")),
@@ -48,7 +48,7 @@ func getCommonStyles() ViewStyles {
 }
 
 // renderViewWithCommonPattern provides a common structure for rendering views
-func renderViewWithCommonPattern(m *model.Model, leftHeader, rightHeader string, renderContent func(styles ViewStyles) string, statusMsg string, contentLines int) string {
+func renderViewWithCommonPattern(m *model.Model, leftHeader, rightHeader string, renderContent func(styles *ViewStyles) string, statusMsg string, contentLines int) string {
 	styles := getCommonStyles()
 
 	// Content builder - same pattern as working views
@@ -68,7 +68,7 @@ func renderViewWithCommonPattern(m *model.Model, leftHeader, rightHeader string,
 }
 
 // cellHighlighting handles common cell highlighting logic for clipboard operations
-func cellHighlighting(m *model.Model, viewType types.ViewMode, row, col, phrase int, text string, styles ViewStyles, isSelected bool) string {
+func cellHighlighting(m *model.Model, viewType types.ViewMode, row, col, phrase int, text string, styles *ViewStyles, isSelected bool) string {
 	if isSelected {
 		return styles.Selected.Render(text)
 	} else if m.Clipboard.HasData && m.Clipboard.HighlightView == viewType &&
@@ -175,7 +175,7 @@ func RenderFooter(m *model.Model, contentLines int, statusMsg string) string {
 }
 
 func RenderChainView(m *model.Model) string {
-	return renderViewWithCommonPattern(m, "", "", func(styles ViewStyles) string {
+	return renderViewWithCommonPattern(m, "", "", func(styles *ViewStyles) string {
 		var content strings.Builder
 
 		// Render header with chain name on the right (like Phrase View)
@@ -684,7 +684,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 		if playbackValue == 1 {
 			playbackText = "1"
 		}
-		
+
 		var playbackCell string
 		if m.CurrentRow == dataIndex && m.CurrentCol == 1 { // Column 1 is the P column
 			playbackCell = selectedStyle.Render(playbackText)
@@ -705,7 +705,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 		if noteValue != -1 {
 			noteText = midiToNoteName(noteValue)
 		}
-		
+
 		var noteCell string
 		if m.CurrentRow == dataIndex && m.CurrentCol == 2 { // Column 2 is the NOT column (0=slice, 1=P, 2=NOT)
 			noteCell = selectedStyle.Render(fmt.Sprintf("%3s", noteText))
@@ -722,7 +722,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 		// Chord (C) - display chord type
 		chordValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColChord]
 		chordText := types.ChordTypeToString(types.ChordType(chordValue))
-		
+
 		var chordCell string
 		if m.CurrentRow == dataIndex && m.CurrentCol == 3 { // Column 3 is the C column
 			chordCell = selectedStyle.Render(fmt.Sprintf("%1s", chordText))
@@ -739,7 +739,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 		// Chord Addition (A) - display chord addition
 		chordAddValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColChordAddition]
 		chordAddText := types.ChordAdditionToString(types.ChordAddition(chordAddValue))
-		
+
 		var chordAddCell string
 		if m.CurrentRow == dataIndex && m.CurrentCol == 4 { // Column 4 is the A column
 			chordAddCell = selectedStyle.Render(fmt.Sprintf("%1s", chordAddText))
@@ -756,7 +756,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 		// Chord Transposition (T) - display transposition value
 		chordTransValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColChordTransposition]
 		chordTransText := types.ChordTranspositionToString(types.ChordTransposition(chordTransValue))
-		
+
 		var chordTransCell string
 		if m.CurrentRow == dataIndex && m.CurrentCol == 5 { // Column 5 is the T column
 			chordTransCell = selectedStyle.Render(fmt.Sprintf("%1s", chordTransText))
@@ -776,7 +776,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 		if arpeggioValue != -1 {
 			arpeggioText = fmt.Sprintf("%02X", arpeggioValue)
 		}
-		
+
 		var arpeggioCell string
 		if m.CurrentRow == dataIndex && m.CurrentCol == 6 { // Column 6 is the AR column
 			arpeggioCell = selectedStyle.Render(fmt.Sprintf("%2s", arpeggioText))
@@ -804,7 +804,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 }
 
 func RenderSettingsView(m *model.Model) string {
-	return renderViewWithCommonPattern(m, "Settings", "", func(styles ViewStyles) string {
+	return renderViewWithCommonPattern(m, "Settings", "", func(styles *ViewStyles) string {
 		var content strings.Builder
 		content.WriteString("\n")
 
@@ -853,7 +853,7 @@ func RenderFileMetadataView(m *model.Model) string {
 	filename := filepath.Base(m.MetadataEditingFile)
 	header := fmt.Sprintf("File Metadata: %s", filename)
 
-	return renderViewWithCommonPattern(m, header, "", func(styles ViewStyles) string {
+	return renderViewWithCommonPattern(m, header, "", func(styles *ViewStyles) string {
 		var content strings.Builder
 		content.WriteString("\n")
 
@@ -899,7 +899,7 @@ func RenderFileMetadataView(m *model.Model) string {
 func RenderFileView(m *model.Model) string {
 	header := fmt.Sprintf("File Browser: %s", m.CurrentDir)
 
-	return renderViewWithCommonPattern(m, header, "", func(styles ViewStyles) string {
+	return renderViewWithCommonPattern(m, header, "", func(styles *ViewStyles) string {
 		var content strings.Builder
 
 		// File list
@@ -985,85 +985,85 @@ func GetPhraseStatusMessage(m *model.Model) string {
 			colIndex := columnMapping.DataColumnIndex
 			value := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex]
 			if colIndex == int(types.ColPlayback) {
-			statusMsg = fmt.Sprintf("Playback enabled: %d", value)
+				statusMsg = fmt.Sprintf("Playback enabled: %d", value)
 			} else if colIndex == int(types.ColGate) {
 				gateFloat := float32(value) / 96.0
 				statusMsg = fmt.Sprintf("Gate: %02X (%.2f)", value, gateFloat)
 			} else if colIndex == int(types.ColPitch) {
-			// PI (Pitch) column - show -24 to +24 mapping, 128 (0x80) means 0.0 pitch
-			if value == -1 {
-				statusMsg = "Pitch: -- (cleared)"
-			} else {
-				pitchFloat := ((float32(value) - 128.0) / 128.0) * 24.0 // Map 0-254 to -24 to +24, with 128 as center (0.0)
-				statusMsg = fmt.Sprintf("Pitch: %02X (%.1f)", value, pitchFloat)
-			}
-		} else if colIndex == int(types.ColPan) {
-			// PA (Pan) column - show -1.0 to 1.0 mapping, -1 means center (0.0)
-			if value == -1 {
-				statusMsg = "Pan: -- (0.0, sticky)"
-			} else {
-				panFloat := (float32(value) - 127.0) / 127.0 // Map 0-254 to -1.0 to 1.0, with 128 as center (0.0)
-				statusMsg = fmt.Sprintf("Pan: %02X (%.2f, sticky)", value, panFloat)
-			}
-		} else if colIndex == int(types.ColLowPassFilter) {
-			// LP (Low Pass Filter) column - show exponential frequency mapping
-			if value == -1 {
-				statusMsg = "Low Pass: -- (20kHz, sticky)"
-			} else {
-				// Exponential mapping: 00 -> 20kHz, FE -> 20Hz
-				logMin := float32(1.301) // log10(20)
-				logMax := float32(4.301) // log10(20000)
-				logFreq := logMax - (float32(value)/254.0)*(logMax-logMin)
-				freq := float32(math.Pow(10, float64(logFreq)))
-				if freq >= 1000 {
-					statusMsg = fmt.Sprintf("Low Pass: %02X (%.1fkHz, sticky)", value, freq/1000)
+				// PI (Pitch) column - show -24 to +24 mapping, 128 (0x80) means 0.0 pitch
+				if value == -1 {
+					statusMsg = "Pitch: -- (cleared)"
 				} else {
-					statusMsg = fmt.Sprintf("Low Pass: %02X (%.0fHz, sticky)", value, freq)
+					pitchFloat := ((float32(value) - 128.0) / 128.0) * 24.0 // Map 0-254 to -24 to +24, with 128 as center (0.0)
+					statusMsg = fmt.Sprintf("Pitch: %02X (%.1f)", value, pitchFloat)
 				}
-			}
-		} else if colIndex == int(types.ColHighPassFilter) {
-			// HP (High Pass Filter) column - show exponential frequency mapping
-			if value == -1 {
-				statusMsg = "High Pass: -- (20Hz, sticky)"
-			} else {
-				// Exponential mapping: 00 -> 20Hz, FE -> 20kHz
-				logMin := float32(1.301) // log10(20)
-				logMax := float32(4.301) // log10(20000)
-				logFreq := logMin + (float32(value)/254.0)*(logMax-logMin)
-				freq := float32(math.Pow(10, float64(logFreq)))
-				if freq >= 1000 {
-					statusMsg = fmt.Sprintf("High Pass: %02X (%.1fkHz, sticky)", value, freq/1000)
+			} else if colIndex == int(types.ColPan) {
+				// PA (Pan) column - show -1.0 to 1.0 mapping, -1 means center (0.0)
+				if value == -1 {
+					statusMsg = "Pan: -- (0.0, sticky)"
 				} else {
-					statusMsg = fmt.Sprintf("High Pass: %02X (%.0fHz, sticky)", value, freq)
+					panFloat := (float32(value) - 127.0) / 127.0 // Map 0-254 to -1.0 to 1.0, with 128 as center (0.0)
+					statusMsg = fmt.Sprintf("Pan: %02X (%.2f, sticky)", value, panFloat)
 				}
-			}
-		} else if colIndex == int(types.ColEffectReverse) {
-			// Reverse (Я) column - show Off/On
-			if value == -1 {
-				statusMsg = "Reverse: -- (Off)"
-			} else if value == 0 {
-				statusMsg = "Reverse: 0 (Off)"
-			} else {
-				statusMsg = "Reverse: 1 (On)"
-			}
-		} else if colIndex == int(types.ColEffectComb) {
-			// CO (Comb) column - show 0.0 to 1.0 mapping
-			if value == -1 {
-				statusMsg = "Comb: -- (sticky)"
-			} else {
-				combFloat := float32(value) / 254.0
-				statusMsg = fmt.Sprintf("Comb: %02X (%.2f, sticky)", value, combFloat)
-			}
-		} else if colIndex == int(types.ColEffectReverb) {
-			// VE (Reverb) column - show 0.0 to 1.0 mapping
-			if value == -1 {
-				statusMsg = "Reverb: -- (sticky)"
-			} else {
-				reverbFloat := float32(value) / 254.0
-				statusMsg = fmt.Sprintf("Reverb: %02X (%.2f, sticky)", value, reverbFloat)
-			}
-		} else if value == -1 {
-			statusMsg = "Current value: --"
+			} else if colIndex == int(types.ColLowPassFilter) {
+				// LP (Low Pass Filter) column - show exponential frequency mapping
+				if value == -1 {
+					statusMsg = "Low Pass: -- (20kHz, sticky)"
+				} else {
+					// Exponential mapping: 00 -> 20kHz, FE -> 20Hz
+					logMin := float32(1.301) // log10(20)
+					logMax := float32(4.301) // log10(20000)
+					logFreq := logMax - (float32(value)/254.0)*(logMax-logMin)
+					freq := float32(math.Pow(10, float64(logFreq)))
+					if freq >= 1000 {
+						statusMsg = fmt.Sprintf("Low Pass: %02X (%.1fkHz, sticky)", value, freq/1000)
+					} else {
+						statusMsg = fmt.Sprintf("Low Pass: %02X (%.0fHz, sticky)", value, freq)
+					}
+				}
+			} else if colIndex == int(types.ColHighPassFilter) {
+				// HP (High Pass Filter) column - show exponential frequency mapping
+				if value == -1 {
+					statusMsg = "High Pass: -- (20Hz, sticky)"
+				} else {
+					// Exponential mapping: 00 -> 20Hz, FE -> 20kHz
+					logMin := float32(1.301) // log10(20)
+					logMax := float32(4.301) // log10(20000)
+					logFreq := logMin + (float32(value)/254.0)*(logMax-logMin)
+					freq := float32(math.Pow(10, float64(logFreq)))
+					if freq >= 1000 {
+						statusMsg = fmt.Sprintf("High Pass: %02X (%.1fkHz, sticky)", value, freq/1000)
+					} else {
+						statusMsg = fmt.Sprintf("High Pass: %02X (%.0fHz, sticky)", value, freq)
+					}
+				}
+			} else if colIndex == int(types.ColEffectReverse) {
+				// Reverse (Я) column - show Off/On
+				if value == -1 {
+					statusMsg = "Reverse: -- (Off)"
+				} else if value == 0 {
+					statusMsg = "Reverse: 0 (Off)"
+				} else {
+					statusMsg = "Reverse: 1 (On)"
+				}
+			} else if colIndex == int(types.ColEffectComb) {
+				// CO (Comb) column - show 0.0 to 1.0 mapping
+				if value == -1 {
+					statusMsg = "Comb: -- (sticky)"
+				} else {
+					combFloat := float32(value) / 254.0
+					statusMsg = fmt.Sprintf("Comb: %02X (%.2f, sticky)", value, combFloat)
+				}
+			} else if colIndex == int(types.ColEffectReverb) {
+				// VE (Reverb) column - show 0.0 to 1.0 mapping
+				if value == -1 {
+					statusMsg = "Reverb: -- (sticky)"
+				} else {
+					reverbFloat := float32(value) / 254.0
+					statusMsg = fmt.Sprintf("Reverb: %02X (%.2f, sticky)", value, reverbFloat)
+				}
+			} else if value == -1 {
+				statusMsg = "Current value: --"
 			} else {
 				statusMsg = fmt.Sprintf("Current value: %d", value)
 			}
@@ -1090,27 +1090,27 @@ func GetInstrumentPhraseStatusMessage(m *model.Model) string {
 	// Use centralized column mapping to determine current column
 	columnMapping := m.GetColumnMapping(m.CurrentCol)
 	phrasesData := m.GetCurrentPhrasesData()
-	
-	if columnMapping != nil && (columnMapping.DataColumnIndex == int(types.ColNote) || 
-								columnMapping.DataColumnIndex == int(types.ColChord) || 
-								columnMapping.DataColumnIndex == int(types.ColChordAddition) ||
-								columnMapping.DataColumnIndex == int(types.ColChordTransposition)) { // NOT, C, A, or T columns
+
+	if columnMapping != nil && (columnMapping.DataColumnIndex == int(types.ColNote) ||
+		columnMapping.DataColumnIndex == int(types.ColChord) ||
+		columnMapping.DataColumnIndex == int(types.ColChordAddition) ||
+		columnMapping.DataColumnIndex == int(types.ColChordTransposition)) { // NOT, C, A, or T columns
 		// Get current row data
 		noteValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColNote]
 		chordValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColChord]
 		chordAddValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColChordAddition]
 		chordTransValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColChordTransposition]
-		
+
 		if noteValue >= 0 && noteValue <= 127 {
 			noteName := midiToNoteName(noteValue)
-			
+
 			// Check if chord is defined (not null/"-")
 			if chordValue > int(types.ChordNone) {
 				// Extract note name and octave from MIDI note
 				noteNames := []string{"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"}
 				rootNote := noteNames[noteValue%12]
 				octave := (noteValue / 12) - 1
-				
+
 				// Build chord name
 				var chordName string
 				switch types.ChordType(chordValue) {
@@ -1123,7 +1123,7 @@ func GetInstrumentPhraseStatusMessage(m *model.Model) string {
 				default:
 					chordName = rootNote
 				}
-				
+
 				// Add chord addition if defined
 				if chordAddValue > int(types.ChordAddNone) {
 					switch types.ChordAddition(chordAddValue) {
@@ -1135,7 +1135,7 @@ func GetInstrumentPhraseStatusMessage(m *model.Model) string {
 						chordName += "4"
 					}
 				}
-				
+
 				// Add transposition if defined and not 0
 				if chordTransValue > int(types.ChordTrans0) {
 					transpositionStr := types.ChordTranspositionToString(types.ChordTransposition(chordTransValue))
@@ -1384,6 +1384,13 @@ func RenderRetriggerView(m *model.Model) string {
 
 // RenderWaveform renders waveform data (assumed in [-1,1]) into a Braille string.
 // width and height are in Braille cells. Each Braille cell is 2x4 dots.
+// RenderWaveform renders waveform data (assumed in [-1,1]) into a Braille string.
+// width and height are in Braille cells. Each Braille cell is 2x4 dots.
+//
+// Optimized to minimize allocations/copies:
+//   - Avoids building a [][]bool grid; uses a flat []byte mask per 2x4 cell.
+//   - Single pass over fine columns sets bits directly into cell masks.
+//   - Reuses small helpers and bounds checks to keep hot loop tight.
 func RenderWaveform(width, height int, data []float64) string {
 	if width <= 0 || height <= 0 || len(data) == 0 {
 		return ""
@@ -1406,30 +1413,8 @@ func RenderWaveform(width, height int, data []float64) string {
 		return data[i]*(1-f) + data[i+1]*f
 	}
 
-	// Dot grid: fineH rows x fineW cols
-	grid := make([][]bool, fineH)
-	for r := range grid {
-		grid[r] = make([]bool, fineW)
-	}
-
-	// Plot the waveform onto the dot grid.
-	for x := 0; x < fineW; x++ {
-		// map x-> position in data
-		p := (float64(x) / float64(fineW-1)) * float64(len(data)-1)
-		v := sampleAt(p) // in [-1,1]
-
-		// Map v to vertical dot index (0 at top)
-		y := int(math.Round((1.0 - (v+1.0)/2.0) * float64(fineH-1)))
-		if y < 0 {
-			y = 0
-		} else if y >= fineH {
-			y = fineH - 1
-		}
-		grid[y][x] = true
-	}
-
-	var b strings.Builder
-	b.Grow((width + 1) * height) // small pre-alloc (each row + newline)
+	// Each cell is a single byte mask for its 2x4 Braille dots.
+	masks := make([]byte, width*height)
 
 	// Braille dot bit masks
 	const (
@@ -1444,47 +1429,75 @@ func RenderWaveform(width, height int, data []float64) string {
 	)
 	const brailleBase = 0x2800
 
-	// Pack each 2x4 block of dots into a single Braille rune.
-	for cellRow := 0; cellRow < height; cellRow++ {
-		fr := cellRow * 4 // fine-row base
-		for cellCol := 0; cellCol < width; cellCol++ {
-			fc := cellCol * 2 // fine-col base
+	// Precompute total data span
+	span := float64(len(data) - 1)
+	if span <= 0 {
+		span = 1
+	}
 
-			var mask int
-			// Rows 0..3, Cols 0..1
-			// Row 0: dots 1(left), 4(right)
-			if grid[fr+0][fc+0] {
-				mask |= dot1
-			}
-			if grid[fr+0][fc+1] {
-				mask |= dot4
-			}
-			// Row 1: dots 2,5
-			if grid[fr+1][fc+0] {
-				mask |= dot2
-			}
-			if grid[fr+1][fc+1] {
-				mask |= dot5
-			}
-			// Row 2: dots 3,6
-			if grid[fr+2][fc+0] {
-				mask |= dot3
-			}
-			if grid[fr+2][fc+1] {
-				mask |= dot6
-			}
-			// Row 3: dots 7,8
-			if grid[fr+3][fc+0] {
-				mask |= dot7
-			}
-			if grid[fr+3][fc+1] {
-				mask |= dot8
-			}
+	// Single pass over fine X columns; set the one dot hit per column.
+	for x := 0; x < fineW; x++ {
+		p := (float64(x) / float64(fineW-1)) * span
+		v := sampleAt(p) // in [-1,1]
 
-			r := rune(brailleBase + mask)
+		// Map v to vertical dot index (0 at top)
+		y := int(math.Round((1.0 - (v+1.0)/2.0) * float64(fineH-1)))
+		if y < 0 {
+			y = 0
+		} else if y >= fineH {
+			y = fineH - 1
+		}
+
+		cellCol := x >> 1 // /2
+		cellRow := y >> 2 // /4
+		inCol := x & 1    // 0..1
+		inRow := y & 3    // 0..3
+
+		// Map (inRow,inCol) -> braille dot bit
+		var bit byte
+		switch inRow {
+		case 0:
+			if inCol == 0 {
+				bit = dot1
+			} else {
+				bit = dot4
+			}
+		case 1:
+			if inCol == 0 {
+				bit = dot2
+			} else {
+				bit = dot5
+			}
+		case 2:
+			if inCol == 0 {
+				bit = dot3
+			} else {
+				bit = dot6
+			}
+		default: // 3
+			if inCol == 0 {
+				bit = dot7
+			} else {
+				bit = dot8
+			}
+		}
+
+		idx := cellRow*width + cellCol
+		masks[idx] |= bit
+	}
+
+	var b strings.Builder
+	// Each cell becomes 1 rune; each row has width runes + 1 newline (except last).
+	b.Grow(height*width + (height - 1))
+
+	for row := 0; row < height; row++ {
+		base := row * width
+		for col := 0; col < width; col++ {
+			mask := masks[base+col]
+			r := rune(brailleBase + int(mask))
 			b.WriteRune(r)
 		}
-		if cellRow != height-1 {
+		if row != height-1 {
 			b.WriteByte('\n')
 		}
 	}
@@ -1500,27 +1513,27 @@ func midiToNoteName(midiNote int) string {
 	}
 
 	noteNames := []string{"c", "c#", "d", "d#", "e", "f", "f#", "g", "g#", "a", "a#", "b"}
-	
+
 	// Calculate octave (MIDI note 12 = C0)
 	octave := (midiNote / 12) - 1
-	
+
 	// Get note name
 	noteName := noteNames[midiNote%12]
-	
+
 	// Always maintain exactly 3 characters for all notes
 	if strings.Contains(noteName, "#") {
 		// Sharp notes: "c#4", "f#1" (already 3 chars for most cases)
 		if octave < 0 {
-			return fmt.Sprintf("%s%d", noteName, -octave)  // "c#1" for negative
+			return fmt.Sprintf("%s%d", noteName, -octave) // "c#1" for negative
 		} else {
-			return fmt.Sprintf("%s%d", noteName, octave)   // "c#4" for positive
+			return fmt.Sprintf("%s%d", noteName, octave) // "c#4" for positive
 		}
 	} else {
 		// Natural notes: always use minus separator to reach 3 chars
 		if octave < 0 {
-			return fmt.Sprintf("%s-%d", noteName, -octave)  // "c-1" for negative
+			return fmt.Sprintf("%s-%d", noteName, -octave) // "c-1" for negative
 		} else {
-			return fmt.Sprintf("%s-%d", noteName, octave)   // "c-4" for positive
+			return fmt.Sprintf("%s-%d", noteName, octave) // "c-4" for positive
 		}
 	}
 }
@@ -1530,16 +1543,16 @@ func noteNameToMidi(noteName string) int {
 	if noteName == "---" || len(noteName) < 2 {
 		return -1
 	}
-	
+
 	noteMap := map[string]int{
 		"c": 0, "c#": 1, "d": 2, "d#": 3, "e": 4, "f": 5,
 		"f#": 6, "g": 7, "g#": 8, "a": 9, "a#": 10, "b": 11,
 	}
-	
+
 	// Extract note and octave parts
 	var noteStr string
 	var octaveStr string
-	
+
 	if len(noteName) >= 3 && noteName[1] == '#' {
 		// Sharp note like "c#4"
 		noteStr = noteName[:2]
@@ -1549,23 +1562,23 @@ func noteNameToMidi(noteName string) int {
 		noteStr = noteName[:1]
 		octaveStr = noteName[1:]
 	}
-	
+
 	noteVal, noteExists := noteMap[noteStr]
 	if !noteExists {
 		return -1
 	}
-	
+
 	// Parse octave
 	var octave int
 	if _, err := fmt.Sscanf(octaveStr, "%d", &octave); err != nil {
 		return -1
 	}
-	
-	midiNote := (octave + 1) * 12 + noteVal
+
+	midiNote := (octave+1)*12 + noteVal
 	if midiNote < 0 || midiNote > 127 {
 		return -1
 	}
-	
+
 	return midiNote
 }
 
@@ -1575,7 +1588,7 @@ func getLevelColorSmooth(dbLevel float32) colorful.Color {
 
 	// Define color stops for smooth gradient (updated for -48 to +12 dB range)
 	veryLowColor, _ := colorful.Hex("#404040") // Dark gray
-	lowColor, _ := colorful.Hex("#808080")     // Gray  
+	lowColor, _ := colorful.Hex("#808080")     // Gray
 	normalColor, _ := colorful.Hex("#FFFFFF")  // White
 	warmColor, _ := colorful.Hex("#FFE135")    // Subtle yellow
 	hotColor, _ := colorful.Hex("#FF6B35")     // Orange-red
@@ -1661,10 +1674,10 @@ func createVerticalBar(currentLevel, setLevel float32, height int, isSelected bo
 	// Choose colors based on selection
 	var fillColor, emptyColor colorful.Color
 	if isSelected {
-		fillColor, _ = colorful.Hex("#FFFFFF") // White for selected
+		fillColor, _ = colorful.Hex("#FFFFFF")  // White for selected
 		emptyColor, _ = colorful.Hex("#808080") // Medium gray for empty parts of selected
 	} else {
-		fillColor, _ = colorful.Hex("#C0C0C0") // Light gray for unselected
+		fillColor, _ = colorful.Hex("#C0C0C0")  // Light gray for unselected
 		emptyColor, _ = colorful.Hex("#404040") // Dark gray for empty parts of unselected
 	}
 
@@ -1687,7 +1700,7 @@ func createVerticalBar(currentLevel, setLevel float32, height int, isSelected bo
 		} else if displayRow >= currentPos && displayRow < currentPos+1 {
 			// Partial fill - use Unicode blocks for smooth edges
 			partialFill := currentPos - math.Floor(currentPos) // Fractional part
-			
+
 			if partialFill > 0 {
 				color = fillColor
 				// Use appropriate Unicode block
@@ -1769,7 +1782,7 @@ func RenderMixerView(m *model.Model) string {
 	}
 	mixerHeader := fmt.Sprintf("Track %d", m.CurrentMixerTrack+1)
 
-	return renderViewWithCommonPattern(m, columnHeader, mixerHeader, func(styles ViewStyles) string {
+	return renderViewWithCommonPattern(m, columnHeader, mixerHeader, func(styles *ViewStyles) string {
 		var content strings.Builder
 
 		// Calculate bar height - smaller to fit with waveform
@@ -1830,7 +1843,7 @@ func RenderMixerView(m *model.Model) string {
 }
 
 func RenderArpeggioView(m *model.Model) string {
-	return renderViewWithCommonPattern(m, "Arpeggio Settings", fmt.Sprintf("Arpeggio %02X", m.ArpeggioEditingIndex), func(styles ViewStyles) string {
+	return renderViewWithCommonPattern(m, "Arpeggio Settings", fmt.Sprintf("Arpeggio %02X", m.ArpeggioEditingIndex), func(styles *ViewStyles) string {
 		var content strings.Builder
 		content.WriteString("\n")
 
@@ -1841,15 +1854,15 @@ func RenderArpeggioView(m *model.Model) string {
 
 		// Get current arpeggio settings
 		settings := m.ArpeggioSettings[m.ArpeggioEditingIndex]
-		
+
 		// Render 16 rows (00 to 0F), each with its own DI and CO values
 		for row := 0; row < 16; row++ {
 			// Row label
 			rowLabel := fmt.Sprintf("%02X", row)
-			
+
 			// Get DI and CO values for this specific row
 			arpeggioRow := settings.Rows[row]
-			
+
 			// Direction (DI) text for this row
 			var diText string
 			switch arpeggioRow.Direction {
@@ -1868,7 +1881,7 @@ func RenderArpeggioView(m *model.Model) string {
 			if arpeggioRow.Count != -1 {
 				coText = fmt.Sprintf("%02X", arpeggioRow.Count)
 			}
-			
+
 			// Direction (DI) column - selectable if this row and column are selected
 			var diCell string
 			if m.CurrentRow == row && m.CurrentCol == 0 { // Column 0 for DI

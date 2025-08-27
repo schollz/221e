@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"runtime/pprof"
 	"syscall"
 	"time"
 
@@ -23,6 +24,23 @@ import (
 type scReadyMsg struct{}
 
 func main() {
+	// Start CPU profiling for the first 30 seconds
+	cpuFile, err := os.Create("cpu.prof")
+	if err != nil {
+		log.Printf("Could not create CPU profile: %v", err)
+	} else {
+		if err := pprof.StartCPUProfile(cpuFile); err != nil {
+			log.Printf("Could not start CPU profile: %v", err)
+		} else {
+			go func() {
+				time.Sleep(30 * time.Second)
+				pprof.StopCPUProfile()
+				cpuFile.Close()
+				log.Println("CPU profiling stopped after 30 seconds")
+			}()
+		}
+	}
+
 	// Set up cleanup on exit
 	setupCleanupOnExit()
 
@@ -228,7 +246,7 @@ func tickSplash() tea.Cmd {
 	})
 }
 
-func (tm TrackerModel) Init() tea.Cmd {
+func (tm *TrackerModel) Init() tea.Cmd {
 	if tm.showingSplash {
 		// Start splash screen animation at 60fps
 		return tickSplash()
@@ -238,7 +256,7 @@ func (tm TrackerModel) Init() tea.Cmd {
 	return tickWaveform(30)
 }
 
-func (tm TrackerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (tm *TrackerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		tm.model.TermHeight = msg.Height
