@@ -37,7 +37,11 @@ func switchToViewWithVisibilityCheck(m *model.Model, config ViewSwitchConfig) {
 
 	// Ensure the cursor row is visible
 	visibleRows := m.GetVisibleRows()
-	if m.CurrentRow >= visibleRows {
+	
+	// Handle negative rows (like TYPE row in Song view)
+	if m.CurrentRow < 0 {
+		m.ScrollOffset = 0
+	} else if m.CurrentRow >= visibleRows {
 		m.ScrollOffset = m.CurrentRow - visibleRows + 1
 	} else if m.CurrentRow < m.ScrollOffset {
 		m.ScrollOffset = m.CurrentRow
@@ -565,9 +569,11 @@ func handleShiftLeft(m *model.Model) tea.Cmd {
 
 func handleUp(m *model.Model) tea.Cmd {
 	if m.ViewMode == types.SongView {
-		if m.CurrentRow > 0 {
+		if m.CurrentRow > -1 { // Allow going up to row -1 (type row)
 			m.CurrentRow = m.CurrentRow - 1
-			m.LastSongRow = m.CurrentRow
+			if m.CurrentRow >= 0 { // Only update LastSongRow for data rows, not type row
+				m.LastSongRow = m.CurrentRow
+			}
 		}
 	} else if m.ViewMode == types.ChainView {
 		if m.CurrentRow > 0 {
@@ -615,9 +621,11 @@ func handleUp(m *model.Model) tea.Cmd {
 
 func handleDown(m *model.Model) tea.Cmd {
 	if m.ViewMode == types.SongView {
-		if m.CurrentRow < 15 { // Song view has 16 rows (0-15)
+		if m.CurrentRow < 15 { // Song view has 16 rows (0-15), plus type row at -1
 			m.CurrentRow = m.CurrentRow + 1
-			m.LastSongRow = m.CurrentRow
+			if m.CurrentRow >= 0 { // Only update LastSongRow for data rows, not type row
+				m.LastSongRow = m.CurrentRow
+			}
 		}
 	} else if m.ViewMode == types.ChainView {
 		if m.CurrentRow < 15 { // Chain view has 16 rows (0-15)
@@ -644,9 +652,8 @@ func handleDown(m *model.Model) tea.Cmd {
 			m.CurrentRow = m.CurrentRow + 1
 		}
 	} else if m.ViewMode == types.MixerView {
-		if m.CurrentMixerRow < 1 { // 0=level, 1=IN/SA
-			m.CurrentMixerRow = m.CurrentMixerRow + 1
-		}
+		// Only row 0 (set level) exists now, no navigation needed
+		// Keep CurrentMixerRow at 0
 	} else if m.CurrentRow < 254 { // 0-254 (FE in hex)
 		m.CurrentRow = m.CurrentRow + 1
 		visibleRows := m.GetVisibleRows()
@@ -750,7 +757,12 @@ func handleRight(m *model.Model) tea.Cmd {
 
 func handleCtrlUp(m *model.Model) tea.Cmd {
 	if m.ViewMode == types.SongView {
-		ModifySongValue(m, 4) // Coarse increment for song view
+		if m.CurrentRow == -1 {
+			// Toggle track type when on type row
+			ToggleTrackType(m, m.CurrentCol)
+		} else {
+			ModifySongValue(m, 4) // Coarse increment for song view
+		}
 	} else if m.ViewMode == types.SettingsView {
 		ModifySettingsValue(m, 1.0)
 	} else if m.ViewMode == types.FileMetadataView {
@@ -764,8 +776,6 @@ func handleCtrlUp(m *model.Model) tea.Cmd {
 	} else if m.ViewMode == types.MixerView {
 		if m.CurrentMixerRow == 0 {
 			ModifyMixerSetLevel(m, 1.0) // Coarse increment for set level
-		} else if m.CurrentMixerRow == 1 {
-			ToggleMixerTrackType(m) // Toggle IN/SA
 		}
 	} else if m.ViewMode != types.FileView {
 		ModifyValue(m, 16)
@@ -775,7 +785,12 @@ func handleCtrlUp(m *model.Model) tea.Cmd {
 
 func handleCtrlDown(m *model.Model) tea.Cmd {
 	if m.ViewMode == types.SongView {
-		ModifySongValue(m, -4) // Coarse decrement for song view
+		if m.CurrentRow == -1 {
+			// Toggle track type when on type row
+			ToggleTrackType(m, m.CurrentCol)
+		} else {
+			ModifySongValue(m, -4) // Coarse decrement for song view
+		}
 	} else if m.ViewMode == types.SettingsView {
 		ModifySettingsValue(m, -1.0)
 	} else if m.ViewMode == types.FileMetadataView {
@@ -789,8 +804,6 @@ func handleCtrlDown(m *model.Model) tea.Cmd {
 	} else if m.ViewMode == types.MixerView {
 		if m.CurrentMixerRow == 0 {
 			ModifyMixerSetLevel(m, -1.0) // Coarse decrement for set level
-		} else if m.CurrentMixerRow == 1 {
-			ToggleMixerTrackType(m) // Toggle IN/SA
 		}
 	} else if m.ViewMode != types.FileView {
 		ModifyValue(m, -16)
@@ -800,7 +813,12 @@ func handleCtrlDown(m *model.Model) tea.Cmd {
 
 func handleCtrlLeft(m *model.Model) tea.Cmd {
 	if m.ViewMode == types.SongView {
-		ModifySongValue(m, -1) // Fine decrement for song view
+		if m.CurrentRow == -1 {
+			// Toggle track type when on type row
+			ToggleTrackType(m, m.CurrentCol)
+		} else {
+			ModifySongValue(m, -1) // Fine decrement for song view
+		}
 	} else if m.ViewMode == types.SettingsView {
 		ModifySettingsValue(m, -0.05)
 	} else if m.ViewMode == types.FileMetadataView {
@@ -814,8 +832,6 @@ func handleCtrlLeft(m *model.Model) tea.Cmd {
 	} else if m.ViewMode == types.MixerView {
 		if m.CurrentMixerRow == 0 {
 			ModifyMixerSetLevel(m, -0.05) // Fine decrement for set level
-		} else if m.CurrentMixerRow == 1 {
-			ToggleMixerTrackType(m) // Toggle IN/SA
 		}
 	} else if m.ViewMode != types.FileView {
 		ModifyValue(m, -1)
@@ -825,7 +841,12 @@ func handleCtrlLeft(m *model.Model) tea.Cmd {
 
 func handleCtrlRight(m *model.Model) tea.Cmd {
 	if m.ViewMode == types.SongView {
-		ModifySongValue(m, 1) // Fine increment for song view
+		if m.CurrentRow == -1 {
+			// Toggle track type when on type row
+			ToggleTrackType(m, m.CurrentCol)
+		} else {
+			ModifySongValue(m, 1) // Fine increment for song view
+		}
 	} else if m.ViewMode == types.FileView {
 		audio.PlayFile(m)
 	} else if m.ViewMode == types.SettingsView {
@@ -841,8 +862,6 @@ func handleCtrlRight(m *model.Model) tea.Cmd {
 	} else if m.ViewMode == types.MixerView {
 		if m.CurrentMixerRow == 0 {
 			ModifyMixerSetLevel(m, 0.05) // Fine increment for set level
-		} else if m.CurrentMixerRow == 1 {
-			ToggleMixerTrackType(m) // Toggle IN/SA
 		}
 	} else {
 		ModifyValue(m, 1)

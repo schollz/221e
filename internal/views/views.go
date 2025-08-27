@@ -1823,25 +1823,6 @@ func RenderMixerView(m *model.Model) string {
 				content.WriteString(styles.Label.Render(setHex))
 			}
 		}
-		content.WriteString("\n")
-
-		// Track type row (IN/SA)
-		content.WriteString("    ")
-		for track := 0; track < 8; track++ {
-			content.WriteString("  ")
-			var trackType string
-			if m.TrackTypes[track] {
-				trackType = "SA" // Sampler
-			} else {
-				trackType = "IN" // Instrument
-			}
-
-			if track == m.CurrentMixerTrack && m.CurrentMixerRow == 1 {
-				content.WriteString(styles.Selected.Render(trackType))
-			} else {
-				content.WriteString(styles.Normal.Render(trackType))
-			}
-		}
 		content.WriteString("\n\n")
 
 		return content.String()

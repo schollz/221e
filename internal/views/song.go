@@ -21,6 +21,29 @@ func RenderSongView(m *model.Model) string {
 		songHeader := "Song"
 		content.WriteString(RenderHeader(m, columnHeader, songHeader))
 
+		// Render track type toggle row (IN/SA)
+		typeRowIndicator := "    "
+		content.WriteString(typeRowIndicator)
+		for track := 0; track < 8; track++ {
+			var trackTypeText string
+			if m.TrackTypes[track] {
+				trackTypeText = " SA" // Sampler
+			} else {
+				trackTypeText = " IN" // Instrument
+			}
+
+			// Check if this track type cell is selected
+			// We'll use row -1 to represent the type row
+			var typeCell string
+			if m.CurrentRow == -1 && m.CurrentCol == track {
+				typeCell = styles.Selected.Render(" " + trackTypeText)
+			} else {
+				typeCell = styles.Label.Render(" " + trackTypeText)
+			}
+			content.WriteString(typeCell)
+		}
+		content.WriteString("\n")
+
 		// Render 16 rows of data
 		visibleRows := 16 // Song view always shows all 16 rows
 		for row := 0; row < visibleRows; row++ {
@@ -103,32 +126,45 @@ func RenderSongView(m *model.Model) string {
 func GetSongStatusMessage(m *model.Model) string {
 	trackCol := m.CurrentCol
 	songRow := m.CurrentRow
-	chainID := m.SongData[trackCol][songRow]
 
 	var statusMsg string
 
-	if chainID == -1 {
-		statusMsg = "No chain selected"
+	// Handle TYPE row (row -1)
+	if songRow == -1 {
+		var trackTypeText string
+		if m.TrackTypes[trackCol] {
+			trackTypeText = "Sampler"
+		} else {
+			trackTypeText = "Instrument"
+		}
+		statusMsg = fmt.Sprintf("Track %d Type: %s", trackCol, trackTypeText)
 	} else {
-		// Check if chain has data and get first phrase for display
-		hasChainData := false
-		firstPhraseID := -1
-		chainsData := m.GetChainsDataForTrack(trackCol)
-		if chainID >= 0 && chainID < len(*chainsData) {
-			for row := 0; row < 16; row++ {
-				if (*chainsData)[chainID][row] != -1 {
-					hasChainData = true
-					if firstPhraseID == -1 {
-						firstPhraseID = (*chainsData)[chainID][row]
+		// Handle normal data rows
+		chainID := m.SongData[trackCol][songRow]
+
+		if chainID == -1 {
+			statusMsg = "No chain selected"
+		} else {
+			// Check if chain has data and get first phrase for display
+			hasChainData := false
+			firstPhraseID := -1
+			chainsData := m.GetChainsDataForTrack(trackCol)
+			if chainID >= 0 && chainID < len(*chainsData) {
+				for row := 0; row < 16; row++ {
+					if (*chainsData)[chainID][row] != -1 {
+						hasChainData = true
+						if firstPhraseID == -1 {
+							firstPhraseID = (*chainsData)[chainID][row]
+						}
 					}
 				}
 			}
-		}
 
-		if hasChainData {
-			statusMsg = fmt.Sprintf("Track %d Row %02X: Chain %02X (First: %02X)", trackCol, songRow, chainID, firstPhraseID)
-		} else {
-			statusMsg = fmt.Sprintf("Track %d Row %02X: Chain %02X (Empty)", trackCol, songRow, chainID)
+			if hasChainData {
+				statusMsg = fmt.Sprintf("Track %d Row %02X: Chain %02X (First: %02X)", trackCol, songRow, chainID, firstPhraseID)
+			} else {
+				statusMsg = fmt.Sprintf("Track %d Row %02X: Chain %02X (Empty)", trackCol, songRow, chainID)
+			}
 		}
 	}
 

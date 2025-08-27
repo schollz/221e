@@ -1516,39 +1516,60 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 		log.Printf("Context: Manual emit  Phrase:%02X Row:%02X BPM=%.2f PPQ=%d", phrase, row, m.BPM, m.PPQ)
 	}
 	log.Printf("Playback: %d", rawPlayback)
-	log.Printf("Raw:  NN=%s DT=%s GT=%s RT=%s TS=%s FI=%d Я=%s PA=%s LP=%s HP=%s CO=%s VE=%s",
-		formatHex(rawNote),
-		formatHex(rawDeltaTime),
-		formatHex(rawGate),
-		formatHex(rawRetrigger),
-		formatHex(rawTimestretch),
-		rawFilenameIndex,
-		func() string {
-			if rawEffectReverse == -1 {
-				return "-"
-			}
-			if rawEffectReverse != 0 {
-				return "1"
-			}
-			return "0"
-		}(),
-		formatHex(rawPan),
-		formatHex(rawLowPassFilter),
-		formatHex(rawHighPassFilter),
-		formatHex(rawEffectComb),
-		formatHex(rawEffectReverb),
-	)
-	log.Printf("Eff:  NN=%s DT=%s FI=%d FN=%s PA=%s LP=%s HP=%s CO=%s VE=%s",
-		formatHex(effectiveNote),
-		formatHex(effectiveDeltaTime),
-		effectiveFilenameIndex,
-		effectiveFilename,
-		formatHex(effectivePan),
-		formatHex(effectiveLowPassFilter),
-		formatHex(effectiveHighPassFilter),
-		formatHex(effectiveComb),
-		formatHex(effectiveReverb),
-	)
+	// Show different debug info based on track type
+	if trackId >= 0 && trackId < 8 && !m.TrackTypes[trackId] {
+		// Instrument track - show chord information
+		rawChord := rowData[types.ColChord]
+		rawChordAdd := rowData[types.ColChordAddition] 
+		rawChordTrans := rowData[types.ColChordTransposition]
+		rawArpeggio := rowData[types.ColArpeggio]
+		
+		log.Printf("Raw:  NN=%s C=%d A=%d T=%d AR=%s",
+			formatHex(rawNote),
+			rawChord,
+			rawChordAdd,
+			rawChordTrans,
+			formatHex(rawArpeggio),
+		)
+		log.Printf("Eff:  NN=%s (Instrument track - chord data shown above)",
+			formatHex(effectiveNote),
+		)
+	} else {
+		// Sampler track - show traditional sampler information
+		log.Printf("Raw:  NN=%s DT=%s GT=%s RT=%s TS=%s FI=%d Я=%s PA=%s LP=%s HP=%s CO=%s VE=%s",
+			formatHex(rawNote),
+			formatHex(rawDeltaTime),
+			formatHex(rawGate),
+			formatHex(rawRetrigger),
+			formatHex(rawTimestretch),
+			rawFilenameIndex,
+			func() string {
+				if rawEffectReverse == -1 {
+					return "-"
+				}
+				if rawEffectReverse != 0 {
+					return "1"
+				}
+				return "0"
+			}(),
+			formatHex(rawPan),
+			formatHex(rawLowPassFilter),
+			formatHex(rawHighPassFilter),
+			formatHex(rawEffectComb),
+			formatHex(rawEffectReverb),
+		)
+		log.Printf("Eff:  NN=%s DT=%s FI=%d FN=%s PA=%s LP=%s HP=%s CO=%s VE=%s",
+			formatHex(effectiveNote),
+			formatHex(effectiveDeltaTime),
+			effectiveFilenameIndex,
+			effectiveFilename,
+			formatHex(effectivePan),
+			formatHex(effectiveLowPassFilter),
+			formatHex(effectiveHighPassFilter),
+			formatHex(effectiveComb),
+			formatHex(effectiveReverb),
+		)
+	}
 
 	// Only emit if we have playback enabled and a concrete note
 	// For samplers, also check that we have a filename
@@ -1565,7 +1586,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 	}
 
 	// shouldEmitRow() hook (kept from playback path; e.g., to skip DT==00, etc.)
-	if shouldEmitRow(m) == false {
+	if shouldEmitRowForTrack(m, trackId) == false {
 		log.Printf("ROW_EMIT: skipped by shouldEmitRow()")
 		return
 	}
@@ -1727,15 +1748,20 @@ func rowDurationMS(m *model.Model) float64 {
 // - DT == 00 => do NOT emit
 // DT is read row-locally and never inherited.
 func shouldEmitRow(m *model.Model) bool {
+	return shouldEmitRowForTrack(m, m.CurrentTrack)
+}
+
+func shouldEmitRowForTrack(m *model.Model, trackId int) bool {
 	p := m.PlaybackPhrase
 	r := m.PlaybackRow
 	if p < 0 || p >= 255 || r < 0 || r >= 255 {
 		return false
 	}
 
-	nn := m.PhrasesData[p][r][types.ColNote]         // may still be inherited elsewhere in your code
-	dtRaw := m.PhrasesData[p][r][types.ColDeltaTime] // strictly local for this rule
-	pFlag := m.PhrasesData[p][r][types.ColPlayback]
+	phrasesData := GetPhrasesDataForTrack(m, trackId)
+	nn := (*phrasesData)[p][r][types.ColNote]         // may still be inherited elsewhere in your code
+	dtRaw := (*phrasesData)[p][r][types.ColDeltaTime] // strictly local for this rule
+	pFlag := (*phrasesData)[p][r][types.ColPlayback]
 
 	if pFlag != 1 {
 		return false
@@ -1743,8 +1769,10 @@ func shouldEmitRow(m *model.Model) bool {
 	if nn == -1 {
 		return false
 	}
-	if dtRaw == 0 {
-		// "DT == 00 => no emission" (time still passes)
+	// For instruments, DT (delta time) might not apply the same way as samplers
+	isInstrument := trackId >= 0 && trackId < 8 && !m.TrackTypes[trackId]
+	if !isInstrument && dtRaw == 0 {
+		// "DT == 00 => no emission" (time still passes) - only applies to samplers
 		return false
 	}
 	return true
@@ -2221,16 +2249,16 @@ func ModifyMixerSetLevel(m *model.Model, delta float32) {
 	storage.AutoSave(m)
 }
 
-// ToggleMixerTrackType toggles the track type between Instrument (IN) and Sampler (SA)
-func ToggleMixerTrackType(m *model.Model) {
+// ToggleTrackType toggles the track type for the specified track (used in Song view)
+func ToggleTrackType(m *model.Model, track int) {
 	// Bounds check
-	if m.CurrentMixerTrack < 0 || m.CurrentMixerTrack >= 8 {
+	if track < 0 || track >= 8 {
 		return
 	}
 
 	// Toggle the track type
-	oldType := m.TrackTypes[m.CurrentMixerTrack]
-	m.TrackTypes[m.CurrentMixerTrack] = !oldType
+	oldType := m.TrackTypes[track]
+	m.TrackTypes[track] = !oldType
 	
 	var oldTypeStr, newTypeStr string
 	if oldType {
@@ -2238,13 +2266,13 @@ func ToggleMixerTrackType(m *model.Model) {
 	} else {
 		oldTypeStr = "IN"
 	}
-	if m.TrackTypes[m.CurrentMixerTrack] {
+	if m.TrackTypes[track] {
 		newTypeStr = "SA"
 	} else {
 		newTypeStr = "IN"
 	}
 
-	log.Printf("Toggled mixer track %d type: %s -> %s", m.CurrentMixerTrack+1, oldTypeStr, newTypeStr)
+	log.Printf("Toggled track %d type: %s -> %s", track, oldTypeStr, newTypeStr)
 	storage.AutoSave(m)
 }
 

@@ -111,7 +111,7 @@ type Model struct {
 	TrackSetLevels    [8]float32 // User-controllable set levels for each track (-96 to +32 dB, default -6.0)
 	TrackTypes        [8]bool     // Track type: false = Instrument (IN), true = Sampler (SA), default SA
 	CurrentMixerTrack int         // Currently selected track in mixer view (0-7)
-	CurrentMixerRow   int         // Current row in mixer: 0 = level, 1 = IN/SA selection
+	CurrentMixerRow   int         // Current row in mixer: 0 = level (track type now in Song view)
 }
 
 // Methods for modifying data structures
