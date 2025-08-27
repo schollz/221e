@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"encoding/json"
 	"log"
 	"os"
 	"path/filepath"
@@ -10,14 +9,17 @@ import (
 	"sync"
 	"time"
 
+	jsoniter "github.com/json-iterator/go"
 	"github.com/schollz/2n/internal/model"
 	"github.com/schollz/2n/internal/types"
 )
 
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
+
 var (
-	mu         sync.Mutex
-	timer      *time.Timer
-	debounceMs = 1 * time.Second
+	mu           sync.Mutex
+	timer        *time.Timer
+	debounceTime = 1 * time.Second
 )
 
 func AutoSave(m *model.Model) {
@@ -30,10 +32,12 @@ func AutoSave(m *model.Model) {
 	}
 
 	// Start a new timer
-	timer = time.AfterFunc(debounceMs, func() {
+	timer = time.AfterFunc(debounceTime, func() {
 		// Place your actual save logic here
 		log.Print("AutoSave executed at", time.Now())
-
+		go func() {
+			DoSave(m)
+		}()
 	})
 }
 
