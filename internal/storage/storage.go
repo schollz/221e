@@ -14,6 +14,9 @@ import (
 
 func AutoSave(m *model.Model) {
 	return
+}
+func DoSave(m *model.Model) {
+	log.Printf("doing save")
 	saveData := types.SaveData{
 		ViewMode:      m.ViewMode,
 		CurrentRow:    m.CurrentRow,
