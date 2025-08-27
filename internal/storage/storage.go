@@ -34,9 +34,11 @@ func AutoSave(m *model.Model) {
 	// Start a new timer
 	timer = time.AfterFunc(debounceTime, func() {
 		// Place your actual save logic here
-		log.Print("AutoSave executed at", time.Now())
 		go func() {
+			startTime := time.Now()
 			DoSave(m)
+			elapsed := time.Since(startTime).Milliseconds()
+			log.Printf("autosaved in %d ms", elapsed)
 		}()
 	})
 }
