@@ -580,9 +580,9 @@ func ModifyValue(m *model.Model, delta int) {
 				// Apply special increment logic for instrument notes
 				// Coarse (Ctrl+Up/Down) should increment by 12 (octaves)
 				// Fine (Ctrl+Left/Right) should increment by 1 (semitones)
-				if delta == 4 || delta == -4 {
+				if delta == 16 || delta == -16 {
 					// This is coarse increment - convert to octave increment (12 semitones)
-					octaveDelta := (delta / 4) * 12
+					octaveDelta := (delta / 16) * 12
 					newValue = currentValue + octaveDelta
 				} else {
 					// This is fine increment (+/-1)
