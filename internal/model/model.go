@@ -128,8 +128,12 @@ func (m *Model) SetPhrasesData(phrase, row, col, value int) {
 }
 
 func (m *Model) AppendPhrasesFile(filename string) int {
-	m.PhrasesFiles = append(m.PhrasesFiles, filename)
-	return len(m.PhrasesFiles) - 1
+	if m.GetPhraseViewType() == types.InstrumentPhraseView {
+		// Instruments don't use files - should not happen
+		return -1
+	}
+	m.SamplerPhrasesFiles = append(m.SamplerPhrasesFiles, filename)
+	return len(m.SamplerPhrasesFiles) - 1
 }
 
 // GetCurrentPhrasesData returns the appropriate phrases data based on current track
