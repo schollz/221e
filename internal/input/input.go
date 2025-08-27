@@ -37,7 +37,7 @@ func switchToViewWithVisibilityCheck(m *model.Model, config ViewSwitchConfig) {
 
 	// Ensure the cursor row is visible
 	visibleRows := m.GetVisibleRows()
-	
+
 	// Handle negative rows (like TYPE row in Song view)
 	if m.CurrentRow < 0 {
 		m.ScrollOffset = 0
@@ -177,6 +177,9 @@ func HandleKeyInput(m *model.Model, msg tea.KeyMsg) tea.Cmd {
 	case "ctrl+up":
 		return handleCtrlUp(m)
 
+	case "ctrl+s":
+		return handleCtrlS(m)
+
 	case "ctrl+down":
 		return handleCtrlDown(m)
 
@@ -276,7 +279,7 @@ func handleShiftRight(m *model.Model) tea.Cmd {
 			if phraseViewType == types.InstrumentPhraseView {
 				m.CurrentCol = 1 // Instrument: Start on P column
 			} else {
-				m.CurrentCol = 2 // Sampler: Start on Note column 
+				m.CurrentCol = 2 // Sampler: Start on Note column
 			}
 			m.ScrollOffset = 0
 
@@ -692,7 +695,7 @@ func handleLeft(m *model.Model) tea.Cmd {
 		} else {
 			minCol = 1 // Sampler: Column 1 is P (playback)
 		}
-		
+
 		if m.CurrentCol > minCol {
 			m.CurrentCol = m.CurrentCol - 1
 			storage.AutoSave(m)
@@ -732,9 +735,9 @@ func handleRight(m *model.Model) tea.Cmd {
 		if phraseViewType == types.InstrumentPhraseView {
 			maxValidCol = 6 // Instrument: last valid column is 6 (AR - Arpeggio)
 		} else {
-			maxValidCol = 14 // Sampler: last valid column is 14 (FI)  
+			maxValidCol = 14 // Sampler: last valid column is 14 (FI)
 		}
-		
+
 		if m.CurrentCol < maxValidCol {
 			m.CurrentCol = m.CurrentCol + 1
 			storage.AutoSave(m)
@@ -752,6 +755,11 @@ func handleRight(m *model.Model) tea.Cmd {
 	} else { // FileView
 		// No horizontal navigation in file view
 	}
+	return nil
+}
+
+func handleCtrlS(m *model.Model) tea.Cmd {
+	storage.DoSave(m)
 	return nil
 }
 
@@ -1017,15 +1025,15 @@ func handleBackspace(m *model.Model) tea.Cmd {
 	} else if m.ViewMode == types.PhraseView {
 		// Clear the current cell in phrase view
 		phrasesData := m.GetCurrentPhrasesData()
-		
+
 		// Use centralized column mapping system
 		columnMapping := m.GetColumnMapping(m.CurrentCol)
 		if columnMapping == nil || !columnMapping.IsDeletable {
 			return nil // Invalid or non-deletable column
 		}
-		
+
 		colIndex := columnMapping.DataColumnIndex
-		
+
 		if colIndex >= 0 && colIndex < int(types.ColCount) {
 			if colIndex == int(types.ColPlayback) {
 				// Reset playback to 0 (special case - 0 means off)

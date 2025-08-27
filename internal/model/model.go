@@ -20,46 +20,46 @@ type OSCMessageConfig struct {
 }
 
 type Model struct {
-	CurrentRow       int
-	CurrentCol       int
-	ScrollOffset     int
-	ViewMode         types.ViewMode
+	CurrentRow   int
+	CurrentCol   int
+	ScrollOffset int
+	ViewMode     types.ViewMode
 	// Legacy shared data structures (will be phased out)
-	PhrasesData      [255][][]int        // [phrase][row][col] where col uses PhraseColumn enum
-	ChainsData       [][]int             // [chain][row] where each chain has 16 rows, each row contains a phrase_number
-	PhrasesFiles     []string            // [phrase] filename for each phrase row
+	PhrasesData  [255][][]int // [phrase][row][col] where col uses PhraseColumn enum
+	ChainsData   [][]int      // [chain][row] where each chain has 16 rows, each row contains a phrase_number
+	PhrasesFiles []string     // [phrase] filename for each phrase row
 	// Separate data pools for Instruments (tracks 0-3) and Samplers (tracks 4-7)
-	InstrumentPhrasesData [255][][]int    // [phrase][row][col] for instrument tracks - simplified data
-	InstrumentChainsData  [][]int         // [chain][row] for instrument tracks
-	SamplerPhrasesData    [255][][]int    // [phrase][row][col] for sampler tracks - full complexity
-	SamplerChainsData     [][]int         // [chain][row] for sampler tracks  
-	SamplerPhrasesFiles   []string        // [phrase] filename for sampler phrases only
-	CurrentPhrase    int                 // Which phrase we're viewing/editing
-	CurrentChain     int                 // Which chain we're viewing/editing
-	CurrentTrack     int                 // Which track context we're viewing (0-7)
-	FileSelectRow    int                 // Which phrase row we're selecting a file for
-	FileSelectCol    int                 // Which phrase column we were on when navigating to file browser
-	Clipboard        types.ClipboardData // Cell clipboard
-	CurrentDir       string              // Current directory for file browser
-	Files            []string            // Files in current directory
-	TermHeight       int
-	TermWidth        int
-	IsPlaying        bool
-	PlaybackRow      int            // Current row within phrase
-	PlaybackChain    int            // Current chain being played
-	PlaybackChainRow int            // Current row within chain during playback
-	PlaybackPhrase   int            // Current phrase being played
-	PlaybackMode     types.ViewMode // Whether playback started from Chain or Phrase view
-	ticker           *time.Ticker
-	LastEditRow      int            // Track the last row that was edited
-	BPM              float32        // Beats per minute
-	PPQ              int            // Pulses per quarter note
-	PregainDB        float32        // Pre-gain in decibels (-96.0 to +32.0, default 0.0)
-	PostgainDB       float32        // Post-gain in decibels (-96.0 to +32.0, default 0.0)
-	BiasDB           float32        // Bias in decibels (-96.0 to +32.0, default -6.0)
-	SaturationDB     float32        // Saturation in decibels (-96.0 to +32.0, default -6.0)
-	DriveDB          float32        // Drive in decibels (-96.0 to +32.0, default -6.0)
-	PreviousView     types.ViewMode // Track the view we came from when entering Settings
+	InstrumentPhrasesData [255][][]int        // [phrase][row][col] for instrument tracks - simplified data
+	InstrumentChainsData  [][]int             // [chain][row] for instrument tracks
+	SamplerPhrasesData    [255][][]int        // [phrase][row][col] for sampler tracks - full complexity
+	SamplerChainsData     [][]int             // [chain][row] for sampler tracks
+	SamplerPhrasesFiles   []string            // [phrase] filename for sampler phrases only
+	CurrentPhrase         int                 // Which phrase we're viewing/editing
+	CurrentChain          int                 // Which chain we're viewing/editing
+	CurrentTrack          int                 // Which track context we're viewing (0-7)
+	FileSelectRow         int                 // Which phrase row we're selecting a file for
+	FileSelectCol         int                 // Which phrase column we were on when navigating to file browser
+	Clipboard             types.ClipboardData // Cell clipboard
+	CurrentDir            string              // Current directory for file browser
+	Files                 []string            // Files in current directory
+	TermHeight            int
+	TermWidth             int
+	IsPlaying             bool
+	PlaybackRow           int            // Current row within phrase
+	PlaybackChain         int            // Current chain being played
+	PlaybackChainRow      int            // Current row within chain during playback
+	PlaybackPhrase        int            // Current phrase being played
+	PlaybackMode          types.ViewMode // Whether playback started from Chain or Phrase view
+	ticker                *time.Ticker
+	LastEditRow           int            // Track the last row that was edited
+	BPM                   float32        // Beats per minute
+	PPQ                   int            // Pulses per quarter note
+	PregainDB             float32        // Pre-gain in decibels (-96.0 to +32.0, default 0.0)
+	PostgainDB            float32        // Post-gain in decibels (-96.0 to +32.0, default 0.0)
+	BiasDB                float32        // Bias in decibels (-96.0 to +32.0, default -6.0)
+	SaturationDB          float32        // Saturation in decibels (-96.0 to +32.0, default -6.0)
+	DriveDB               float32        // Drive in decibels (-96.0 to +32.0, default -6.0)
+	PreviousView          types.ViewMode // Track the view we came from when entering Settings
 	// Playback state for inheriting values from previous rows
 	lastPlaybackNote     int    // Last non-null note value during playback
 	lastPlaybackDT       int    // Last non-null deltatime value during playback
@@ -109,9 +109,9 @@ type Model struct {
 	// Mixer state
 	TrackVolumes      [8]float32 // Current volume levels received from SuperCollider (-96 to +12 dB)
 	TrackSetLevels    [8]float32 // User-controllable set levels for each track (-96 to +32 dB, default -6.0)
-	TrackTypes        [8]bool     // Track type: false = Instrument (IN), true = Sampler (SA), default SA
-	CurrentMixerTrack int         // Currently selected track in mixer view (0-7)
-	CurrentMixerRow   int         // Current row in mixer: 0 = level (track type now in Song view)
+	TrackTypes        [8]bool    // Track type: false = Instrument (IN), true = Sampler (SA), default SA
+	CurrentMixerTrack int        // Currently selected track in mixer view (0-7)
+	CurrentMixerRow   int        // Current row in mixer: 0 = level (track type now in Song view)
 }
 
 // Methods for modifying data structures
@@ -174,19 +174,19 @@ func (m *Model) GetChainsDataForTrack(track int) *[][]int {
 
 // ColumnMapping represents the mapping from UI column to data column
 type ColumnMapping struct {
-	DataColumnIndex int          // Which data column this maps to (types.ColPlayback, types.ColNote, etc.)
-	IsEditable      bool         // Whether this column can be edited
-	IsCopyable      bool         // Whether this column can be copied
-	IsPasteable     bool         // Whether this column can be pasted to
-	IsDeletable     bool         // Whether this column can be deleted (backspace)
-	DisplayName     string       // Name shown in UI
+	DataColumnIndex int    // Which data column this maps to (types.ColPlayback, types.ColNote, etc.)
+	IsEditable      bool   // Whether this column can be edited
+	IsCopyable      bool   // Whether this column can be copied
+	IsPasteable     bool   // Whether this column can be pasted to
+	IsDeletable     bool   // Whether this column can be deleted (backspace)
+	DisplayName     string // Name shown in UI
 }
 
 // GetColumnMapping returns the column mapping for the current phrase view type
 // This centralizes all column mapping logic to prevent inconsistencies
 func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 	phraseViewType := m.GetPhraseViewType()
-	
+
 	if phraseViewType == types.InstrumentPhraseView {
 		// Instrument view: SL (0), P (1), NOT (2)
 		switch uiColumn {
@@ -339,7 +339,7 @@ func NewModel(oscPort int, saveFile string) *Model {
 		m.TrackSetLevels[i] = -6.0 // Default set level (-6 dB)
 		m.TrackTypes[i] = true     // Default to Sampler (SA)
 	}
-	m.CurrentMixerRow = 0 // Start on level row
+	m.CurrentMixerRow = 0   // Start on level row
 	m.CurrentMixerTrack = 0 // Default to track 0
 
 	// Initialize OSC client if port is provided
@@ -395,13 +395,13 @@ func (m *Model) initializeDefaultData() {
 		for i := range m.InstrumentPhrasesData[p] {
 			m.InstrumentPhrasesData[p][i] = make([]int, int(types.ColCount))
 			// For instruments, initialize with minimal defaults
-			m.InstrumentPhrasesData[p][i][types.ColPlayback] = 0                   // Off by default
-			m.InstrumentPhrasesData[p][i][types.ColNote] = -1                      // No note by default
+			m.InstrumentPhrasesData[p][i][types.ColPlayback] = 0 // Off by default
+			m.InstrumentPhrasesData[p][i][types.ColNote] = -1    // No note by default
 			// Initialize chord columns (use int values corresponding to enum defaults)
-			m.InstrumentPhrasesData[p][i][types.ColChord] = int(types.ChordNone)                // Default: "-"
-			m.InstrumentPhrasesData[p][i][types.ColChordAddition] = int(types.ChordAddNone)     // Default: "-"
+			m.InstrumentPhrasesData[p][i][types.ColChord] = int(types.ChordNone)                   // Default: "-"
+			m.InstrumentPhrasesData[p][i][types.ColChordAddition] = int(types.ChordAddNone)        // Default: "-"
 			m.InstrumentPhrasesData[p][i][types.ColChordTransposition] = int(types.ChordTransNone) // Default: "-"
-			m.InstrumentPhrasesData[p][i][types.ColArpeggio] = -1                               // Default: "--" (no arpeggio)
+			m.InstrumentPhrasesData[p][i][types.ColArpeggio] = -1                                  // Default: "--" (no arpeggio)
 			// Other columns can stay -1 (unused for instruments)
 		}
 	}
@@ -411,20 +411,20 @@ func (m *Model) initializeDefaultData() {
 		m.SamplerPhrasesData[p] = make([][]int, 255)
 		for i := range m.SamplerPhrasesData[p] {
 			m.SamplerPhrasesData[p][i] = make([]int, int(types.ColCount))
-			m.SamplerPhrasesData[p][i][types.ColPlayback] = 0             // Playback flag (0=off, 1=on)
-			m.SamplerPhrasesData[p][i][types.ColNote] = -1                // Note value (-1 means no data "--")
-			m.SamplerPhrasesData[p][i][types.ColPitch] = 128              // Pitch value (128 = 0x80 = 0.0 pitch, default)
-			m.SamplerPhrasesData[p][i][types.ColDeltaTime] = -1           // Delta time (-1 means no data "--")
-			m.SamplerPhrasesData[p][i][types.ColGate] = 128               // Gate value (128 = 1.0, default)
-			m.SamplerPhrasesData[p][i][types.ColRetrigger] = -1           // Retrigger index (-1 means no retrigger)
-			m.SamplerPhrasesData[p][i][types.ColTimestretch] = -1         // Timestretch index (-1 means no timestretch)
-			m.SamplerPhrasesData[p][i][types.ColEffectReverse] = -1       // Reverse effect (-1 means no effect)
-			m.SamplerPhrasesData[p][i][types.ColPan] = -1                 // Pan (-1 = null, will use effective value or default to center)
-			m.SamplerPhrasesData[p][i][types.ColLowPassFilter] = -1       // Low pass filter (-1 means no filter/20kHz)
-			m.SamplerPhrasesData[p][i][types.ColHighPassFilter] = -1      // High pass filter (-1 means no filter/20Hz)
-			m.SamplerPhrasesData[p][i][types.ColEffectComb] = -1          // Comb effect (-1 means no effect)
-			m.SamplerPhrasesData[p][i][types.ColEffectReverb] = -1        // Reverb effect (-1 means no effect)
-			m.SamplerPhrasesData[p][i][types.ColFilename] = -1            // Filename index (-1 means no file selected)
+			m.SamplerPhrasesData[p][i][types.ColPlayback] = 0        // Playback flag (0=off, 1=on)
+			m.SamplerPhrasesData[p][i][types.ColNote] = -1           // Note value (-1 means no data "--")
+			m.SamplerPhrasesData[p][i][types.ColPitch] = 128         // Pitch value (128 = 0x80 = 0.0 pitch, default)
+			m.SamplerPhrasesData[p][i][types.ColDeltaTime] = -1      // Delta time (-1 means no data "--")
+			m.SamplerPhrasesData[p][i][types.ColGate] = 128          // Gate value (128 = 1.0, default)
+			m.SamplerPhrasesData[p][i][types.ColRetrigger] = -1      // Retrigger index (-1 means no retrigger)
+			m.SamplerPhrasesData[p][i][types.ColTimestretch] = -1    // Timestretch index (-1 means no timestretch)
+			m.SamplerPhrasesData[p][i][types.ColEffectReverse] = -1  // Reverse effect (-1 means no effect)
+			m.SamplerPhrasesData[p][i][types.ColPan] = -1            // Pan (-1 = null, will use effective value or default to center)
+			m.SamplerPhrasesData[p][i][types.ColLowPassFilter] = -1  // Low pass filter (-1 means no filter/20kHz)
+			m.SamplerPhrasesData[p][i][types.ColHighPassFilter] = -1 // High pass filter (-1 means no filter/20Hz)
+			m.SamplerPhrasesData[p][i][types.ColEffectComb] = -1     // Comb effect (-1 means no effect)
+			m.SamplerPhrasesData[p][i][types.ColEffectReverb] = -1   // Reverb effect (-1 means no effect)
+			m.SamplerPhrasesData[p][i][types.ColFilename] = -1       // Filename index (-1 means no file selected)
 		}
 	}
 
@@ -539,9 +539,9 @@ type SamplerOSCParams struct {
 }
 
 type InstrumentOSCParams struct {
-	TrackId   int     // Track ID
-	MidiNote  int     // MIDI note number (0-127)
-	Velocity  float32 // Note velocity (0.0-1.0)
+	TrackId  int     // Track ID
+	MidiNote int     // MIDI note number (0-127)
+	Velocity float32 // Note velocity (0.0-1.0)
 }
 
 // NewSamplerOSCParams creates sampler parameters with custom slice duration
@@ -630,7 +630,7 @@ func (m *Model) SendOSCInstrumentMessage(params InstrumentOSCParams) {
 	if err != nil {
 		log.Printf("Error sending OSC instrument message: %v", err)
 	} else {
-		log.Printf("OSC instrument message sent: /instrument track=%d note=%d velocity=%.2f", 
+		log.Printf("OSC instrument message sent: /instrument track=%d note=%d velocity=%.2f",
 			params.TrackId, params.MidiNote, params.Velocity)
 	}
 }
