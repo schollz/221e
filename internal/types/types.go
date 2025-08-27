@@ -12,6 +12,7 @@ const (
 	RetriggerView
 	TimestrechView
 	MixerView
+	ArpeggioView
 )
 
 type PhraseViewType int
@@ -55,6 +56,7 @@ const (
 	ColChord                              // Column 14: Chord (Instrument view only: "-", "M", "m", "d")
 	ColChordAddition                      // Column 15: Chord Addition (Instrument view only: "-", "7", "9", "4")
 	ColChordTransposition                 // Column 16: Chord Transposition (Instrument view only: "-", "0"-"F")
+	ColArpeggio                           // Column 17: Arpeggio (Instrument view only: 00-FE)
 	ColCount                              // Total number of columns
 )
 
@@ -198,6 +200,15 @@ type TimestrechSettings struct {
 	Beats int     `json:"beats"` // Beats value (0-256)
 }
 
+type ArpeggioRow struct {
+	Direction int `json:"direction"` // Direction: 0="--", 1="u-", 2="d-"
+	Count     int `json:"count"`     // Count: -1="--", 0-254 for hex values 00-FE
+}
+
+type ArpeggioSettings struct {
+	Rows [16]ArpeggioRow `json:"rows"` // 16 rows (00-0F), each with its own DI and CO
+}
+
 type ClipboardData struct {
 	// Cell data
 	Value    int
@@ -248,6 +259,7 @@ type SaveData struct {
 	RecordingEnabled   bool                    `json:"recordingEnabled"`
 	RetriggerSettings  [255]RetriggerSettings  `json:"retriggerSettings"`
 	TimestrechSettings [255]TimestrechSettings `json:"timestrechSettings"`
+	ArpeggioSettings   [255]ArpeggioSettings   `json:"arpeggioSettings"`
 	SongData           [8][16]int              `json:"songData"`
 	LastSongRow        int                     `json:"lastSongRow"`
 	LastSongTrack      int                     `json:"lastSongTrack"`
