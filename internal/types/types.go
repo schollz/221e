@@ -15,6 +15,7 @@ const (
 	TimestrechView
 	MixerView
 	ArpeggioView
+	MidiView
 )
 
 type PhraseViewType int
@@ -58,10 +59,11 @@ const (
 	ColChordAddition                          // Column 14: Chord Addition (Instrument view only: "-", "7", "9", "4")
 	ColChordTransposition                     // Column 15: Chord Transposition (Instrument view only: "-", "0"-"F")
 	ColArpeggio                               // Column 16: Arpeggio (Instrument view only: 00-FE)
-	ColAttack                                 // Column 17: Attack (Instrument view only: 00-FE, 0.02-30s exponential, default -1, sticky)
-	ColDecay                                  // Column 18: Decay (Instrument view only: 00-FE, 0.0-30.0s linear, default -1, sticky)
-	ColSustain                                // Column 19: Sustain (Instrument view only: 00-FE, 0.0-1.0 linear, default -1, sticky)
-	ColRelease                                // Column 20: Release (Instrument view only: 00-FE, 0.02-30s exponential, default -1, sticky)
+	ColMidi                                   // Column 17: MIDI (Instrument view only: 00-FE, sticky)
+	ColAttack                                 // Column 18: Attack (Instrument view only: 00-FE, 0.02-30s exponential, default -1, sticky)
+	ColDecay                                  // Column 19: Decay (Instrument view only: 00-FE, 0.0-30.0s linear, default -1, sticky)
+	ColSustain                                // Column 20: Sustain (Instrument view only: 00-FE, 0.0-1.0 linear, default -1, sticky)
+	ColRelease                                // Column 21: Release (Instrument view only: 00-FE, 0.02-30s exponential, default -1, sticky)
 	ColCount                                  // Total number of columns
 )
 
@@ -215,6 +217,11 @@ type ArpeggioSettings struct {
 	Rows [16]ArpeggioRow `json:"rows"` // 16 rows (00-0F), each with its own DI and CO
 }
 
+type MidiSettings struct {
+	Device  string `json:"device"`  // MIDI Device name
+	Channel string `json:"channel"` // MIDI Channel (1-16 or "all")
+}
+
 type ClipboardData struct {
 	// Cell data
 	Value    int
@@ -266,6 +273,7 @@ type SaveData struct {
 	RetriggerSettings     [255]RetriggerSettings  `json:"retriggerSettings"`
 	TimestrechSettings    [255]TimestrechSettings `json:"timestrechSettings"`
 	ArpeggioSettings      [255]ArpeggioSettings   `json:"arpeggioSettings"`
+	MidiSettings          [255]MidiSettings       `json:"midiSettings"`
 	SongData              [8][16]int              `json:"songData"`
 	LastSongRow           int                     `json:"lastSongRow"`
 	LastSongTrack         int                     `json:"lastSongTrack"`

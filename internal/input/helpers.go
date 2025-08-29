@@ -527,6 +527,93 @@ func ModifyArpeggioValue(m *model.Model, baseDelta float32) {
 	storage.AutoSave(m)
 }
 
+func ModifyMidiValue(m *model.Model, baseDelta float32) {
+	if m.MidiEditingIndex < 0 || m.MidiEditingIndex >= 255 {
+		return
+	}
+
+	// Get current settings
+	settings := &m.MidiSettings[m.MidiEditingIndex]
+
+	if m.CurrentRow == 0 { // Device row
+		// For now, Device just cycles through a basic list including "None"
+		// This will be expanded when the public SetAvailableMidiDevices function is used
+		var delta int
+		if baseDelta > 0 {
+			delta = 1
+		} else {
+			delta = -1
+		}
+
+		// Basic device list for now
+		devices := []string{"None"} // Will be populated by SetAvailableMidiDevices
+		
+		// Find current index
+		currentIndex := -1
+		for i, dev := range devices {
+			if settings.Device == dev {
+				currentIndex = i
+				break
+			}
+		}
+		
+		// If current device not found, start from beginning
+		if currentIndex == -1 {
+			currentIndex = 0
+		}
+		
+		// Apply delta with wrapping
+		newIndex := currentIndex + delta
+		if newIndex < 0 {
+			newIndex = len(devices) - 1 // Wrap to last device
+		} else if newIndex >= len(devices) {
+			newIndex = 0 // Wrap to first device
+		}
+		
+		oldDevice := settings.Device
+		settings.Device = devices[newIndex]
+		log.Printf("Modified MIDI %02X Device: %s -> %s", m.MidiEditingIndex, oldDevice, settings.Device)
+	} else if m.CurrentRow == 1 { // Channel row
+		// Channel cycles through: "1"-"16" and "all"
+		var delta int
+		if baseDelta > 0 {
+			delta = 1
+		} else {
+			delta = -1
+		}
+
+		channels := []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "all"}
+		
+		// Find current index
+		currentIndex := -1
+		for i, ch := range channels {
+			if settings.Channel == ch {
+				currentIndex = i
+				break
+			}
+		}
+		
+		// If current channel not found, start from beginning
+		if currentIndex == -1 {
+			currentIndex = 0
+		}
+		
+		// Apply delta with wrapping
+		newIndex := currentIndex + delta
+		if newIndex < 0 {
+			newIndex = len(channels) - 1 // Wrap to "all"
+		} else if newIndex >= len(channels) {
+			newIndex = 0 // Wrap to "1"
+		}
+		
+		oldChannel := settings.Channel
+		settings.Channel = channels[newIndex]
+		log.Printf("Modified MIDI %02X Channel: %s -> %s", m.MidiEditingIndex, oldChannel, settings.Channel)
+	}
+
+	storage.AutoSave(m)
+}
+
 func ModifyValue(m *model.Model, delta int) {
 	if m.ViewMode == types.ChainView {
 		// Chain view now only has phrase editing
@@ -693,6 +780,22 @@ func ModifyValue(m *model.Model, delta int) {
 				if newValue < 0 {
 					newValue = 0 // Stop at first valid value
 				}
+			}
+			(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newValue
+		} else if phraseViewType == types.InstrumentPhraseView && colIndex == int(types.ColMidi) {
+			// Instrument view MIDI column: hex values 00-FE
+			var newValue int
+			if currentValue == -1 {
+				// First edit on an empty cell: initialize to 00 and DO NOT apply delta
+				newValue = 0
+			} else {
+				newValue = currentValue + delta
+			}
+
+			if newValue < 0 {
+				newValue = 0
+			} else if newValue > 254 {
+				newValue = 254
 			}
 			(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newValue
 		} else {
@@ -1448,6 +1551,16 @@ func GetEffectiveValueForTrack(m *model.Model, phrase, row, colIndex, trackId in
 		}
 	}
 	return -1 // No non-null value found
+}
+
+// GetEffectiveMidiValue gets the effective MIDI value for a row (sticky behavior)
+func GetEffectiveMidiValue(m *model.Model, phrase, row int) int {
+	return GetEffectiveMidiValueForTrack(m, phrase, row, m.CurrentTrack)
+}
+
+// GetEffectiveMidiValueForTrack gets the effective MIDI value for a row for a specific track
+func GetEffectiveMidiValueForTrack(m *model.Model, phrase, row, trackId int) int {
+	return GetEffectiveValueForTrack(m, phrase, row, int(types.ColMidi), trackId)
 }
 
 // GetEffectiveFilename gets the effective filename for a row
