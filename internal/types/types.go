@@ -41,28 +41,27 @@ const (
 type PhraseColumn int
 
 const (
-	ColPlayback           PhraseColumn = iota // Column 0: Playback flag (0 or 1)
-	ColNote                                   // Column 1: Note value (hex)
-	ColPitch                                  // Column 2: Pitch value (hex, default 80/0x80 = 0.0 pitch)
-	ColDeltaTime                              // Column 3: Delta time (hex)
-	ColGate                                   // Column 4: Gate value (hex, default 128/0x80)
-	ColRetrigger                              // Column 5: Retrigger setting index (hex, 00-FE)
-	ColTimestretch                            // Column 6: Timestretch setting index (hex, 00-FE)
-	ColEffectReverse                          // Column 7: Я (reverse) 0/1
-	ColPan                                    // Column 8: PA (pan) (hex, default 128/0x80, 00-FE maps -1.0 to 1.0)
-	ColLowPassFilter                          // Column 9: LP (low pass filter) (hex, default -1/null, 00-FE maps 20kHz to 20Hz exponentially)
-	ColHighPassFilter                         // Column 10: HP (high pass filter) (hex, default -1/null, 00-FE maps 20Hz to 20kHz exponentially)
-	ColEffectComb                             // Column 11: CO (00-FE)
-	ColEffectReverb                           // Column 12: VE (00-FE)
-	ColFilename                               // Column 13: Filename index
-	ColChord                                  // Column 14: Chord (Instrument view only: "-", "M", "m", "d")
-	ColChordAddition                          // Column 15: Chord Addition (Instrument view only: "-", "7", "9", "4")
-	ColChordTransposition                     // Column 16: Chord Transposition (Instrument view only: "-", "0"-"F")
-	ColArpeggio                               // Column 17: Arpeggio (Instrument view only: 00-FE)
-	ColAttack                                 // Column 18: Attack (Instrument view only: 00-FE, 0.02-30s exponential, default -1, sticky)
-	ColDecay                                  // Column 19: Decay (Instrument view only: 00-FE, 0.0-30.0s linear, default -1, sticky)
-	ColSustain                                // Column 20: Sustain (Instrument view only: 00-FE, 0.0-1.0 linear, default -1, sticky)
-	ColRelease                                // Column 21: Release (Instrument view only: 00-FE, 0.02-30s exponential, default -1, sticky)
+	ColNote                                   PhraseColumn = iota // Column 0: Note value (hex)
+	ColPitch                                  // Column 1: Pitch value (hex, default 80/0x80 = 0.0 pitch)
+	ColDeltaTime                              // Column 2: Delta time (hex) - controls playback: >0=play, <=0=skip
+	ColGate                                   // Column 3: Gate value (hex, default 128/0x80)
+	ColRetrigger                              // Column 4: Retrigger setting index (hex, 00-FE)
+	ColTimestretch                            // Column 5: Timestretch setting index (hex, 00-FE)
+	ColEffectReverse                          // Column 6: Я (reverse) 0/1
+	ColPan                                    // Column 7: PA (pan) (hex, default 128/0x80, 00-FE maps -1.0 to 1.0)
+	ColLowPassFilter                          // Column 8: LP (low pass filter) (hex, default -1/null, 00-FE maps 20kHz to 20Hz exponentially)
+	ColHighPassFilter                         // Column 9: HP (high pass filter) (hex, default -1/null, 00-FE maps 20Hz to 20kHz exponentially)
+	ColEffectComb                             // Column 10: CO (00-FE)
+	ColEffectReverb                           // Column 11: VE (00-FE)
+	ColFilename                               // Column 12: Filename index
+	ColChord                                  // Column 13: Chord (Instrument view only: "-", "M", "m", "d")
+	ColChordAddition                          // Column 14: Chord Addition (Instrument view only: "-", "7", "9", "4")
+	ColChordTransposition                     // Column 15: Chord Transposition (Instrument view only: "-", "0"-"F")
+	ColArpeggio                               // Column 16: Arpeggio (Instrument view only: 00-FE)
+	ColAttack                                 // Column 17: Attack (Instrument view only: 00-FE, 0.02-30s exponential, default -1, sticky)
+	ColDecay                                  // Column 18: Decay (Instrument view only: 00-FE, 0.0-30.0s linear, default -1, sticky)
+	ColSustain                                // Column 19: Sustain (Instrument view only: 00-FE, 0.0-1.0 linear, default -1, sticky)
+	ColRelease                                // Column 20: Release (Instrument view only: 00-FE, 0.02-30s exponential, default -1, sticky)
 	ColCount                                  // Total number of columns
 )
 

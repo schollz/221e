@@ -1,0 +1,35 @@
+[34m
+* Datadog Agent 7 install script v1.40.0
+[0m
+/usr/bin/systemctl
+[34m
+* Installing curl gnupg
+[0m
+Hit:1 https://cli.github.com/packages stable InRelease
+Ign:2 https://apt.datadoghq.com stable InRelease
+Hit:3 https://apt.datadoghq.com stable Release
+Hit:4 https://downloads.1password.com/linux/debian/amd64 stable InRelease
+Get:6 https://ngrok-agent.s3.amazonaws.com buster InRelease [20.3 kB]
+Hit:7 https://packages.microsoft.com/repos/code stable InRelease
+Hit:8 https://download.ni.com/ni-linux-desktop/2024/Q4/deb/ni/noble noble InRelease
+Hit:9 https://download.ni.com/ni-linux-desktop/stream/deb/ni/noble noble InRelease
+Get:10 https://packages.adoptium.net/artifactory/deb noble InRelease [7,501 B]
+Get:11 https://ngrok-agent.s3.amazonaws.com buster/main amd64 Packages [8,992 B]
+Get:12 https://ngrok-agent.s3.amazonaws.com buster/main i386 Packages [9,001 B]
+Get:13 https://packages.mozilla.org/apt mozilla InRelease [1,522 B]
+Hit:14 http://archive.ubuntu.com/ubuntu noble InRelease
+Get:15 http://security.ubuntu.com/ubuntu noble-security InRelease [126 kB]
+Get:16 http://download.zerotier.com/debian/noble noble InRelease [20.5 kB]
+Get:17 https://packages.mozilla.org/apt mozilla/main all Packages [5,142 kB]
+Hit:18 https://ppa.launchpadcontent.net/graphics-drivers/ppa/ubuntu noble InRelease
+Get:19 https://packages.mozilla.org/apt mozilla/main i386 Packages [91.9 kB]
+Hit:20 https://ppa.launchpadcontent.net/mozillateam/ppa/ubuntu noble InRelease
+Get:21 https://packages.mozilla.org/apt mozilla/main amd64 Packages [97.8 kB]
+Get:22 http://security.ubuntu.com/ubuntu noble-security/main amd64 Packages [1,106 kB]
+Get:23 http://security.ubuntu.com/ubuntu noble-security/main i386 Packages [323 kB]
+Get:24 http://security.ubuntu.com/ubuntu noble-security/main amd64 Components [21.5 kB]
+Get:25 http://security.ubuntu.com/ubuntu noble-security/restricted amd64 Components [212 B]
+Get:26 http://security.ubuntu.com/ubuntu noble-security/universe i386 Packages [544 kB]
+Get:27 http://security.ubuntu.com/ubuntu noble-security/universe amd64 Packages [881 kB]
+Get:28 http://security.ubuntu.com/ubuntu noble-security/universe amd64 Components [52.3 kB]
+Get:29 http://security.ubuntu.com/ubuntu noble-security/multiverse amd64 Components [212 B]

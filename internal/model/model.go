@@ -188,7 +188,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 	phraseViewType := m.GetPhraseViewType()
 
 	if phraseViewType == types.InstrumentPhraseView {
-		// Instrument view: SL (0), P (1), NOT (2)
+		// Instrument view: SL (0), DT (1), NOT (2)
 		switch uiColumn {
 		case 0: // SL - display only
 			return &ColumnMapping{
@@ -199,14 +199,14 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     false,
 				DisplayName:     "SL",
 			}
-		case 1: // P - playback column
+		case 1: // DT - delta time column (unified playback control)
 			return &ColumnMapping{
-				DataColumnIndex: int(types.ColPlayback),
+				DataColumnIndex: int(types.ColDeltaTime),
 				IsEditable:      true,
 				IsCopyable:      true,
 				IsPasteable:     true,
 				IsDeletable:     true,
-				DisplayName:     "P",
+				DisplayName:     "DT",
 			}
 		case 2: // NOT - note column
 			return &ColumnMapping{
@@ -293,8 +293,8 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 			return nil // Invalid column
 		}
 	} else {
-		// Sampler view: Use simple offset mapping (original approach that was working)
-		// SL (0) is display only, columns 1-14 map to data columns 0-13
+		// Sampler view: Custom mapping after removing P column and moving DT to front
+		// New order: SL (0), DT (1), NN (2), PI (3), GT (4), RT (5), TS (6), Я (7), PA (8), LP (9), HP (10), CO (11), VE (12), FI (13)
 		switch uiColumn {
 		case 0: // SL - display only
 			return &ColumnMapping{
@@ -305,18 +305,124 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     false,
 				DisplayName:     "SL",
 			}
-		default:
-			// All other columns use simple offset: UI column N maps to data column N-1
-			if uiColumn >= 1 && uiColumn <= int(types.ColCount) {
-				return &ColumnMapping{
-					DataColumnIndex: uiColumn - 1,
-					IsEditable:      true,
-					IsCopyable:      true,
-					IsPasteable:     true,
-					IsDeletable:     true,
-					DisplayName:     "DATA",
-				}
+		case 1: // DT - Delta Time (moved from position 4)
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColDeltaTime),
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "DT",
 			}
+		case 2: // NN - Note
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColNote), // Now index 0
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "NN",
+			}
+		case 3: // PI - Pitch
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColPitch), // Now index 1
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "PI",
+			}
+		case 4: // GT - Gate
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColGate), // Now index 3
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "GT",
+			}
+		case 5: // RT - Retrigger
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColRetrigger), // Now index 4
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "RT",
+			}
+		case 6: // TS - Timestretch
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColTimestretch), // Now index 5
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "TS",
+			}
+		case 7: // Я - Reverse
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColEffectReverse), // Now index 6
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "Я",
+			}
+		case 8: // PA - Pan
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColPan), // Now index 7
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "PA",
+			}
+		case 9: // LP - Low Pass Filter
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColLowPassFilter), // Now index 8
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "LP",
+			}
+		case 10: // HP - High Pass Filter
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColHighPassFilter), // Now index 9
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "HP",
+			}
+		case 11: // CO - Comb
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColEffectComb), // Now index 10
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "CO",
+			}
+		case 12: // VE - Reverb
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColEffectReverb), // Now index 11
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "VE",
+			}
+		case 13: // FI - Filename
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColFilename), // Now index 12
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "FI",
+			}
+		default:
 			return nil // Invalid column
 		}
 	}
@@ -404,10 +510,9 @@ func (m *Model) initializeDefaultData() {
 		m.PhrasesData[p] = make([][]int, 255)
 		for i := range m.PhrasesData[p] {
 			m.PhrasesData[p][i] = make([]int, int(types.ColCount)) // Use ColCount for array size
-			m.PhrasesData[p][i][types.ColPlayback] = 0             // Playback flag (0=off, 1=on)
 			m.PhrasesData[p][i][types.ColNote] = -1                // Note value (-1 means no data "--")
 			m.PhrasesData[p][i][types.ColPitch] = 128              // Pitch value (128 = 0x80 = 0.0 pitch, default)
-			m.PhrasesData[p][i][types.ColDeltaTime] = -1           // Delta time (-1 means no data "--")
+			m.PhrasesData[p][i][types.ColDeltaTime] = -1           // Delta time (-1 means no data "--", controls playback)
 			m.PhrasesData[p][i][types.ColGate] = 128               // Gate value (128 = 1.0, default)
 			m.PhrasesData[p][i][types.ColRetrigger] = -1           // Retrigger index (-1 means no retrigger)
 			m.PhrasesData[p][i][types.ColTimestretch] = -1         // Timestretch index (-1 means no timestretch)
@@ -431,8 +536,8 @@ func (m *Model) initializeDefaultData() {
 		for i := range m.InstrumentPhrasesData[p] {
 			m.InstrumentPhrasesData[p][i] = make([]int, int(types.ColCount))
 			// For instruments, initialize with minimal defaults
-			m.InstrumentPhrasesData[p][i][types.ColPlayback] = 0 // Off by default
-			m.InstrumentPhrasesData[p][i][types.ColNote] = -1    // No note by default
+			m.InstrumentPhrasesData[p][i][types.ColNote] = -1        // No note by default
+			m.InstrumentPhrasesData[p][i][types.ColDeltaTime] = -1   // DT controls playback for instruments too
 			// Initialize chord columns (use int values corresponding to enum defaults)
 			m.InstrumentPhrasesData[p][i][types.ColChord] = int(types.ChordNone)                   // Default: "-"
 			m.InstrumentPhrasesData[p][i][types.ColChordAddition] = int(types.ChordAddNone)        // Default: "-"
@@ -452,10 +557,9 @@ func (m *Model) initializeDefaultData() {
 		m.SamplerPhrasesData[p] = make([][]int, 255)
 		for i := range m.SamplerPhrasesData[p] {
 			m.SamplerPhrasesData[p][i] = make([]int, int(types.ColCount))
-			m.SamplerPhrasesData[p][i][types.ColPlayback] = 0        // Playback flag (0=off, 1=on)
 			m.SamplerPhrasesData[p][i][types.ColNote] = -1           // Note value (-1 means no data "--")
 			m.SamplerPhrasesData[p][i][types.ColPitch] = 128         // Pitch value (128 = 0x80 = 0.0 pitch, default)
-			m.SamplerPhrasesData[p][i][types.ColDeltaTime] = -1      // Delta time (-1 means no data "--")
+			m.SamplerPhrasesData[p][i][types.ColDeltaTime] = -1      // Delta time (-1 means no data "--", controls playback)
 			m.SamplerPhrasesData[p][i][types.ColGate] = 128          // Gate value (128 = 1.0, default)
 			m.SamplerPhrasesData[p][i][types.ColRetrigger] = -1      // Retrigger index (-1 means no retrigger)
 			m.SamplerPhrasesData[p][i][types.ColTimestretch] = -1    // Timestretch index (-1 means no timestretch)
