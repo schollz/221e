@@ -1714,9 +1714,10 @@ func isInstrumentTrack(m *model.Model, trackId int) bool {
 
 // rowDurationMS returns the per-row duration in milliseconds.
 // DT is read *row-locally* and never inherited.
-// - DT == -1 (null) -> base duration
-// - DT == 0         -> base duration (no emission rule handled elsewhere)
-// - DT > 0          -> base * (1 + DT/16)
+// New behavior:
+// - DT == -1 (--) -> behaves like DT == 1 (1 tick duration)
+// - DT == 0       -> skip row (duration irrelevant, handled by shouldEmitRow)
+// - DT > 0        -> hold for DT number of ticks (baseMs * DT)
 func rowDurationMS(m *model.Model) float64 {
 	// Guard against invalid BPM/PPQ
 	if m.BPM <= 0 || m.PPQ <= 0 {
@@ -1735,17 +1736,25 @@ func rowDurationMS(m *model.Model) float64 {
 		return baseMs
 	}
 
-	dtRaw := m.PhrasesData[p][r][types.ColDeltaTime] // row-local DT
-	if dtRaw > 0 {
-		return baseMs * (1.0 + float64(dtRaw)/16.0)
+	// Get the correct phrases data based on current track type
+	phrasesData := GetPhrasesDataForTrack(m, m.CurrentTrack)
+	dtRaw := (*phrasesData)[p][r][types.ColDeltaTime] // row-local DT
+	if dtRaw == -1 {
+		// -- behaves like 01 (1 tick)
+		return baseMs
+	} else if dtRaw == 0 {
+		// 00 means skip row, but we still return base duration for timing consistency
+		return baseMs
+	} else {
+		// DT > 0: hold for DT number of ticks
+		return baseMs * float64(dtRaw)
 	}
-	return baseMs
 }
 
 // shouldEmitRow enforces:
 // - NN must be present (not -1)
 // - P (playback flag) must be 1
-// - DT == 00 => do NOT emit
+// - DT == 00 => do NOT emit (for all track types)
 // DT is read row-locally and never inherited.
 func shouldEmitRow(m *model.Model) bool {
 	return shouldEmitRowForTrack(m, m.CurrentTrack)
@@ -1769,10 +1778,8 @@ func shouldEmitRowForTrack(m *model.Model, trackId int) bool {
 	if nn == -1 {
 		return false
 	}
-	// For instruments, DT (delta time) might not apply the same way as samplers
-	isInstrument := trackId >= 0 && trackId < 8 && !m.TrackTypes[trackId]
-	if !isInstrument && dtRaw == 0 {
-		// "DT == 00 => no emission" (time still passes) - only applies to samplers
+	// DT == 00 => skip row for all track types (time still passes)
+	if dtRaw == 0 {
 		return false
 	}
 	return true
