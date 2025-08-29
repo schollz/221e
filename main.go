@@ -98,12 +98,6 @@ func main() {
 	log.Println("Debug logging enabled")
 	log.Printf("OSC port configured: %d", oscPort)
 
-	// Get list of MIDI devices
-	midi_devices := midiconnector.Devices()
-	for _, device := range midi_devices {
-		log.Printf("MIDI device found: %+v", device)
-	}
-
 	// Create readiness channel for SuperCollider startup detection
 	readyChannel := make(chan struct{}, 1)
 
@@ -141,6 +135,7 @@ func main() {
 
 	// Build program
 	tm = initialModel(oscPort, saveFile, d)
+
 	p := tea.NewProgram(tm, tea.WithAltScreen())
 
 	// Start SuperCollider in the background so it doesn't block the splash
@@ -213,6 +208,11 @@ func initialModel(oscPort int, saveFile string, dispatcher *osc.StandardDispatch
 		}
 		m.PushWaveformSample(sample, maxCols*2/3)
 	})
+
+	m.AvailableMidiDevices = midiconnector.Devices()
+	for _, device := range m.AvailableMidiDevices {
+		log.Printf("MIDI device found: %+v", device)
+	}
 
 	return &TrackerModel{
 		model:         m,

@@ -114,6 +114,8 @@ type Model struct {
 	TrackTypes        [8]bool    // Track type: false = Instrument (IN), true = Sampler (SA), default SA
 	CurrentMixerTrack int        // Currently selected track in mixer view (0-7)
 	CurrentMixerRow   int        // Current row in mixer: 0 = level (track type now in Song view)
+	// MIDI functionality
+	AvailableMidiDevices []string
 }
 
 // Methods for modifying data structures
@@ -549,8 +551,8 @@ func (m *Model) initializeDefaultData() {
 		for i := range m.InstrumentPhrasesData[p] {
 			m.InstrumentPhrasesData[p][i] = make([]int, int(types.ColCount))
 			// For instruments, initialize with minimal defaults
-			m.InstrumentPhrasesData[p][i][types.ColNote] = -1        // No note by default
-			m.InstrumentPhrasesData[p][i][types.ColDeltaTime] = -1   // DT controls playback for instruments too
+			m.InstrumentPhrasesData[p][i][types.ColNote] = -1      // No note by default
+			m.InstrumentPhrasesData[p][i][types.ColDeltaTime] = -1 // DT controls playback for instruments too
 			// Initialize chord columns (use int values corresponding to enum defaults)
 			m.InstrumentPhrasesData[p][i][types.ColChord] = int(types.ChordNone)                   // Default: "-"
 			m.InstrumentPhrasesData[p][i][types.ColChordAddition] = int(types.ChordAddNone)        // Default: "-"
@@ -558,10 +560,10 @@ func (m *Model) initializeDefaultData() {
 			m.InstrumentPhrasesData[p][i][types.ColArpeggio] = -1                                  // Default: "--" (no arpeggio)
 			m.InstrumentPhrasesData[p][i][types.ColMidi] = -1                                      // Default: "--" (sticky)
 			// Initialize ADSR columns (all sticky, default to undefined)
-			m.InstrumentPhrasesData[p][i][types.ColAttack] = -1                                    // Default: "--" (sticky)
-			m.InstrumentPhrasesData[p][i][types.ColDecay] = -1                                     // Default: "--" (sticky)
-			m.InstrumentPhrasesData[p][i][types.ColSustain] = -1                                   // Default: "--" (sticky)
-			m.InstrumentPhrasesData[p][i][types.ColRelease] = -1                                   // Default: "--" (sticky)
+			m.InstrumentPhrasesData[p][i][types.ColAttack] = -1  // Default: "--" (sticky)
+			m.InstrumentPhrasesData[p][i][types.ColDecay] = -1   // Default: "--" (sticky)
+			m.InstrumentPhrasesData[p][i][types.ColSustain] = -1 // Default: "--" (sticky)
+			m.InstrumentPhrasesData[p][i][types.ColRelease] = -1 // Default: "--" (sticky)
 			// Other columns can stay -1 (unused for instruments)
 		}
 	}
