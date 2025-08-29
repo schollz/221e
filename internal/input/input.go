@@ -701,7 +701,7 @@ func handleLeft(m *model.Model) tea.Cmd {
 			storage.AutoSave(m)
 		}
 	} else if m.ViewMode == types.ArpeggioView {
-		if m.CurrentCol > 0 { // 2 columns: 0=DI, 1=CO
+		if m.CurrentCol > 0 { // 3 columns: 0=DI, 1=CO, 2=Divisor
 			m.CurrentCol = m.CurrentCol - 1
 			storage.AutoSave(m)
 		}
@@ -743,7 +743,7 @@ func handleRight(m *model.Model) tea.Cmd {
 			storage.AutoSave(m)
 		}
 	} else if m.ViewMode == types.ArpeggioView {
-		if m.CurrentCol < 1 { // 2 columns: 0=DI, 1=CO
+		if m.CurrentCol < 2 { // 3 columns: 0=DI, 1=CO, 2=Divisor
 			m.CurrentCol = m.CurrentCol + 1
 			storage.AutoSave(m)
 		}

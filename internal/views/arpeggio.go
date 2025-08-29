@@ -7,13 +7,47 @@ import (
 	"github.com/schollz/2n/internal/model"
 )
 
+func GetArpeggioStatusMessage(m *model.Model) string {
+	settings := m.ArpeggioSettings[m.ArpeggioEditingIndex]
+	currentRow := &settings.Rows[m.CurrentRow]
+
+	var columnStatus string
+	switch m.CurrentCol {
+	case 0: // DI (Direction) column
+		directionText := "--"
+		switch currentRow.Direction {
+		case 1:
+			directionText = "u-"
+		case 2:
+			directionText = "d-"
+		}
+		columnStatus = fmt.Sprintf("Direction %s", directionText)
+	case 1: // CO (Count) column
+		countText := "--"
+		if currentRow.Count != -1 {
+			countText = fmt.Sprintf("%02X", currentRow.Count)
+		}
+		columnStatus = fmt.Sprintf("Count %s", countText)
+	case 2: // Divisor (/) column
+		divisorText := "--"
+		if currentRow.Divisor != -1 {
+			divisorText = fmt.Sprintf("%02X", currentRow.Divisor)
+		}
+		columnStatus = fmt.Sprintf("Divisor /%s", divisorText)
+	}
+
+	baseMsg := "Up/Down: Navigate rows | Left/Right: Navigate columns | Ctrl+Arrow: Adjust values | Shift+Left: Back to Phrase view"
+	return fmt.Sprintf("%s | %s", columnStatus, baseMsg)
+}
+
 func RenderArpeggioView(m *model.Model) string {
+	statusMsg := GetArpeggioStatusMessage(m)
 	return renderViewWithCommonPattern(m, "Arpeggio Settings", fmt.Sprintf("Arpeggio %02X", m.ArpeggioEditingIndex), func(styles *ViewStyles) string {
 		var content strings.Builder
 		content.WriteString("\n")
 
 		// Render header for the arpeggio table
-		headerRow := fmt.Sprintf("  %-4s %-4s %-4s", styles.Label.Render("Row"), styles.Label.Render("DI"), styles.Label.Render("CO"))
+		headerRow := fmt.Sprintf("     %-4s %-4s %-4s", styles.Label.Render("DI"), styles.Label.Render("CO"), styles.Label.Render("/"))
 		content.WriteString(headerRow)
 		content.WriteString("\n")
 
@@ -47,6 +81,12 @@ func RenderArpeggioView(m *model.Model) string {
 				coText = fmt.Sprintf("%02X", arpeggioRow.Count)
 			}
 
+			// Divisor (/) text for this row
+			divisorText := "--"
+			if arpeggioRow.Divisor != -1 {
+				divisorText = fmt.Sprintf("%02X", arpeggioRow.Divisor)
+			}
+
 			// Direction (DI) column - selectable if this row and column are selected
 			var diCell string
 			if m.CurrentRow == row && m.CurrentCol == 0 { // Column 0 for DI
@@ -63,11 +103,19 @@ func RenderArpeggioView(m *model.Model) string {
 				coCell = styles.Normal.Render(coText)
 			}
 
-			rowData := fmt.Sprintf("  %-4s %-4s %-4s", styles.Label.Render(rowLabel), diCell, coCell)
+			// Divisor (/) column - selectable if this row and column are selected
+			var divisorCell string
+			if m.CurrentRow == row && m.CurrentCol == 2 { // Column 2 for Divisor
+				divisorCell = styles.Selected.Render(divisorText)
+			} else {
+				divisorCell = styles.Normal.Render(divisorText)
+			}
+
+			rowData := fmt.Sprintf("  %-4s %-4s %-4s %-4s", styles.Label.Render(rowLabel), diCell, coCell, divisorCell)
 			content.WriteString(rowData)
 			content.WriteString("\n")
 		}
 
 		return content.String()
-	}, "Up/Down: Navigate rows | Left/Right: Navigate columns | Ctrl+Arrow: Adjust values | Shift+Left: Back to Phrase view", 18) // 16 rows + 1 header + 1 spacing
+	}, statusMsg, 18) // 16 rows + 1 header + 1 spacing
 }

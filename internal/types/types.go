@@ -208,6 +208,7 @@ type TimestrechSettings struct {
 type ArpeggioRow struct {
 	Direction int `json:"direction"` // Direction: 0="--", 1="u-", 2="d-"
 	Count     int `json:"count"`     // Count: -1="--", 0-254 for hex values 00-FE
+	Divisor   int `json:"divisor"`   // Divisor: -1="--", 1-254 for hex values 01-FE
 }
 
 type ArpeggioSettings struct {
