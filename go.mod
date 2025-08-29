@@ -6,8 +6,9 @@ require (
 	github.com/charmbracelet/bubbles v0.21.0
 	github.com/charmbracelet/bubbletea v1.3.6
 	github.com/charmbracelet/lipgloss v1.1.0
-	github.com/fogleman/ease v0.0.0-20170301025033-8da417bf1776
+	github.com/goccy/go-json v0.10.5
 	github.com/hypebeast/go-osc v0.0.0-20220308234300-cec5a8a1e5f5
+	github.com/json-iterator/go v1.1.12
 	github.com/lucasb-eyer/go-colorful v1.2.0
 	github.com/muesli/termenv v0.16.0
 	github.com/stretchr/testify v1.10.0
@@ -25,6 +26,8 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-localereader v0.0.1 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/muesli/ansi v0.0.0-20230316100256-276c6243b2f6 // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
