@@ -614,6 +614,111 @@ func ModifyMidiValue(m *model.Model, baseDelta float32) {
 	storage.AutoSave(m)
 }
 
+func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
+	if m.SoundMakerEditingIndex < 0 || m.SoundMakerEditingIndex >= 255 {
+		return
+	}
+
+	// Get current settings
+	settings := &m.SoundMakerSettings[m.SoundMakerEditingIndex]
+
+	if m.CurrentRow == 0 { // Name row
+		// Name cycles through available SoundMakers
+		var delta int
+		if baseDelta > 0 {
+			delta = 1
+		} else {
+			delta = -1
+		}
+
+		// Use the available SoundMaker names
+		soundMakers := []string{"None", "Polyperc", "Infinite Pad"}
+		
+		// Find current index
+		currentIndex := -1
+		for i, sm := range soundMakers {
+			if settings.Name == sm {
+				currentIndex = i
+				break
+			}
+		}
+		
+		// If current SoundMaker not found, start from beginning
+		if currentIndex == -1 {
+			currentIndex = 0
+		}
+		
+		// Apply delta with wrapping
+		newIndex := currentIndex + delta
+		if newIndex < 0 {
+			newIndex = len(soundMakers) - 1 // Wrap to last SoundMaker
+		} else if newIndex >= len(soundMakers) {
+			newIndex = 0 // Wrap to first SoundMaker
+		}
+		
+		oldName := settings.Name
+		settings.Name = soundMakers[newIndex]
+		log.Printf("Modified SoundMaker %02X Name: %s -> %s", m.SoundMakerEditingIndex, oldName, settings.Name)
+	} else if m.CurrentRow >= 1 && m.CurrentRow <= 4 { // Parameters A, B, C, D
+		// Parameters cycle through 00-FE or -- (which is -1)
+		var delta int
+		if baseDelta > 0 {
+			delta = 1
+		} else {
+			delta = -1
+		}
+
+		// Get the current parameter value
+		var currentValue *int
+		switch m.CurrentRow {
+		case 1: // Parameter A
+			currentValue = &settings.A
+		case 2: // Parameter B
+			currentValue = &settings.B
+		case 3: // Parameter C
+			currentValue = &settings.C
+		case 4: // Parameter D
+			currentValue = &settings.D
+		}
+
+		if currentValue != nil {
+			oldValue := *currentValue
+			var newValue int
+
+			if *currentValue == -1 {
+				// If currently "--", start from 00
+				if delta > 0 {
+					newValue = 0
+				} else {
+					newValue = 254 // FE
+				}
+			} else {
+				newValue = *currentValue + delta
+				// Wrap around: 00-FE (0-254) or -- (-1)
+				if newValue > 254 {
+					newValue = -1 // Wrap to "--"
+				} else if newValue < -1 {
+					newValue = 254 // Wrap to FE
+				}
+			}
+
+			*currentValue = newValue
+			paramName := string(rune('A' + (m.CurrentRow - 1)))
+			if newValue == -1 {
+				log.Printf("Modified SoundMaker %02X Parameter %s: %02X -> -- (delta: %d)", m.SoundMakerEditingIndex, paramName, oldValue, delta)
+			} else {
+				if oldValue == -1 {
+					log.Printf("Modified SoundMaker %02X Parameter %s: -- -> %02X (delta: %d)", m.SoundMakerEditingIndex, paramName, newValue, delta)
+				} else {
+					log.Printf("Modified SoundMaker %02X Parameter %s: %02X -> %02X (delta: %d)", m.SoundMakerEditingIndex, paramName, oldValue, newValue, delta)
+				}
+			}
+		}
+	}
+
+	storage.AutoSave(m)
+}
+
 func ModifyValue(m *model.Model, delta int) {
 	if m.ViewMode == types.ChainView {
 		// Chain view now only has phrase editing

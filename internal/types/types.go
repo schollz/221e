@@ -16,6 +16,7 @@ const (
 	MixerView
 	ArpeggioView
 	MidiView
+	SoundMakerView
 )
 
 type PhraseViewType int
@@ -60,10 +61,11 @@ const (
 	ColChordTransposition                     // Column 15: Chord Transposition (Instrument view only: "-", "0"-"F")
 	ColArpeggio                               // Column 16: Arpeggio (Instrument view only: 00-FE)
 	ColMidi                                   // Column 17: MIDI (Instrument view only: 00-FE, sticky)
-	ColAttack                                 // Column 18: Attack (Instrument view only: 00-FE, 0.02-30s exponential, default -1, sticky)
-	ColDecay                                  // Column 19: Decay (Instrument view only: 00-FE, 0.0-30.0s linear, default -1, sticky)
-	ColSustain                                // Column 20: Sustain (Instrument view only: 00-FE, 0.0-1.0 linear, default -1, sticky)
-	ColRelease                                // Column 21: Release (Instrument view only: 00-FE, 0.02-30s exponential, default -1, sticky)
+	ColSoundMaker                             // Column 18: SoundMaker (Instrument view only: 00-FE, sticky)
+	ColAttack                                 // Column 19: Attack (Instrument view only: 00-FE, 0.02-30s exponential, default -1, sticky)
+	ColDecay                                  // Column 20: Decay (Instrument view only: 00-FE, 0.0-30.0s linear, default -1, sticky)
+	ColSustain                                // Column 21: Sustain (Instrument view only: 00-FE, 0.0-1.0 linear, default -1, sticky)
+	ColRelease                                // Column 22: Release (Instrument view only: 00-FE, 0.02-30s exponential, default -1, sticky)
 	ColCount                                  // Total number of columns
 )
 
@@ -222,6 +224,14 @@ type MidiSettings struct {
 	Channel string `json:"channel"` // MIDI Channel (1-16 or "all")
 }
 
+type SoundMakerSettings struct {
+	Name string `json:"name"` // SoundMaker name ("Polyperc", "Infinite Pad", etc.)
+	A    int    `json:"a"`    // Parameter A (00-FE, -1 for "--")
+	B    int    `json:"b"`    // Parameter B (00-FE, -1 for "--")
+	C    int    `json:"c"`    // Parameter C (00-FE, -1 for "--")
+	D    int    `json:"d"`    // Parameter D (00-FE, -1 for "--")
+}
+
 type ClipboardData struct {
 	// Cell data
 	Value    int
@@ -274,6 +284,7 @@ type SaveData struct {
 	TimestrechSettings    [255]TimestrechSettings `json:"timestrechSettings"`
 	ArpeggioSettings      [255]ArpeggioSettings   `json:"arpeggioSettings"`
 	MidiSettings          [255]MidiSettings       `json:"midiSettings"`
+	SoundMakerSettings    [255]SoundMakerSettings `json:"soundMakerSettings"`
 	SongData              [8][16]int              `json:"songData"`
 	LastSongRow           int                     `json:"lastSongRow"`
 	LastSongTrack         int                     `json:"lastSongTrack"`
