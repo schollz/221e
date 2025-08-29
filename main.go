@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"runtime/pprof"
 	"syscall"
 	"time"
 
@@ -23,17 +24,36 @@ import (
 type scReadyMsg struct{}
 
 func main() {
+	// Start CPU profiling for the first 30 seconds
+	cpuFile, err := os.Create("cpu.prof")
+	if err != nil {
+		log.Printf("Could not create CPU profile: %v", err)
+	} else {
+		if err := pprof.StartCPUProfile(cpuFile); err != nil {
+			log.Printf("Could not start CPU profile: %v", err)
+		} else {
+			go func() {
+				time.Sleep(30 * time.Second)
+				pprof.StopCPUProfile()
+				cpuFile.Close()
+				log.Println("CPU profiling stopped after 30 seconds")
+			}()
+		}
+	}
+
 	// Set up cleanup on exit
 	setupCleanupOnExit()
 
 	// Parse command line arguments (no no-splash anymore)
 	var oscPort int
+	var skipJackCheck bool
 	var saveFile string
 	flag.IntVar(&oscPort, "osc-port", 57120, "OSC port for sending playback messages")
 	flag.StringVar(&saveFile, "save-file", "tracker-save.json", "Save file to load from or create")
+	flag.BoolVar(&skipJackCheck, "skip-jack-check", false, "Skip checking for JACK server (for testing only)")
 	flag.Parse()
 
-	if !supercollider.IsJackEnabled() {
+	if !supercollider.IsJackEnabled() && !skipJackCheck {
 		dialog := supercollider.NewJackDialogModel()
 		p := tea.NewProgram(dialog, tea.WithAltScreen())
 		_, _ = p.Run()
@@ -117,19 +137,30 @@ func main() {
 	p := tea.NewProgram(tm, tea.WithAltScreen())
 
 	// Start SuperCollider in the background so it doesn't block the splash
-	go func() {
-		if !supercollider.IsSuperColliderEnabled() {
-			if err := supercollider.StartSuperCollider(); err != nil {
-				log.Printf("Failed to start SuperCollider: %v", err)
+	if supercollider.IsJackEnabled() {
+		go func() {
+			if !supercollider.IsSuperColliderEnabled() {
+				if err := supercollider.StartSuperCollider(); err != nil {
+					log.Printf("Failed to start SuperCollider: %v", err)
+				}
 			}
+		}()
+	} else {
+		if !skipJackCheck {
+			log.Printf("JACK server not enabled; cannot start SuperCollider")
+			os.Exit(1)
 		}
-	}()
+	}
 
 	// When SC signals readiness via /cpuusage, hide the splash
 	go func() {
-		<-readyChannel
-		log.Printf("Received SuperCollider ready; hiding splash")
-		p.Send(scReadyMsg{})
+		if skipJackCheck {
+			p.Send(scReadyMsg{}) // skip splash if skipping JACK check
+		} else {
+			<-readyChannel
+			log.Printf("Received SuperCollider ready; hiding splash")
+			p.Send(scReadyMsg{})
+		}
 	}()
 
 	if _, err := p.Run(); err != nil {
@@ -215,7 +246,7 @@ func tickSplash() tea.Cmd {
 	})
 }
 
-func (tm TrackerModel) Init() tea.Cmd {
+func (tm *TrackerModel) Init() tea.Cmd {
 	if tm.showingSplash {
 		// Start splash screen animation at 60fps
 		return tickSplash()
@@ -225,7 +256,7 @@ func (tm TrackerModel) Init() tea.Cmd {
 	return tickWaveform(30)
 }
 
-func (tm TrackerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (tm *TrackerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		tm.model.TermHeight = msg.Height
@@ -296,6 +327,8 @@ func (tm TrackerModel) View() string {
 		return views.RenderRetriggerView(tm.model)
 	case types.TimestrechView:
 		return views.RenderTimestrechView(tm.model)
+	case types.ArpeggioView:
+		return views.RenderArpeggioView(tm.model)
 	case types.MixerView:
 		return views.RenderMixerView(tm.model)
 	default: // FileView

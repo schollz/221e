@@ -1,51 +1,90 @@
 package storage
 
 import (
-	"encoding/json"
 	"log"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
+	"time"
 
+	jsoniter "github.com/json-iterator/go"
 	"github.com/schollz/2n/internal/model"
 	"github.com/schollz/2n/internal/types"
 )
 
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
+
+var (
+	mu           sync.Mutex
+	timer        *time.Timer
+	debounceTime = 1 * time.Second
+)
+
 func AutoSave(m *model.Model) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	if timer != nil {
+		// Stop the previous timer if still running
+		timer.Stop()
+	}
+
+	// Start a new timer
+	timer = time.AfterFunc(debounceTime, func() {
+		// Place your actual save logic here
+		go func() {
+			startTime := time.Now()
+			DoSave(m)
+			elapsed := time.Since(startTime).Milliseconds()
+			log.Printf("autosaved in %d ms", elapsed)
+		}()
+	})
+}
+
+func DoSave(m *model.Model) {
+	log.Printf("doing save")
 	saveData := types.SaveData{
-		ViewMode:           m.ViewMode,
-		CurrentRow:         m.CurrentRow,
-		CurrentCol:         m.CurrentCol,
-		ScrollOffset:       m.ScrollOffset,
-		CurrentPhrase:      m.CurrentPhrase,
-		FileSelectRow:      m.FileSelectRow,
-		FileSelectCol:      m.FileSelectCol,
-		ChainsData:         m.ChainsData,
-		PhrasesData:        m.PhrasesData,
-		LastEditRow:        m.LastEditRow,
-		PhrasesFiles:       m.PhrasesFiles,
-		CurrentDir:         m.CurrentDir,
-		BPM:                m.BPM,
-		PPQ:                m.PPQ,
-		PregainDB:          m.PregainDB,
-		PostgainDB:         m.PostgainDB,
-		BiasDB:             m.BiasDB,
-		SaturationDB:       m.SaturationDB,
-		DriveDB:            m.DriveDB,
-		FileMetadata:       m.FileMetadata,
-		LastChainRow:       m.LastChainRow,
-		LastPhraseRow:      m.LastPhraseRow,
-		RecordingEnabled:   m.RecordingEnabled,
-		RetriggerSettings:  m.RetriggerSettings,
-		TimestrechSettings: m.TimestrechSettings,
-		SongData:           m.SongData,
-		LastSongRow:        m.LastSongRow,
-		LastSongTrack:      m.LastSongTrack,
-		CurrentChain:       m.CurrentChain,
-		CurrentTrack:       m.CurrentTrack,
-		TrackSetLevels:     m.TrackSetLevels,
-		CurrentMixerTrack:  m.CurrentMixerTrack,
+		ViewMode:      m.ViewMode,
+		CurrentRow:    m.CurrentRow,
+		CurrentCol:    m.CurrentCol,
+		ScrollOffset:  m.ScrollOffset,
+		CurrentPhrase: m.CurrentPhrase,
+		FileSelectRow: m.FileSelectRow,
+		FileSelectCol: m.FileSelectCol,
+		ChainsData:    m.ChainsData,
+		PhrasesData:   m.PhrasesData,
+		// New separate data pools
+		InstrumentChainsData:  m.InstrumentChainsData,
+		InstrumentPhrasesData: m.InstrumentPhrasesData,
+		SamplerChainsData:     m.SamplerChainsData,
+		SamplerPhrasesData:    m.SamplerPhrasesData,
+		SamplerPhrasesFiles:   m.SamplerPhrasesFiles,
+		LastEditRow:           m.LastEditRow,
+		PhrasesFiles:          m.PhrasesFiles,
+		CurrentDir:            m.CurrentDir,
+		BPM:                   m.BPM,
+		PPQ:                   m.PPQ,
+		PregainDB:             m.PregainDB,
+		PostgainDB:            m.PostgainDB,
+		BiasDB:                m.BiasDB,
+		SaturationDB:          m.SaturationDB,
+		DriveDB:               m.DriveDB,
+		FileMetadata:          m.FileMetadata,
+		LastChainRow:          m.LastChainRow,
+		LastPhraseRow:         m.LastPhraseRow,
+		RecordingEnabled:      m.RecordingEnabled,
+		RetriggerSettings:     m.RetriggerSettings,
+		TimestrechSettings:    m.TimestrechSettings,
+		SongData:              m.SongData,
+		LastSongRow:           m.LastSongRow,
+		LastSongTrack:         m.LastSongTrack,
+		CurrentChain:          m.CurrentChain,
+		CurrentTrack:          m.CurrentTrack,
+		TrackSetLevels:        m.TrackSetLevels,
+		TrackTypes:            m.TrackTypes,
+		CurrentMixerTrack:     m.CurrentMixerTrack,
 	}
 
 	data, err := json.Marshal(saveData)
@@ -60,6 +99,7 @@ func AutoSave(m *model.Model) {
 		return
 	}
 }
+
 func LoadState(m *model.Model, oscPort int, saveFile string) error {
 	data, err := os.ReadFile(saveFile)
 	if err != nil {
@@ -110,11 +150,29 @@ func LoadState(m *model.Model, oscPort int, saveFile string) error {
 	m.CurrentChain = saveData.CurrentChain
 	m.CurrentTrack = saveData.CurrentTrack
 	m.TrackSetLevels = saveData.TrackSetLevels
+	m.TrackTypes = saveData.TrackTypes
 	m.CurrentMixerTrack = saveData.CurrentMixerTrack
 
 	// Bulk-assign arrays
 	m.ChainsData = saveData.ChainsData
 	m.PhrasesData = saveData.PhrasesData
+
+	// Load new separate data pools (with backwards compatibility)
+	if saveData.InstrumentChainsData != nil {
+		m.InstrumentChainsData = saveData.InstrumentChainsData
+	}
+	if len(saveData.InstrumentPhrasesData) > 0 && saveData.InstrumentPhrasesData[0] != nil {
+		m.InstrumentPhrasesData = saveData.InstrumentPhrasesData
+	}
+	if saveData.SamplerChainsData != nil {
+		m.SamplerChainsData = saveData.SamplerChainsData
+	}
+	if len(saveData.SamplerPhrasesData) > 0 && saveData.SamplerPhrasesData[0] != nil {
+		m.SamplerPhrasesData = saveData.SamplerPhrasesData
+	}
+	if saveData.SamplerPhrasesFiles != nil {
+		m.SamplerPhrasesFiles = append([]string(nil), saveData.SamplerPhrasesFiles...)
+	}
 
 	// Restore phrase file list
 	m.PhrasesFiles = append([]string(nil), saveData.PhrasesFiles...)
