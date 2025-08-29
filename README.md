@@ -38,59 +38,93 @@ Defaults: OSC **57120**, save file **tracker-save.json**.
 
 ## Keyboard — Quick Reference
 
-### Shift navigation (views)
-- **Shift+Right**
+### Navigation (views)
+- **Shift+Right** – Navigate deeper into structure
   - Song → Chain (selected track/row)
   - Chain → Phrase (selected row)
-  - Phrase → Retrigger (if on **RT** and set) / Timestretch (if on **TS** and set) / File Browser (otherwise)
-- **Shift+Up**
-  - Song / Chain / Phrase → **Settings**
-  - File Browser → **File Metadata** (for selected file)
-- **Shift+Down**
-  - Song / Chain / Phrase → **Mixer**
-  - Mixer → back to previous view
+  - Phrase → Retrigger/Timestretch/Arpeggio (if set) or File Browser
+- **Shift+Left** – Navigate back to parent view
+- **Shift+Up** – Go to Settings (from Song/Chain/Phrase) or File Metadata (from File Browser)
+- **Shift+Down** – Go to Mixer (from Song/Chain/Phrase) or back from Mixer
+- **Arrow keys** – Move cursor/navigate within views
+- **Left/Right** – Navigate tracks (Song), chains (Chain), or columns (Phrase)
 
-### Editing / movement
-- **Ctrl+Right / Ctrl+Left** – fine adjust values
-- **Ctrl+Up / Ctrl+Down** – coarse adjust values
+### Editing
+- **Ctrl+Up/Down** – Coarse adjust values (+/-16, coarse increments)
+- **Ctrl+Left/Right** – Fine adjust values (+/-1, fine increments)
+- **Backspace** – Clear cell/value
+- **Ctrl+H** – Delete entire row
+- **S** – Paste last edited row
+- **C** – Trigger row playback OR copy last row with increment (if empty)
 
-### Copy & paste
-- **Ctrl+C** copy • **Ctrl+X** cut • **Ctrl+V** paste • **Ctrl+D** deep copy
+### Copy & Paste
+- **Ctrl+C** – Copy cell
+- **Ctrl+X** – Cut row  
+- **Ctrl+V** – Paste
+- **Ctrl+D** – Deep copy
 
-### Playback
-- **Space** play/stop from current row
-- **Ctrl+@** play from top
+### Playback & Recording
+- **Space** – Play/stop from current position
+- **Ctrl+@** – Play/stop from top (global)
+- **Ctrl+R** – Toggle recording mode
+
+### Advanced Functions
+- **Ctrl+F** – Smart fill/clear for DT column (Delta Time)
+- **Ctrl+S** – Manual save
 
 ### Misc
-- **Esc** clear selection highlight
-- **Ctrl+Q** quit
+- **Esc** – Clear selection highlight
+- **Ctrl+Q** – Quit
 
 
 ## Views
 
-- **Song** – 8 tracks × 16 rows (chains per track)
-- **Chain** – 16 rows mapping to phrases
-- **Phrase** – tracker grid (notes & effects)
-- **File Browser** – pick audio files per row
-- **File Metadata** – per-file BPM / slices
-- **Retrigger** – retrigger envelope
-- **Timestretch** – stretch window settings
-- **Mixer** – track levels/volumes
-- **Settings** – BPM, PPQ, gains, etc.
+- **Song** – 8 tracks × 16 rows (chains per track), supports Instrument/Sampler track types
+- **Chain** – 16 rows mapping to phrases  
+- **Phrase** – Main tracker grid with two modes:
+  - **Sampler** – Full sample manipulation (pitch, effects, files)
+  - **Instrument** – Note-based with chords, ADSR, arpeggio
+- **File Browser** – Select audio files for sampler tracks
+- **File Metadata** – Configure BPM and slice count per file
+- **Retrigger** – Envelope settings for retrigger effects
+- **Timestretch** – Time-stretching parameters
+- **Arpeggio** – Arpeggio pattern editor (Instrument tracks only)
+- **Mixer** – Per-track volume levels
+- **Settings** – Global settings (BPM, PPQ, audio gains, etc.)
 
 
 ## Phrase Columns
 
+### Sampler View
 ```
-SL  P  NN  DT  GT  RT  TS  Я  PA  LP  HP  CO  VE  FI
+SL  DT  NN  PI  GT  RT  TS  Я  PA  LP  HP  CO  VE  FI
 ```
 
-- **SL** (slice) • **P** (play 0/1) • **NN** (note)
-- **DT** (delta) • **GT** (gate) • **RT** (retrigger) • **TS** (timestretch)
-- **Я** (reverse)
-- **PA** (pan)
-- **LP** / **HP** (filters)
-- **CO** (comb) • **VE** (reverb) • **FI** (file index)
+### Instrument View  
+```
+SL  DT  NOT  CAT  A D S R  AR
+```
+
+### Column Descriptions
+- **SL** (slice) – Row number display
+- **DT** (delta time) – **Unified playback control**: `--`/`00` = skip, `>00` = play for N ticks
+- **NN/NOT** (note) – MIDI note (hex) or note name
+- **PI** (pitch) – Pitch bend (sampler only)
+- **GT** (gate) – Note length/gate time
+- **RT** (retrigger) – Retrigger effect index
+- **TS** (timestretch) – Time-stretch effect index  
+- **Я** (reverse) – Reverse playback flag
+- **PA** (pan) – Stereo panning
+- **LP/HP** (filters) – Low-pass/High-pass filters
+- **CO** (comb) – Comb filter effect
+- **VE** (reverb) – Reverb effect
+- **FI** (file index) – Sample file selection (sampler only)
+- **CAT** (chord/addition/transposition) – Chord notation (instrument only)
+- **A D S R** (ADSR) – Attack/Decay/Sustain/Release envelope (instrument only)
+- **AR** (arpeggio) – Arpeggio pattern index (instrument only)
+
+### Key Feature: Unified DT Column
+Both Sampler and Instrument views now use the same **DT** (Delta Time) column for playback control, replacing the previous separate P/DT system. This provides consistent behavior across both track types.
 
 
 ## License
