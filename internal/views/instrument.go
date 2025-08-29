@@ -28,7 +28,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 	var content strings.Builder
 
 	// Render header for Instrument view (row, playback, note, and chord columns)
-	columnHeader := "  SL  DT  NOT  CAT  A D S R  AR"
+	columnHeader := "  SL  DT  NOT  CAT  A D S R   AR  MI"
 	phraseHeader := fmt.Sprintf("Instrument %02X", m.CurrentPhrase)
 	content.WriteString(RenderHeader(m, columnHeader, phraseHeader))
 
@@ -266,7 +266,27 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 			arpeggioCell = normalStyle.Render(fmt.Sprintf("%2s", arpeggioText))
 		}
 
-		row := fmt.Sprintf("%s %-3s  %s  %s  %s%s%s  %s%s%s%s  %s", arrow, sliceCell, dtCell, noteCell, chordCell, chordAddCell, chordTransCell, attackCell, decayCell, sustainCell, releaseCell, arpeggioCell)
+		// MIDI (MI) - display MIDI index
+		midiValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColMidi]
+		midiText := "--"
+		if midiValue != -1 {
+			midiText = fmt.Sprintf("%02X", midiValue)
+		}
+
+		var midiCell string
+		if m.CurrentRow == dataIndex && m.CurrentCol == 11 { // Column 11 is the MI column (after AR)
+			midiCell = selectedStyle.Render(fmt.Sprintf("%2s", midiText))
+		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
+			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == 11) {
+				midiCell = copiedStyle.Render(fmt.Sprintf("%2s", midiText))
+			} else {
+				midiCell = normalStyle.Render(fmt.Sprintf("%2s", midiText))
+			}
+		} else {
+			midiCell = normalStyle.Render(fmt.Sprintf("%2s", midiText))
+		}
+
+		row := fmt.Sprintf("%s %-3s  %s  %s  %s%s%s  %s%s%s%s  %s  %s", arrow, sliceCell, dtCell, noteCell, chordCell, chordAddCell, chordTransCell, attackCell, decayCell, sustainCell, releaseCell, arpeggioCell, midiCell)
 		content.WriteString(row)
 		content.WriteString("\n")
 	}
@@ -393,6 +413,28 @@ func GetInstrumentPhraseStatusMessage(m *model.Model) string {
 		} else {
 			releaseSeconds := types.ReleaseToSeconds(releaseValue)
 			statusMsg = fmt.Sprintf("Release: %02X (%.3fs, sticky)", releaseValue, releaseSeconds)
+		}
+	} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColArpeggio) { // AR column
+		// Show Arpeggio info
+		arpeggioValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColArpeggio]
+		if arpeggioValue == -1 {
+			statusMsg = "Arpeggio: -- (not assigned)"
+		} else {
+			statusMsg = fmt.Sprintf("Arpeggio: %02X", arpeggioValue)
+		}
+	} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColMidi) { // MI column
+		// Show MIDI info with sticky behavior
+		midiValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColMidi]
+		if midiValue == -1 {
+			// Check for effective (sticky) MIDI value
+			effectiveMidiValue := input.GetEffectiveMidiValueForTrack(m, m.CurrentPhrase, m.CurrentRow, m.CurrentTrack)
+			if effectiveMidiValue == -1 {
+				statusMsg = "MIDI: -- (sticky)"
+			} else {
+				statusMsg = fmt.Sprintf("MIDI: -- (%02X sticky)", effectiveMidiValue)
+			}
+		} else {
+			statusMsg = fmt.Sprintf("MIDI: %02X (sticky)", midiValue)
 		}
 	} else {
 		// On other columns - show basic info

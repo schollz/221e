@@ -84,6 +84,8 @@ type Model struct {
 	// Arpeggio settings management
 	ArpeggioSettings     [255]types.ArpeggioSettings // Array of arpeggio settings (00-FE)
 	ArpeggioEditingIndex int                         // Currently editing arpeggio index
+	MidiSettings         [255]types.MidiSettings     // Array of MIDI settings (00-FE)
+	MidiEditingIndex     int                         // Currently editing MIDI index
 	// View navigation state
 	LastChainRow  int // Last selected row in chain view
 	LastPhraseRow int // Last selected row in phrase view
@@ -289,6 +291,15 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "AR",
 			}
+		case 11: // MI - MIDI column
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColMidi),
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "MI",
+			}
 		default:
 			return nil // Invalid column
 		}
@@ -460,6 +471,8 @@ func NewModel(oscPort int, saveFile string) *Model {
 		TimestrechEditingIndex: 0,
 		// Initialize arpeggio settings
 		ArpeggioEditingIndex: 0,
+		// Initialize MIDI settings
+		MidiEditingIndex: 0,
 		// Initialize view navigation state
 		CurrentChain:  0,
 		CurrentTrack:  0,
@@ -543,6 +556,7 @@ func (m *Model) initializeDefaultData() {
 			m.InstrumentPhrasesData[p][i][types.ColChordAddition] = int(types.ChordAddNone)        // Default: "-"
 			m.InstrumentPhrasesData[p][i][types.ColChordTransposition] = int(types.ChordTransNone) // Default: "-"
 			m.InstrumentPhrasesData[p][i][types.ColArpeggio] = -1                                  // Default: "--" (no arpeggio)
+			m.InstrumentPhrasesData[p][i][types.ColMidi] = -1                                      // Default: "--" (sticky)
 			// Initialize ADSR columns (all sticky, default to undefined)
 			m.InstrumentPhrasesData[p][i][types.ColAttack] = -1                                    // Default: "--" (sticky)
 			m.InstrumentPhrasesData[p][i][types.ColDecay] = -1                                     // Default: "--" (sticky)
@@ -625,6 +639,14 @@ func (m *Model) initializeDefaultData() {
 			}
 		}
 		m.ArpeggioSettings[i] = arpeggioSettings
+	}
+
+	// Initialize MIDI settings with defaults
+	for i := 0; i < 255; i++ {
+		m.MidiSettings[i] = types.MidiSettings{
+			Device:  "None",
+			Channel: "1", // Default to channel 1
+		}
 	}
 
 	// Initialize song data (8 tracks × 16 rows, all empty initially)
@@ -971,6 +993,15 @@ func (m *Model) SendStopOSC() {
 	}
 	msg := osc.NewMessage("/stop")
 	_ = m.oscClient.Send(msg) // ignore error or log if you prefer
+}
+
+// SetAvailableMidiDevices updates the list of available MIDI devices
+// This function should be called from main.go when MIDI functionality is added
+func SetAvailableMidiDevices(devices []string) {
+	// For now this is just a placeholder to store the devices globally
+	// In the future, this would update the device list that can be selected in MIDI view
+	log.Printf("Available MIDI devices updated: %v", devices)
+	// TODO: Store devices list and update MIDI settings accordingly
 }
 
 // GetPhraseViewType determines if the current track context should use Sampler or Instrument phrase view
