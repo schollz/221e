@@ -643,6 +643,9 @@ func handleUp(m *model.Model) tea.Cmd {
 	} else if m.ViewMode == types.MidiView {
 		if m.CurrentRow > 0 {
 			m.CurrentRow = m.CurrentRow - 1
+			if m.CurrentRow < m.ScrollOffset {
+				m.ScrollOffset = m.CurrentRow
+			}
 		}
 	} else if m.ViewMode == types.MixerView {
 		if m.CurrentMixerRow > 0 {
@@ -697,8 +700,14 @@ func handleDown(m *model.Model) tea.Cmd {
 			m.CurrentRow = m.CurrentRow + 1
 		}
 	} else if m.ViewMode == types.MidiView {
-		if m.CurrentRow < 1 { // 0=Device, 1=Channel
+		// Calculate maximum row: 2 settings rows + available MIDI devices
+		maxRow := 1 + len(m.AvailableMidiDevices) // Device(0), Channel(1), then devices starting at row 2
+		if m.CurrentRow < maxRow {
 			m.CurrentRow = m.CurrentRow + 1
+			visibleRows := m.GetVisibleRows()
+			if m.CurrentRow >= m.ScrollOffset+visibleRows {
+				m.ScrollOffset = m.CurrentRow - visibleRows + 1
+			}
 		}
 	} else if m.ViewMode == types.MixerView {
 		// Only row 0 (set level) exists now, no navigation needed
@@ -1056,6 +1065,16 @@ func handleCtrlD(m *model.Model) tea.Cmd {
 func handleSpace(m *model.Model) tea.Cmd {
 	if m.ViewMode == types.FileView {
 		audio.SelectFile(m)
+		return nil
+	} else if m.ViewMode == types.MidiView {
+		// Handle device selection in MIDI view
+		if m.CurrentRow >= 2 && m.CurrentRow-2+m.ScrollOffset < len(m.AvailableMidiDevices) {
+			deviceIndex := m.CurrentRow - 2 + m.ScrollOffset
+			selectedDevice := m.AvailableMidiDevices[deviceIndex]
+			m.MidiSettings[m.MidiEditingIndex].Device = selectedDevice
+			log.Printf("Selected MIDI device: %s for MIDI %02X", selectedDevice, m.MidiEditingIndex)
+			storage.AutoSave(m)
+		}
 		return nil
 	} else if m.ViewMode != types.SettingsView && m.ViewMode != types.FileMetadataView {
 		return TogglePlayback(m)

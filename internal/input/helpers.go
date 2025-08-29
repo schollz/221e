@@ -536,8 +536,7 @@ func ModifyMidiValue(m *model.Model, baseDelta float32) {
 	settings := &m.MidiSettings[m.MidiEditingIndex]
 
 	if m.CurrentRow == 0 { // Device row
-		// For now, Device just cycles through a basic list including "None"
-		// This will be expanded when the public SetAvailableMidiDevices function is used
+		// Device cycles through available MIDI devices from AvailableMidiDevices
 		var delta int
 		if baseDelta > 0 {
 			delta = 1
@@ -545,8 +544,9 @@ func ModifyMidiValue(m *model.Model, baseDelta float32) {
 			delta = -1
 		}
 
-		// Basic device list for now
-		devices := []string{"None"} // Will be populated by SetAvailableMidiDevices
+		// Use the actual available MIDI devices list, with "None" as first option
+		devices := []string{"None"}
+		devices = append(devices, m.AvailableMidiDevices...)
 		
 		// Find current index
 		currentIndex := -1

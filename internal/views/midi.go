@@ -16,9 +16,17 @@ func GetMidiStatusMessage(m *model.Model) string {
 		columnStatus = fmt.Sprintf("MIDI Device: %s", settings.Device)
 	case 1: // MIDI Channel row
 		columnStatus = fmt.Sprintf("MIDI Channel: %s", settings.Channel)
+	default:
+		// Device selection rows
+		if m.CurrentRow >= 2 && m.CurrentRow-2+m.ScrollOffset < len(m.AvailableMidiDevices) {
+			deviceIndex := m.CurrentRow - 2 + m.ScrollOffset
+			columnStatus = fmt.Sprintf("Select Device: %s", m.AvailableMidiDevices[deviceIndex])
+		} else {
+			columnStatus = "Available MIDI Devices"
+		}
 	}
 
-	baseMsg := "Up/Down: Navigate settings | Left/Right: Navigate columns | Ctrl+Arrow: Adjust values | Shift+Left: Back to Phrase view"
+	baseMsg := "Up/Down: Navigate | SPACE: Select device | Ctrl+Arrow: Adjust values | Shift+Left: Back to Phrase view"
 	return fmt.Sprintf("%s | %s", columnStatus, baseMsg)
 }
 
@@ -53,6 +61,39 @@ func RenderMidiView(m *model.Model) string {
 			content.WriteString("\n")
 		}
 
+		// Separator line
+		content.WriteString("\n")
+		content.WriteString(styles.Label.Render("Available MIDI Devices:"))
+		content.WriteString("\n\n")
+
+		// Available MIDI devices list (scrollable)
+		visibleRows := m.GetVisibleRows() - 6 // Reserve space for header, settings, and labels
+		deviceStartRow := 2 // Devices start at row 2 (after Device and Channel settings)
+		
+		for i := 0; i < visibleRows && i+m.ScrollOffset < len(m.AvailableMidiDevices); i++ {
+			dataIndex := i + m.ScrollOffset
+			deviceRow := deviceStartRow + i
+
+			// Arrow for current selection
+			arrow := " "
+			if m.CurrentRow == deviceRow {
+				arrow = "▶"
+			}
+
+			// Device name with appropriate styling
+			deviceName := m.AvailableMidiDevices[dataIndex]
+			var deviceCell string
+			if m.CurrentRow == deviceRow {
+				deviceCell = styles.Selected.Render(deviceName)
+			} else {
+				deviceCell = styles.Normal.Render(deviceName)
+			}
+
+			row := fmt.Sprintf("%s %s", arrow, deviceCell)
+			content.WriteString(row)
+			content.WriteString("\n")
+		}
+
 		return content.String()
-	}, statusMsg, 4) // 2 settings rows + spacing + header
+	}, statusMsg, m.GetVisibleRows()) // Use dynamic visible rows
 }
