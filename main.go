@@ -338,6 +338,8 @@ func (tm TrackerModel) View() string {
 		return views.RenderArpeggioView(tm.model)
 	case types.MidiView:
 		return views.RenderMidiView(tm.model)
+	case types.SoundMakerView:
+		return views.RenderSoundMakerView(tm.model)
 	case types.MixerView:
 		return views.RenderMixerView(tm.model)
 	default: // FileView
