@@ -14,6 +14,7 @@ import (
 	"github.com/hypebeast/go-osc/osc"
 
 	"github.com/schollz/2n/internal/input"
+	"github.com/schollz/2n/internal/midiconnector"
 	"github.com/schollz/2n/internal/model"
 	"github.com/schollz/2n/internal/storage"
 	"github.com/schollz/2n/internal/supercollider"
@@ -96,6 +97,12 @@ func main() {
 	log.SetOutput(f)
 	log.Println("Debug logging enabled")
 	log.Printf("OSC port configured: %d", oscPort)
+
+	// Get list of MIDI devices
+	midi_devices := midiconnector.Devices()
+	for _, device := range midi_devices {
+		log.Printf("MIDI device found: %+v", device)
+	}
 
 	// Create readiness channel for SuperCollider startup detection
 	readyChannel := make(chan struct{}, 1)
