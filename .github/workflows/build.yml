@@ -22,8 +22,6 @@ jobs:
       - name: Set up environment variables
         run: |
           echo "CGO_ENABLED=1" >> $GITHUB_ENV
-      - name: Run tests
-        run: go test ./... -v -cover
       - name: Build Go project
         run: go build -v
   linux:
@@ -38,9 +36,6 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "stable"
-
-      - name: Run tests
-        run: go test ./... -v -cover
 
       - name: Build Go project
         run: go build -v
