@@ -1035,9 +1035,9 @@ func handleBackspace(m *model.Model) tea.Cmd {
 		colIndex := columnMapping.DataColumnIndex
 
 		if colIndex >= 0 && colIndex < int(types.ColCount) {
-			if colIndex == int(types.ColPlayback) {
-				// Reset playback to 0 (special case - 0 means off)
-				(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = 0
+			if colIndex == int(types.ColDeltaTime) {
+				// Reset DT to -1 (means skip/not played)
+				(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = -1
 			} else {
 				// Clear all other columns to -1 (including GT, PI, RT, etc.)
 				(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = -1
@@ -1059,10 +1059,12 @@ func handleCtrlH(m *model.Model) tea.Cmd {
 	} else if m.ViewMode == types.PhraseView {
 		// Delete entire phrase row (clear all columns)
 		phrasesData := m.GetCurrentPhrasesData()
-		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColPlayback)] = 0   // Reset playback to 0
+		phraseViewType := m.GetPhraseViewType()
+		if phraseViewType == types.InstrumentPhraseView {
+			}
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColNote)] = -1      // Clear note
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColPitch)] = 128    // Reset pitch to default (hex 80)
-		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColDeltaTime)] = -1 // Clear deltatime
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColDeltaTime)] = -1 // Clear deltatime (for samplers this also clears playback)
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColGate)] = 128     // Reset gate to default
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColRetrigger)] = -1 // Clear retrigger
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColFilename)] = -1  // Clear filename

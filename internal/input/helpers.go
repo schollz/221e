@@ -540,16 +540,16 @@ func ModifyValue(m *model.Model, delta int) {
 	phrasesData := m.GetCurrentPhrasesData()
 	currentValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex]
 
-	if colIndex == int(types.ColPlayback) {
-		// P column: clamp 0..1 (keep existing behavior)
+	if colIndex == int(types.ColDeltaTime) {
+		// DT column: clamp 0..254 (hex range)
 		if currentValue == -1 {
 			currentValue = 0
 		}
 		newValue := currentValue + delta
 		if newValue < 0 {
 			newValue = 0
-		} else if newValue > 1 {
-			newValue = 1
+		} else if newValue > 254 {
+			newValue = 254
 		}
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newValue
 
@@ -598,9 +598,9 @@ func ModifyValue(m *model.Model, delta int) {
 			}
 			(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newValue
 
-			// Auto-set P=1 when any note is added in Instrument view
+			// Auto-set DT=1 when any note is added in both views
 			if newValue != -1 {
-				(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColPlayback)] = 1
+				(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColDeltaTime)] = 1
 			}
 		} else if phraseViewType == types.InstrumentPhraseView && colIndex == int(types.ColChord) {
 			// Instrument view chord column: Cycle through chord types, stop at ends
@@ -689,10 +689,13 @@ func ModifyValue(m *model.Model, delta int) {
 			(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newValue
 		}
 
-		// Auto-enable playback on first note entry
-		if colIndex == int(types.ColNote) && (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColPlayback] == 0 {
-			(*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColPlayback] = 1
-			log.Printf("Auto-enabled playback for phrase %d row %d due to note change", m.CurrentPhrase, m.CurrentRow)
+		// Auto-enable playback on first note entry - use DT for both views
+		if colIndex == int(types.ColNote) {
+			if (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColDeltaTime] == -1 {
+				// Auto-set DT to 01 when a note is added (only if DT is currently -1/"--")
+				(*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColDeltaTime] = 1
+				log.Printf("Auto-set DT=01 for phrase %d row %d due to note change", m.CurrentPhrase, m.CurrentRow)
+			}
 		}
 	}
 
@@ -847,7 +850,9 @@ func AdvancePlayback(m *model.Model) {
 				// Find next row with playback enabled in current phrase
 				phrasesData := GetPhrasesDataForTrack(m, track)
 				for i := m.SongPlaybackRowInPhrase[track] + 1; i < 255; i++ {
-					if (*phrasesData)[phraseNum][i][types.ColPlayback] == 1 {
+					// Unified DT-based playback: DT > 0 means playable for both instruments and samplers
+					dtValue := (*phrasesData)[phraseNum][i][types.ColDeltaTime]
+					if IsRowPlayable(dtValue) {
 						m.SongPlaybackRowInPhrase[track] = i
 						EmitRowDataFor(m, phraseNum, i, track)
 						log.Printf("Song track %d advanced within phrase from row %d to %d", track, oldPhraseRow, i)
@@ -945,13 +950,15 @@ func AdvancePlayback(m *model.Model) {
 		log.Printf("Song playback: processed %d active tracks", activeTrackCount)
 	} else if m.PlaybackMode == types.ChainView {
 		// Chain playback mode - advance through phrases in sequence
-		// Find next row with playback enabled (P=1)
+		// Find next row with playback enabled (unified DT-based playback)
 		phrasesData := GetPhrasesDataForTrack(m, m.CurrentTrack)
 
 		// Validate PlaybackPhrase is within bounds before accessing array
 		if m.PlaybackPhrase >= 0 && m.PlaybackPhrase < 255 {
 			for i := m.PlaybackRow + 1; i < 255; i++ {
-				if (*phrasesData)[m.PlaybackPhrase][i][types.ColPlayback] == 1 {
+				// Unified DT-based playback: DT > 0 means playable for both instruments and samplers
+				dtValue := (*phrasesData)[m.PlaybackPhrase][i][types.ColDeltaTime]
+				if IsRowPlayable(dtValue) {
 					m.PlaybackRow = i
 					DebugLogRowEmission(m)
 					log.Printf("Chain playback advanced from row %d to %d", oldRow, m.PlaybackRow)
@@ -998,10 +1005,12 @@ func AdvancePlayback(m *model.Model) {
 		return
 	} else {
 		// Phrase-only playback mode
-		// Find next row with playback enabled (P=1)
+		// Find next row with playback enabled (unified DT-based playback)
 		phrasesData := GetPhrasesDataForTrack(m, m.CurrentTrack)
 		for i := m.PlaybackRow + 1; i < 255; i++ {
-			if (*phrasesData)[m.PlaybackPhrase][i][types.ColPlayback] == 1 {
+			// Unified DT-based playback: DT > 0 means playable for both instruments and samplers
+			dtValue := (*phrasesData)[m.PlaybackPhrase][i][types.ColDeltaTime]
+			if IsRowPlayable(dtValue) {
 				m.PlaybackRow = i
 				DebugLogRowEmission(m)
 				log.Printf("Phrase playback advanced from row %d to %d", oldRow, m.PlaybackRow)
@@ -1036,9 +1045,10 @@ func FindFirstNonEmptyRowInPhraseForTrack(m *model.Model, phraseNum int, track i
 		phrasesData := GetPhrasesDataForTrack(m, track)
 		log.Printf("DEBUG: FindFirstNonEmptyRowInPhraseForTrack - phrase=%d, track=%d", phraseNum, track)
 		for i := 0; i < 255; i++ {
-			playbackValue := (*phrasesData)[phraseNum][i][types.ColPlayback]
-			if playbackValue == 1 {
-				log.Printf("DEBUG: Found playback row %d with P=%d", i, playbackValue)
+			// Unified DT-based playback: DT > 0 means playable for both instruments and samplers
+			dtValue := (*phrasesData)[phraseNum][i][types.ColDeltaTime]
+			if IsRowPlayable(dtValue) {
+				log.Printf("DEBUG: Found playback row %d with DT=%d", i, dtValue)
 				return i
 			}
 		}
@@ -1101,8 +1111,8 @@ func CopyLastRowWithIncrement(m *model.Model) {
 		log.Printf("No non-null note found above current row, using default start")
 	}
 
-	// Set playback flag to 1
-	(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColPlayback)] = 1
+	// Set DT to 1 for both view types
+	(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColDeltaTime)] = 1
 
 	// Increment the note and set it
 	var newNote int
@@ -1240,9 +1250,8 @@ func CutRowToClipboard(m *model.Model) {
 		}
 		m.Clipboard = clipboard
 		// Clear the row
-		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColPlayback)] = 0   // Reset playback to 0
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColNote)] = -1      // Clear note
-		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColDeltaTime)] = -1 // Clear deltatime
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColDeltaTime)] = -1 // Clear deltatime (clears playback for both views)
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColFilename)] = -1  // Clear filename
 		log.Printf("Cut phrase row %d", m.CurrentRow)
 	}
@@ -1460,8 +1469,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 	phrasesData := GetPhrasesDataForTrack(m, trackId)
 	rowData := (*phrasesData)[phrase][row]
 
-	// Raw values
-	rawPlayback := rowData[types.ColPlayback]
+	// Raw values - DT used for playback control in both views
 	rawNote := rowData[types.ColNote]
 	rawPitch := rowData[types.ColPitch]
 	rawDeltaTime := rowData[types.ColDeltaTime]
@@ -1515,7 +1523,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 	} else {
 		log.Printf("Context: Manual emit  Phrase:%02X Row:%02X BPM=%.2f PPQ=%d", phrase, row, m.BPM, m.PPQ)
 	}
-	log.Printf("Playback: %d", rawPlayback)
+	log.Printf("DeltaTime (playback control): %d", rawDeltaTime)
 	// Show different debug info based on track type
 	if trackId >= 0 && trackId < 8 && !m.TrackTypes[trackId] {
 		// Instrument track - show chord information
@@ -1574,9 +1582,11 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 	// Only emit if we have playback enabled and a concrete note
 	// For samplers, also check that we have a filename
 	needsFile := trackId >= 0 && trackId < 8 && m.TrackTypes[trackId] // Sampler tracks need files
-	if rawPlayback != 1 || rawNote == -1 || (needsFile && effectiveFilename == "none") {
-		if rawPlayback != 1 {
-			log.Printf("ROW_EMIT: skipped (P!=1)")
+	
+	// Unified DT-based playback condition: DT > 0 means play for both instruments and samplers
+	if !IsRowPlayable(rawDeltaTime) || rawNote == -1 || (needsFile && effectiveFilename == "none") {
+		if !IsRowPlayable(rawDeltaTime) {
+			log.Printf("ROW_EMIT: skipped (DT<=0, value=%d)", rawDeltaTime)
 		} else if rawNote == -1 {
 			log.Printf("ROW_EMIT: skipped (NN==null)")
 		} else if needsFile && effectiveFilename == "none" {
@@ -1769,19 +1779,17 @@ func shouldEmitRowForTrack(m *model.Model, trackId int) bool {
 
 	phrasesData := GetPhrasesDataForTrack(m, trackId)
 	nn := (*phrasesData)[p][r][types.ColNote]         // may still be inherited elsewhere in your code
-	dtRaw := (*phrasesData)[p][r][types.ColDeltaTime] // strictly local for this rule
-	pFlag := (*phrasesData)[p][r][types.ColPlayback]
+	dtRaw := (*phrasesData)[p][r][types.ColDeltaTime] // unified playback control
 
-	if pFlag != 1 {
+	// Unified DT-based playback: DT > 0 means play, DT <= 0 means don't play
+	if !IsRowPlayable(dtRaw) {
 		return false
 	}
+	
 	if nn == -1 {
 		return false
 	}
-	// DT == 00 => skip row for all track types (time still passes)
-	if dtRaw == 0 {
-		return false
-	}
+	
 	return true
 }
 
@@ -2222,7 +2230,9 @@ func IsPhraseUnused(m *model.Model, phraseID int) bool {
 	// Check if phrase has any playback-enabled rows
 	phrasesData := GetPhrasesDataForTrack(m, m.CurrentTrack)
 	for row := 0; row < 255; row++ {
-		if (*phrasesData)[phraseID][row][types.ColPlayback] == 1 {
+		// Unified DT-based playback: DT > 0 means playable for both instruments and samplers
+		dtValue := (*phrasesData)[phraseID][row][types.ColDeltaTime]
+		if IsRowPlayable(dtValue) {
 			return false
 		}
 	}
@@ -2380,31 +2390,37 @@ func FillSequentialPhrase(m *model.Model) {
 	}
 
 	// Handle different column types
-	if colIndex == int(types.ColPlayback) {
-		// Special bit-flipping logic for P column
+	if colIndex == int(types.ColDeltaTime) {
+		// Special Ctrl+F logic for DT column
 		currentValue := (*phrasesData)[m.CurrentPhrase][currentRow][colIndex]
 
-		if currentValue == 0 {
-			// Current cell is 0: flip all 0's above (and current) until most recent "1" to 1
-			for row := currentRow; row >= 0; row-- {
+		if currentValue <= 0 {
+			// Current cell is "--" (value <= 0): Find last non-"--" value and copy it down
+			lastNonEmptyValue := 1 // Default to 1 if no previous value found
+			fillStartRow := 0
+			
+			// Find the last non-"--" value going upward
+			for row := currentRow - 1; row >= 0; row-- {
 				cellValue := (*phrasesData)[m.CurrentPhrase][row][colIndex]
-				if cellValue == 1 {
-					break // Stop at the most recent "1"
-				}
-				if cellValue == 0 {
-					(*phrasesData)[m.CurrentPhrase][row][colIndex] = 1
+				if cellValue > 0 {
+					lastNonEmptyValue = cellValue
+					fillStartRow = row + 1
+					break
 				}
 			}
+			
+			// Fill from fillStartRow to currentRow with lastNonEmptyValue
+			for row := fillStartRow; row <= currentRow; row++ {
+				(*phrasesData)[m.CurrentPhrase][row][colIndex] = lastNonEmptyValue
+			}
 		} else {
-			// Current cell is 1: flip all 1's above (and current) until most recent "0" to 0
+			// Current cell is "XX" (value > 0): Switch XX to "--" on current and all above until first non-XX
 			for row := currentRow; row >= 0; row-- {
 				cellValue := (*phrasesData)[m.CurrentPhrase][row][colIndex]
-				if cellValue == 0 {
-					break // Stop at the most recent "0"
+				if cellValue != currentValue {
+					break // Stop at first cell that doesn't match current value
 				}
-				if cellValue == 1 {
-					(*phrasesData)[m.CurrentPhrase][row][colIndex] = 0
-				}
+				(*phrasesData)[m.CurrentPhrase][row][colIndex] = -1 // Set to "--"
 			}
 		}
 	} else if colIndex == int(types.ColEffectReverse) {
@@ -2447,8 +2463,9 @@ func FillSequentialPhrase(m *model.Model) {
 	// Auto-enable playback when filling note column (NN or NOT)
 	if colIndex == int(types.ColNote) {
 		for row := startRow; row <= currentRow; row++ {
-			if (*phrasesData)[m.CurrentPhrase][row][types.ColPlayback] == 0 {
-				(*phrasesData)[m.CurrentPhrase][row][types.ColPlayback] = 1
+			// Use DT column for both views (only if not already set)
+			if (*phrasesData)[m.CurrentPhrase][row][types.ColDeltaTime] == -1 {
+				(*phrasesData)[m.CurrentPhrase][row][types.ColDeltaTime] = 1
 			}
 		}
 	}
@@ -2457,4 +2474,36 @@ func FillSequentialPhrase(m *model.Model) {
 	m.LastEditRow = currentRow
 
 	log.Printf("Filled phrase %02X column %d from row %d to %d, starting with %d", m.CurrentPhrase, colIndex, startRow, currentRow, startValue)
+}
+
+// Shared DT (Delta Time) utility functions for both Sampler and Instrument views
+// DT controls playback: >0 = play for N ticks, 0 = skip, -1 = skip
+
+// IsRowPlayable checks if a row should be played based on its DT value
+func IsRowPlayable(dtValue int) bool {
+	return dtValue > 0
+}
+
+// GetEffectiveDTValue gets the effective DT value for a row (for display/status)
+func GetEffectiveDTValue(dtValue int) string {
+	if dtValue == -1 {
+		return "--"
+	}
+	return fmt.Sprintf("%02X", dtValue)
+}
+
+// SetDTForPlayback sets DT to 01 (default playback value) for a row
+func SetDTForPlayback(phrasesData *[255][][]int, phrase, row int) {
+	(*phrasesData)[phrase][row][types.ColDeltaTime] = 1
+}
+
+// GetDTStatusMessage returns a status message for DT column
+func GetDTStatusMessage(dtValue int) string {
+	if dtValue == -1 {
+		return "Delta Time: -- (row not played)"
+	} else if dtValue == 0 {
+		return "Delta Time: 00 (row not played)"
+	} else {
+		return fmt.Sprintf("Delta Time: %02X (%d ticks, row played)", dtValue, dtValue)
+	}
 }

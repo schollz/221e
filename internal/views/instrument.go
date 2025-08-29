@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/schollz/2n/internal/input"
 	"github.com/schollz/2n/internal/model"
 	"github.com/schollz/2n/internal/music"
 	"github.com/schollz/2n/internal/types"
@@ -27,7 +28,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 	var content strings.Builder
 
 	// Render header for Instrument view (row, playback, note, and chord columns)
-	columnHeader := "  SL  P  NOT  CAT  A D S R  AR"
+	columnHeader := "  SL  DT  NOT  CAT  A D S R  AR"
 	phraseHeader := fmt.Sprintf("Instrument %02X", m.CurrentPhrase)
 	content.WriteString(RenderHeader(m, columnHeader, phraseHeader))
 
@@ -75,25 +76,22 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 			sliceCell = sliceStyle.Render(sliceHex)
 		}
 
-		// Playback (P) column
+		// Delta Time (DT) column - unified playback control for both Sampler and Instrument views
 		phrasesData := m.GetCurrentPhrasesData()
-		playbackValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColPlayback]
-		playbackText := "0"
-		if playbackValue == 1 {
-			playbackText = "1"
-		}
+		dtValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColDeltaTime]
+		dtText := input.GetEffectiveDTValue(dtValue)
 
-		var playbackCell string
-		if m.CurrentRow == dataIndex && m.CurrentCol == 1 { // Column 1 is the P column
-			playbackCell = selectedStyle.Render(playbackText)
+		var dtCell string
+		if m.CurrentRow == dataIndex && m.CurrentCol == 1 { // Column 1 is the DT column
+			dtCell = selectedStyle.Render(dtText)
 		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
 			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == 1) {
-				playbackCell = copiedStyle.Render(playbackText)
+				dtCell = copiedStyle.Render(dtText)
 			} else {
-				playbackCell = normalStyle.Render(playbackText)
+				dtCell = normalStyle.Render(dtText)
 			}
 		} else {
-			playbackCell = normalStyle.Render(playbackText)
+			dtCell = normalStyle.Render(dtText)
 		}
 
 		// Note (NOT) - use ColNote but display as note name
@@ -268,7 +266,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 			arpeggioCell = normalStyle.Render(fmt.Sprintf("%2s", arpeggioText))
 		}
 
-		row := fmt.Sprintf("%s %-3s  %s  %s  %s%s%s  %s%s%s%s  %s", arrow, sliceCell, playbackCell, noteCell, chordCell, chordAddCell, chordTransCell, attackCell, decayCell, sustainCell, releaseCell, arpeggioCell)
+		row := fmt.Sprintf("%s %-3s  %s  %s  %s%s%s  %s%s%s%s  %s", arrow, sliceCell, dtCell, noteCell, chordCell, chordAddCell, chordTransCell, attackCell, decayCell, sustainCell, releaseCell, arpeggioCell)
 		content.WriteString(row)
 		content.WriteString("\n")
 	}
@@ -352,13 +350,13 @@ func GetInstrumentPhraseStatusMessage(m *model.Model) string {
 		} else {
 			statusMsg = "No note selected"
 		}
-	} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColPlayback) { // P column
-		// Show playback info
-		playbackValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColPlayback]
-		if playbackValue == 1 {
-			statusMsg = "Playback: ON"
+	} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColDeltaTime) { // DT column
+		// Show DT playback info
+		playbackValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColDeltaTime]
+		if playbackValue > 0 {
+			statusMsg = fmt.Sprintf("DT: %02X (play %d ticks)", playbackValue, playbackValue)
 		} else {
-			statusMsg = "Playback: OFF"
+			statusMsg = "DT: not played"
 		}
 	} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColAttack) { // A column
 		// Show Attack info
