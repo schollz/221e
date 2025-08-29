@@ -496,6 +496,30 @@ func ModifyArpeggioValue(m *model.Model, baseDelta float32) {
 		}
 		currentRow.Count = newCount
 		log.Printf("Modified arpeggio %02X row %02X Count: %d -> %d (delta: %d)", m.ArpeggioEditingIndex, m.CurrentRow, currentRow.Count-delta, currentRow.Count, delta)
+	} else if m.CurrentCol == 2 { // Divisor (/) column
+		// Divisor: -1="--", 1-254 for hex values 01-FE (never allow 00)
+		var delta int
+		if baseDelta == 1.0 || baseDelta == -1.0 {
+			delta = int(baseDelta) * 16 // Coarse control (Ctrl+Up/Down): +/-16
+		} else if baseDelta == 0.05 || baseDelta == -0.05 {
+			delta = int(baseDelta / 0.05) // Fine control (Ctrl+Left/Right): +/-1
+		} else {
+			delta = int(baseDelta) // Fallback
+		}
+
+		newDivisor := currentRow.Divisor + delta
+		if currentRow.Divisor == -1 && delta > 0 {
+			// When going up from "--", start at 1 (not 0)
+			newDivisor = 1
+		} else if newDivisor <= 0 {
+			// Going below 1, wrap to "--"
+			newDivisor = -1
+		} else if newDivisor > 254 {
+			// Cap at FE (254)
+			newDivisor = 254
+		}
+		currentRow.Divisor = newDivisor
+		log.Printf("Modified arpeggio %02X row %02X Divisor: %d -> %d (delta: %d)", m.ArpeggioEditingIndex, m.CurrentRow, currentRow.Divisor-delta, currentRow.Divisor, delta)
 	}
 
 	// Store back the modified settings

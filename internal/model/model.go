@@ -621,6 +621,7 @@ func (m *Model) initializeDefaultData() {
 			arpeggioSettings.Rows[row] = types.ArpeggioRow{
 				Direction: 0,  // Default direction (0 = "--")
 				Count:     -1, // Default count (-1 = "--")
+				Divisor:   -1, // Default divisor (-1 = "--")
 			}
 		}
 		m.ArpeggioSettings[i] = arpeggioSettings
