@@ -77,6 +77,9 @@ func DoSave(m *model.Model) {
 		RecordingEnabled:      m.RecordingEnabled,
 		RetriggerSettings:     m.RetriggerSettings,
 		TimestrechSettings:    m.TimestrechSettings,
+		ArpeggioSettings:      m.ArpeggioSettings,
+		MidiSettings:          m.MidiSettings,
+		SoundMakerSettings:    m.SoundMakerSettings,
 		SongData:              m.SongData,
 		LastSongRow:           m.LastSongRow,
 		LastSongTrack:         m.LastSongTrack,
@@ -144,6 +147,9 @@ func LoadState(m *model.Model, oscPort int, saveFile string) error {
 	m.RecordingEnabled = saveData.RecordingEnabled
 	m.RetriggerSettings = saveData.RetriggerSettings
 	m.TimestrechSettings = saveData.TimestrechSettings
+	m.ArpeggioSettings = saveData.ArpeggioSettings
+	m.MidiSettings = saveData.MidiSettings
+	m.SoundMakerSettings = saveData.SoundMakerSettings
 	m.SongData = saveData.SongData
 	m.LastSongRow = saveData.LastSongRow
 	m.LastSongTrack = saveData.LastSongTrack

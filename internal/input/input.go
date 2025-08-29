@@ -148,6 +148,15 @@ func midiViewConfig() ViewSwitchConfig {
 	}
 }
 
+func soundMakerViewConfig() ViewSwitchConfig {
+	return ViewSwitchConfig{
+		ViewMode:     types.SoundMakerView,
+		Row:          0,
+		Col:          0,
+		ScrollOffset: 0,
+	}
+}
+
 type TickMsg time.Time
 
 func HandleKeyInput(m *model.Model, msg tea.KeyMsg) tea.Cmd {
@@ -368,6 +377,25 @@ func handleShiftRight(m *model.Model) tea.Cmd {
 			m.ViewMode = types.MidiView
 			m.CurrentRow = 0 // Start at first setting
 			m.CurrentCol = 0 // Start at Device column
+			m.ScrollOffset = 0
+			storage.AutoSave(m)
+			return nil
+		} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColSoundMaker) {
+			// Navigate to SoundMaker view - if no SoundMaker is selected, use 00
+			phrasesData := m.GetCurrentPhrasesData()
+			soundMakerIndex := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColSoundMaker]
+			if soundMakerIndex == -1 {
+				// If no SoundMaker is selected, default to index 00 for settings
+				soundMakerIndex = 0
+				// Also set the value in the cell to 00 so it shows when we return
+				(*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColSoundMaker] = 0
+			}
+			// Save current phrase view position
+			m.LastPhraseRow = m.CurrentRow
+			m.SoundMakerEditingIndex = soundMakerIndex
+			m.ViewMode = types.SoundMakerView
+			m.CurrentRow = 0 // Start at first setting
+			m.CurrentCol = 0 // Start at Name column
 			m.ScrollOffset = 0
 			storage.AutoSave(m)
 			return nil
@@ -604,6 +632,16 @@ func handleShiftLeft(m *model.Model) tea.Cmd {
 			miColumn = 1 // MI is not accessible in sampler view, default to P column
 		}
 		switchToViewWithVisibilityCheck(m, phraseViewConfig(m.LastPhraseRow, miColumn))
+	} else if m.ViewMode == types.SoundMakerView {
+		// Navigate back to phrase view - find the UI column for SO
+		var soColumn int
+		phraseViewType := m.GetPhraseViewType()
+		if phraseViewType == types.InstrumentPhraseView {
+			soColumn = 12 // SO column is column 12 in instrument view (after MI column)
+		} else {
+			soColumn = 1 // SO is not accessible in sampler view, default to P column
+		}
+		switchToViewWithVisibilityCheck(m, phraseViewConfig(m.LastPhraseRow, soColumn))
 	}
 	return nil
 }
@@ -641,6 +679,13 @@ func handleUp(m *model.Model) tea.Cmd {
 			m.CurrentRow = m.CurrentRow - 1
 		}
 	} else if m.ViewMode == types.MidiView {
+		if m.CurrentRow > 0 {
+			m.CurrentRow = m.CurrentRow - 1
+			if m.CurrentRow < m.ScrollOffset {
+				m.ScrollOffset = m.CurrentRow
+			}
+		}
+	} else if m.ViewMode == types.SoundMakerView {
 		if m.CurrentRow > 0 {
 			m.CurrentRow = m.CurrentRow - 1
 			if m.CurrentRow < m.ScrollOffset {
@@ -709,6 +754,17 @@ func handleDown(m *model.Model) tea.Cmd {
 				m.ScrollOffset = m.CurrentRow - visibleRows + 1
 			}
 		}
+	} else if m.ViewMode == types.SoundMakerView {
+		// Calculate maximum row: 5 settings rows + available SoundMakers
+		availableSoundMakers := []string{"Polyperc", "Infinite Pad"}
+		maxRow := 4 + len(availableSoundMakers) // Name(0), A(1), B(2), C(3), D(4), then SoundMakers starting at row 5
+		if m.CurrentRow < maxRow {
+			m.CurrentRow = m.CurrentRow + 1
+			visibleRows := m.GetVisibleRows()
+			if m.CurrentRow >= m.ScrollOffset+visibleRows {
+				m.ScrollOffset = m.CurrentRow - visibleRows + 1
+			}
+		}
 	} else if m.ViewMode == types.MixerView {
 		// Only row 0 (set level) exists now, no navigation needed
 		// Keep CurrentMixerRow at 0
@@ -762,6 +818,8 @@ func handleLeft(m *model.Model) tea.Cmd {
 		}
 	} else if m.ViewMode == types.MidiView {
 		// No horizontal navigation in MIDI view - use up/down for settings
+	} else if m.ViewMode == types.SoundMakerView {
+		// No horizontal navigation in SoundMaker view - use up/down for settings
 	} else if m.ViewMode == types.MixerView {
 		if m.CurrentMixerTrack > 0 { // Select previous track (0-7)
 			m.CurrentMixerTrack = m.CurrentMixerTrack - 1
@@ -790,7 +848,7 @@ func handleRight(m *model.Model) tea.Cmd {
 		phraseViewType := m.GetPhraseViewType()
 		var maxValidCol int
 		if phraseViewType == types.InstrumentPhraseView {
-			maxValidCol = 11 // Instrument: last valid column is 11 (MI - MIDI) after adding MIDI column
+			maxValidCol = 12 // Instrument: last valid column is 12 (SO - SoundMaker) after adding SoundMaker column
 		} else {
 			maxValidCol = 14 // Sampler: last valid column is 14 (FI)
 		}
@@ -806,6 +864,8 @@ func handleRight(m *model.Model) tea.Cmd {
 		}
 	} else if m.ViewMode == types.MidiView {
 		// No horizontal navigation in MIDI view - use up/down for settings
+	} else if m.ViewMode == types.SoundMakerView {
+		// No horizontal navigation in SoundMaker view - use up/down for settings
 	} else if m.ViewMode == types.MixerView {
 		if m.CurrentMixerTrack < 7 { // Select next track (0-7)
 			m.CurrentMixerTrack = m.CurrentMixerTrack + 1
@@ -842,6 +902,8 @@ func handleCtrlUp(m *model.Model) tea.Cmd {
 		ModifyArpeggioValue(m, 1.0)
 	} else if m.ViewMode == types.MidiView {
 		ModifyMidiValue(m, 1.0)
+	} else if m.ViewMode == types.SoundMakerView {
+		ModifySoundMakerValue(m, 1.0)
 	} else if m.ViewMode == types.MixerView {
 		if m.CurrentMixerRow == 0 {
 			ModifyMixerSetLevel(m, 1.0) // Coarse increment for set level
@@ -872,6 +934,8 @@ func handleCtrlDown(m *model.Model) tea.Cmd {
 		ModifyArpeggioValue(m, -1.0)
 	} else if m.ViewMode == types.MidiView {
 		ModifyMidiValue(m, -1.0)
+	} else if m.ViewMode == types.SoundMakerView {
+		ModifySoundMakerValue(m, -1.0)
 	} else if m.ViewMode == types.MixerView {
 		if m.CurrentMixerRow == 0 {
 			ModifyMixerSetLevel(m, -1.0) // Coarse decrement for set level
@@ -902,6 +966,8 @@ func handleCtrlLeft(m *model.Model) tea.Cmd {
 		ModifyArpeggioValue(m, -0.05)
 	} else if m.ViewMode == types.MidiView {
 		ModifyMidiValue(m, -0.05)
+	} else if m.ViewMode == types.SoundMakerView {
+		ModifySoundMakerValue(m, -0.05)
 	} else if m.ViewMode == types.MixerView {
 		if m.CurrentMixerRow == 0 {
 			ModifyMixerSetLevel(m, -0.05) // Fine decrement for set level
@@ -934,6 +1000,8 @@ func handleCtrlRight(m *model.Model) tea.Cmd {
 		ModifyArpeggioValue(m, 0.05)
 	} else if m.ViewMode == types.MidiView {
 		ModifyMidiValue(m, 0.05)
+	} else if m.ViewMode == types.SoundMakerView {
+		ModifySoundMakerValue(m, 0.05)
 	} else if m.ViewMode == types.MixerView {
 		if m.CurrentMixerRow == 0 {
 			ModifyMixerSetLevel(m, 0.05) // Fine increment for set level
@@ -1073,6 +1141,17 @@ func handleSpace(m *model.Model) tea.Cmd {
 			selectedDevice := m.AvailableMidiDevices[deviceIndex]
 			m.MidiSettings[m.MidiEditingIndex].Device = selectedDevice
 			log.Printf("Selected MIDI device: %s for MIDI %02X", selectedDevice, m.MidiEditingIndex)
+			storage.AutoSave(m)
+		}
+		return nil
+	} else if m.ViewMode == types.SoundMakerView {
+		// Handle SoundMaker selection in SoundMaker view
+		availableSoundMakers := []string{"Polyperc", "Infinite Pad"}
+		if m.CurrentRow >= 5 && m.CurrentRow-5+m.ScrollOffset < len(availableSoundMakers) {
+			soundMakerIndex := m.CurrentRow - 5 + m.ScrollOffset
+			selectedSoundMaker := availableSoundMakers[soundMakerIndex]
+			m.SoundMakerSettings[m.SoundMakerEditingIndex].Name = selectedSoundMaker
+			log.Printf("Selected SoundMaker: %s for SoundMaker %02X", selectedSoundMaker, m.SoundMakerEditingIndex)
 			storage.AutoSave(m)
 		}
 		return nil

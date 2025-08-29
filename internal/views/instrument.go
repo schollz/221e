@@ -28,7 +28,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 	var content strings.Builder
 
 	// Render header for Instrument view (row, playback, note, and chord columns)
-	columnHeader := "  SL  DT  NOT  CAT  A D S R   AR  MI"
+	columnHeader := "  SL  DT  NOT  CAT  A D S R   AR  MI  SO"
 	phraseHeader := fmt.Sprintf("Instrument %02X", m.CurrentPhrase)
 	content.WriteString(RenderHeader(m, columnHeader, phraseHeader))
 
@@ -286,7 +286,27 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 			midiCell = normalStyle.Render(fmt.Sprintf("%2s", midiText))
 		}
 
-		row := fmt.Sprintf("%s %-3s  %s  %s  %s%s%s  %s%s%s%s  %s  %s", arrow, sliceCell, dtCell, noteCell, chordCell, chordAddCell, chordTransCell, attackCell, decayCell, sustainCell, releaseCell, arpeggioCell, midiCell)
+		// SoundMaker (SO) - display SoundMaker index
+		soundMakerValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColSoundMaker]
+		soundMakerText := "--"
+		if soundMakerValue != -1 {
+			soundMakerText = fmt.Sprintf("%02X", soundMakerValue)
+		}
+
+		var soundMakerCell string
+		if m.CurrentRow == dataIndex && m.CurrentCol == 12 { // Column 12 is the SO column (after MI)
+			soundMakerCell = selectedStyle.Render(fmt.Sprintf("%2s", soundMakerText))
+		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
+			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == 12) {
+				soundMakerCell = copiedStyle.Render(fmt.Sprintf("%2s", soundMakerText))
+			} else {
+				soundMakerCell = normalStyle.Render(fmt.Sprintf("%2s", soundMakerText))
+			}
+		} else {
+			soundMakerCell = normalStyle.Render(fmt.Sprintf("%2s", soundMakerText))
+		}
+
+		row := fmt.Sprintf("%s %-3s  %s  %s  %s%s%s  %s%s%s%s  %s  %s  %s", arrow, sliceCell, dtCell, noteCell, chordCell, chordAddCell, chordTransCell, attackCell, decayCell, sustainCell, releaseCell, arpeggioCell, midiCell, soundMakerCell)
 		content.WriteString(row)
 		content.WriteString("\n")
 	}
@@ -463,6 +483,20 @@ func GetInstrumentPhraseStatusMessage(m *model.Model) string {
 			}
 		} else {
 			statusMsg = fmt.Sprintf("MIDI: %02X (sticky)", midiValue)
+		}
+	} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColSoundMaker) { // SO column
+		// Show SoundMaker info with sticky behavior
+		soundMakerValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColSoundMaker]
+		if soundMakerValue == -1 {
+			// Check for effective (sticky) SoundMaker value
+			effectiveSoundMakerValue := input.GetEffectiveValueForTrack(m, m.CurrentPhrase, m.CurrentRow, int(types.ColSoundMaker), m.CurrentTrack)
+			if effectiveSoundMakerValue == -1 {
+				statusMsg = "SoundMaker: -- (sticky)"
+			} else {
+				statusMsg = fmt.Sprintf("SoundMaker: -- (%02X sticky)", effectiveSoundMakerValue)
+			}
+		} else {
+			statusMsg = fmt.Sprintf("SoundMaker: %02X (sticky)", soundMakerValue)
 		}
 	} else {
 		// On other columns - show basic info
