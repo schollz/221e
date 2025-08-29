@@ -35,3 +35,4 @@ debug.log
 2n.exe
 tracker-save.json
 internal/sox/test.wav
+cpu.prof
