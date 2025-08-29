@@ -382,7 +382,14 @@ func GetInstrumentPhraseStatusMessage(m *model.Model) string {
 		// Show Attack info
 		attackValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColAttack]
 		if attackValue == -1 {
-			statusMsg = "Attack: -- (sticky)"
+			// Check for effective (sticky) Attack value
+			effectiveAttackValue := input.GetEffectiveValueForTrack(m, m.CurrentPhrase, m.CurrentRow, int(types.ColAttack), m.CurrentTrack)
+			if effectiveAttackValue == -1 {
+				statusMsg = "Attack: -- (sticky)"
+			} else {
+				attackSeconds := types.AttackToSeconds(effectiveAttackValue)
+				statusMsg = fmt.Sprintf("Attack: -- (%.3fs, sticky)", attackSeconds)
+			}
 		} else {
 			attackSeconds := types.AttackToSeconds(attackValue)
 			statusMsg = fmt.Sprintf("Attack: %02X (%.3fs, sticky)", attackValue, attackSeconds)
@@ -391,7 +398,14 @@ func GetInstrumentPhraseStatusMessage(m *model.Model) string {
 		// Show Decay info
 		decayValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColDecay]
 		if decayValue == -1 {
-			statusMsg = "Decay: -- (sticky)"
+			// Check for effective (sticky) Decay value
+			effectiveDecayValue := input.GetEffectiveValueForTrack(m, m.CurrentPhrase, m.CurrentRow, int(types.ColDecay), m.CurrentTrack)
+			if effectiveDecayValue == -1 {
+				statusMsg = "Decay: -- (sticky)"
+			} else {
+				decaySeconds := types.DecayToSeconds(effectiveDecayValue)
+				statusMsg = fmt.Sprintf("Decay: -- (%.3fs, sticky)", decaySeconds)
+			}
 		} else {
 			decaySeconds := types.DecayToSeconds(decayValue)
 			statusMsg = fmt.Sprintf("Decay: %02X (%.3fs, sticky)", decayValue, decaySeconds)
@@ -400,7 +414,14 @@ func GetInstrumentPhraseStatusMessage(m *model.Model) string {
 		// Show Sustain info
 		sustainValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColSustain]
 		if sustainValue == -1 {
-			statusMsg = "Sustain: -- (sticky)"
+			// Check for effective (sticky) Sustain value
+			effectiveSustainValue := input.GetEffectiveValueForTrack(m, m.CurrentPhrase, m.CurrentRow, int(types.ColSustain), m.CurrentTrack)
+			if effectiveSustainValue == -1 {
+				statusMsg = "Sustain: -- (sticky)"
+			} else {
+				sustainLevel := types.SustainToLevel(effectiveSustainValue)
+				statusMsg = fmt.Sprintf("Sustain: -- (%.3f, sticky)", sustainLevel)
+			}
 		} else {
 			sustainLevel := types.SustainToLevel(sustainValue)
 			statusMsg = fmt.Sprintf("Sustain: %02X (%.3f, sticky)", sustainValue, sustainLevel)
@@ -409,7 +430,14 @@ func GetInstrumentPhraseStatusMessage(m *model.Model) string {
 		// Show Release info
 		releaseValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColRelease]
 		if releaseValue == -1 {
-			statusMsg = "Release: -- (sticky)"
+			// Check for effective (sticky) Release value
+			effectiveReleaseValue := input.GetEffectiveValueForTrack(m, m.CurrentPhrase, m.CurrentRow, int(types.ColRelease), m.CurrentTrack)
+			if effectiveReleaseValue == -1 {
+				statusMsg = "Release: -- (sticky)"
+			} else {
+				releaseSeconds := types.ReleaseToSeconds(effectiveReleaseValue)
+				statusMsg = fmt.Sprintf("Release: -- (%.3fs, sticky)", releaseSeconds)
+			}
 		} else {
 			releaseSeconds := types.ReleaseToSeconds(releaseValue)
 			statusMsg = fmt.Sprintf("Release: %02X (%.3fs, sticky)", releaseValue, releaseSeconds)
