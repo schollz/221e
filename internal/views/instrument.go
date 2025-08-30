@@ -410,18 +410,20 @@ func GetInstrumentPhraseStatusMessage(m *model.Model) string {
 			statusMsg = "DT: not played"
 		}
 	} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColGate) { // GT column
-		// Show Gate info
+		// Show Gate info with percentage (80 = 100% gate)
 		gateValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColGate]
 		if gateValue == -1 {
 			// Check for effective (sticky) Gate value
 			effectiveGateValue := input.GetEffectiveValueForTrack(m, m.CurrentPhrase, m.CurrentRow, int(types.ColGate), m.CurrentTrack)
 			if effectiveGateValue == -1 {
-				statusMsg = "Gate: -- (80, sticky)"
+				statusMsg = "Gate: -- (80/100%, sticky)"
 			} else {
-				statusMsg = fmt.Sprintf("Gate: -- (%02X, sticky)", effectiveGateValue)
+				gatePercent := float32(effectiveGateValue) / 80.0 * 100.0
+				statusMsg = fmt.Sprintf("Gate: -- (%02X/%.0f%%, sticky)", effectiveGateValue, gatePercent)
 			}
 		} else {
-			statusMsg = fmt.Sprintf("Gate: %02X (sticky)", gateValue)
+			gatePercent := float32(gateValue) / 80.0 * 100.0
+			statusMsg = fmt.Sprintf("Gate: %02X (%.0f%%, sticky)", gateValue, gatePercent)
 		}
 	} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColAttack) { // A column
 		// Show Attack info
