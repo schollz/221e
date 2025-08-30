@@ -189,6 +189,46 @@ func ChordTranspositionToString(chordTrans ChordTransposition) string {
 	}
 }
 
+func GetChordNotes(root int, ctype ChordType, add ChordAddition, transpose ChordTransposition) []int {
+	notes := []int{root}
+
+	if ctype == ChordNone {
+		return notes
+	}
+
+	switch ctype {
+	case ChordMajor:
+		notes = append(notes, root+4, root+7)
+	case ChordMinor:
+		notes = append(notes, root+3, root+7)
+	case ChordDominant:
+		notes = append(notes, root+4, root+7) // dominant is like major triad, add7 handled below
+	}
+
+	switch add {
+	case ChordAdd7:
+		if ctype == ChordMinor {
+			notes = append(notes, root+10) // minor 7th
+		} else {
+			notes = append(notes, root+11) // major 7th
+		}
+	case ChordAdd9:
+		notes = append(notes, root+14) // 9th = 2nd + octave
+	case ChordAdd4:
+		notes = append(notes, root+5) // 4th
+	}
+
+	if transpose > ChordTrans0 {
+		for i := ChordTrans0; i < transpose; i++ {
+			first := notes[0]
+			notes = notes[1:]
+			notes = append(notes, first+12)
+		}
+	}
+
+	return notes
+}
+
 type FileMetadata struct {
 	BPM    float32 `json:"bpm"`    // Source BPM for the file
 	Slices int     `json:"slices"` // Number of slices in the file
