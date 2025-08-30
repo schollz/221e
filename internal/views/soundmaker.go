@@ -115,8 +115,8 @@ func RenderSoundMakerView(m *model.Model) string {
 		// Available SoundMakers list (scrollable)
 		availableSoundMakers := []string{"Polyperc", "Infinite Pad"}
 		visibleRows := m.GetVisibleRows() - 9 // Reserve space for header, settings, and labels
-		soundMakerStartRow := 5 // SoundMakers start at row 5 (after Name and A,B,C,D settings)
-		
+		soundMakerStartRow := 5               // SoundMakers start at row 5 (after Name and A,B,C,D settings)
+
 		for i := 0; i < visibleRows && i+m.ScrollOffset < len(availableSoundMakers); i++ {
 			dataIndex := i + m.ScrollOffset
 			soundMakerRow := soundMakerStartRow + i
@@ -142,5 +142,5 @@ func RenderSoundMakerView(m *model.Model) string {
 		}
 
 		return content.String()
-	}, statusMsg, m.GetVisibleRows()) // Use dynamic visible rows
+	}, statusMsg, 12) // Use dynamic visible rows
 }
