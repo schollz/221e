@@ -734,7 +734,8 @@ type SamplerOSCParams struct {
 }
 
 type InstrumentOSCParams struct {
-	TrackId            int     // Track ID
+	TrackId            int // Track ID
+	NoteOn             int32
 	MidiNote           int     // MIDI note number (0-127)
 	Velocity           float32 // Note velocity (0.0-1.0)
 	ChordType          int     // Chord type (C parameter)
@@ -812,6 +813,7 @@ func NewSamplerOSCParamsWithRetrigger(filename string, trackId, sliceCount, slic
 func NewInstrumentOSCParams(trackId, midiNote int, velocity float32, chordType, chordAddition, chordTransposition int, attack, decay, sustain, release float32, arpeggioIndex, midiSettingsIndex, soundMakerIndex int) InstrumentOSCParams {
 	return InstrumentOSCParams{
 		TrackId:            trackId,
+		NoteOn:             1,
 		MidiNote:           midiNote,
 		Velocity:           velocity,
 		ChordType:          chordType,
@@ -834,18 +836,11 @@ func (m *Model) SendOSCInstrumentMessage(params InstrumentOSCParams) {
 
 	msg := osc.NewMessage("/instrument")
 	msg.Append(int32(params.TrackId)) // Track ID
+	msg.Append(int32(params.NoteOn))  // Note on (1) or off (0)
 	msg.Append("trackVolume")
 	msg.Append(float32(m.TrackSetLevels[params.TrackId]))
-	msg.Append("midiNote")
+	msg.Append("note")
 	msg.Append(int32(params.MidiNote))
-	msg.Append("velocity")
-	msg.Append(float32(params.Velocity))
-	msg.Append("chordType")
-	msg.Append(int32(params.ChordType))
-	msg.Append("chordAddition")
-	msg.Append(int32(params.ChordAddition))
-	msg.Append("chordTransposition")
-	msg.Append(int32(params.ChordTransposition))
 	msg.Append("attack")
 	msg.Append(float32(params.Attack))
 	msg.Append("decay")
@@ -854,20 +849,13 @@ func (m *Model) SendOSCInstrumentMessage(params InstrumentOSCParams) {
 	msg.Append(float32(params.Sustain))
 	msg.Append("release")
 	msg.Append(float32(params.Release))
-	msg.Append("arpeggioIndex")
-	msg.Append(int32(params.ArpeggioIndex))
-	msg.Append("midiSettingsIndex")
-	msg.Append(int32(params.MidiSettingsIndex))
-	msg.Append("soundMakerIndex")
-	msg.Append(int32(params.SoundMakerIndex))
 
 	err := m.oscClient.Send(msg)
 	if err != nil {
 		log.Printf("Error sending OSC instrument message: %v", err)
 	} else {
-		log.Printf("OSC instrument message sent: /instrument track=%d note=%d velocity=%.2f chord=%d/%d/%d ADSR=%.2f/%.2f/%.2f/%.2f arpeggio=%d midi=%d soundmaker=%d",
-			params.TrackId, params.MidiNote, params.Velocity, params.ChordType, params.ChordAddition, params.ChordTransposition,
-			params.Attack, params.Decay, params.Sustain, params.Release, params.ArpeggioIndex, params.MidiSettingsIndex, params.SoundMakerIndex)
+		// log message
+		log.Printf("%s", msg)
 	}
 }
 

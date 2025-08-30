@@ -4,7 +4,36 @@ s.waitForBoot({
 		~serverLatency = 0.1;
 		~synthPlayback = nil;
 		~synthRecord = Dictionary.new();
+		~samplesPlaying = Dictionary.new();
 		~synthsPlaying = Dictionary.new();
+
+
+
+		SynthDef("PolyPerc",{
+			arg trackId,
+			trackVolume = 0,
+			pan=0,
+			note=0,
+			gate=1,
+			attack=0.1,
+			decay=1.0,
+			sustain=0.7,
+			release=0.5,
+			effectDryOut,
+			effectReverb = 0.0, effectReverbOut,
+			effectComb = 0.0, effectCombOut,
+			a=0,b=0,c=0,d=0 // a,b,c,d vary between 0 and 1.0
+			;
+			var snd;
+			var env;
+			snd = Pulse.ar(note.midicps, 0.5);
+			snd = MoogFF.ar(snd, 2000, 1.5);
+			env=EnvGen.ar(Env.adsr(attack,decay,sustain,release),gate,doneAction:2);
+			snd = Pan2.ar(snd,pan);
+			Out.ar(effectDryOut, snd);
+			Out.ar(effectCombOut, snd*effectComb);
+			Out.ar(effectReverbOut, snd*effectReverb);
+		}).add;
 
 
 		SynthDef("synthPad", {
@@ -16,7 +45,7 @@ s.waitForBoot({
 			effectDryOut,
 			effectReverb = 0.0, effectReverbOut,
 			effectComb = 0.0, effectCombOut,
-			a=0,b=0,c=0,d=0, // a,b,c,d vary between 0 and 1.0
+			a=0,b=0,c=0,d=0 // a,b,c,d vary between 0 and 1.0
 			;
 			var snd;
 			var freq = note.midicps;
@@ -293,6 +322,45 @@ s.waitForBoot({
 		~sampleCache = Dictionary.new();
 
 
+		~playSynthFromMsg = {
+			arg msg;
+			var synName = 1000000.rand.asString;
+			var track = msg[1].asInteger;
+			var argLast;
+			var noteOn = msg[2].asInteger;
+			var args = [
+				\effectDryOut, ~busDry,
+				\effectCombOut, ~busComb,
+				\effectReverbOut, ~busReverb,
+				\trackId, track,
+			];
+			["track",track,"noteOn",noteOn].postln;
+			// create a new dictionary if it doesn't exist
+			if (~synthsPlaying.at(track).isNil,{
+				~synthsPlaying.put(track, Dictionary.new());
+			});
+			// stop all currently playing synths for this track
+			~synthsPlaying.at(track).values.do({
+				arg syn;
+				if (syn.isPlaying,{
+					if (syn.notNil,{
+						syn.set(\gate,0);
+					});
+				});
+			});
+			if (noteOn > 0,{
+				args = args ++ msg[3..];
+				~synthsPlaying.at(track).put(synName,
+					Synth.head(s,"PolyPerc",args).onFree({
+						[synName,"freed"].postln;
+						~synthsPlaying.at(track).removeAt(synName);
+					});
+				);
+				NodeWatcher.register(~synthsPlaying.at(track).at(synName));
+			});
+		};
+
+
 		~playFromMsg = {
 			arg msg, b;
 			var synName = 1000000.rand.asString;
@@ -306,11 +374,11 @@ s.waitForBoot({
 				\trackId, track,
 			];
 			// create a new dictionary for the track if it doesn't exist
-			if (~synthsPlaying.at(track).isNil,{
-				~synthsPlaying.put(track, Dictionary.new());
+			if (~samplesPlaying.at(track).isNil,{
+				~samplesPlaying.put(track, Dictionary.new());
 			});
 			// stop all currently playing synths for this track
-			~synthsPlaying.at(track).values.do({
+			~samplesPlaying.at(track).values.do({
 				arg syn;
 				if (syn.isPlaying,{
 					if (syn.notNil,{
@@ -331,10 +399,10 @@ s.waitForBoot({
 			});
 
 
-			~synthsPlaying.at(track).put(synName,
+			~samplesPlaying.at(track).put(synName,
 				Synth.head(s,"sampler"++(b.numChannels),args).onFree({
 					[b,"freed"].postln;
-					~synthsPlaying.at(track).removeAt(synName);
+					~samplesPlaying.at(track).removeAt(synName);
 				});
 			);
 
@@ -354,22 +422,13 @@ s.waitForBoot({
 			});
 		},'/sampler');
 		OSCFunc({ |msg|
-			[60, 64, 67].do { |note, i|
-				Synth.head(s, \synthPad, [
-					\effectDryOut,    ~busDry,
-					\effectCombOut,   ~busComb,
-					\effectReverbOut, ~busReverb,
-					\effectReverb, 0.5,
-					\effectDry, 0.2,
-					\duration, 30,
-					\note,            note-12  // comma, not colon; no semicolon inside the array
-				]);
-			};
-		}, '/note_on');
+		msg.postln;
+			~playSynthFromMsg.(msg);
+		},'/instrument');
 
 		OSCFunc({ |msg|
 			// stop all currently playing synths in all tracks
-			~synthsPlaying.values.do({
+			~samplesPlaying.values.do({
 				arg track;
 				track.values.do({ arg syn;
 					if (syn.isPlaying,{
@@ -489,9 +548,9 @@ s.waitForBoot({
 		// 		(60/~bpmTarget/2).wait;
 		// 	});
 		// }.play;
-		Routine {
-			NetAddr.new("127.0.0.1", NetAddr.langPort).sendMsg("/note_on");
-		}.play;
+		// Routine {
+		// 	NetAddr.new("127.0.0.1", NetAddr.langPort).sendMsg("/note_on");
+		// }.play;
 	}.play;
 });
 )
