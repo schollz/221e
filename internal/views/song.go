@@ -117,7 +117,7 @@ func RenderSongView(m *model.Model) string {
 		}
 
 		return content.String()
-	}, GetSongStatusMessage(m), 17) // 16 rows + 1 for header
+	}, GetSongStatusMessage(m), 18) // 16 rows + 2 for header
 }
 
 // GetSongStatusMessage returns the status message for song view
