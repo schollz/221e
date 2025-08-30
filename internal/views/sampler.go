@@ -459,6 +459,13 @@ func GetPhraseStatusMessage(m *model.Model) string {
 					reverbFloat := float32(value) / 254.0
 					statusMsg = fmt.Sprintf("Reverb: %02X (%.2f, sticky)", value, reverbFloat)
 				}
+			} else if colIndex == int(types.ColTimestretch) {
+				// TS (Timestretch) column - show timestretch info
+				if value == -1 {
+					statusMsg = "No timestretch selected"
+				} else {
+					statusMsg = fmt.Sprintf("Timestretch: %02X", value)
+				}
 			} else if value == -1 {
 				statusMsg = "Current value: --"
 			} else {
