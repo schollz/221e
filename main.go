@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -25,6 +26,8 @@ import (
 type scReadyMsg struct{}
 
 func main() {
+	log.SetOutput(io.Discard)
+
 	// Start CPU profiling for the first 30 seconds
 	cpuFile, err := os.Create("cpu.prof")
 	if err != nil {
@@ -49,9 +52,11 @@ func main() {
 	var oscPort int
 	var skipJackCheck bool
 	var saveFile string
+	var debugLog string
 	flag.IntVar(&oscPort, "osc-port", 57120, "OSC port for sending playback messages")
 	flag.StringVar(&saveFile, "save-file", "tracker-save.json", "Save file to load from or create")
 	flag.BoolVar(&skipJackCheck, "skip-jack-check", false, "Skip checking for JACK server (for testing only)")
+	flag.StringVar(&debugLog, "debug", "", "If set, write debug logs to this file; empty disables logging")
 	flag.Parse()
 
 	if !supercollider.IsJackEnabled() && !skipJackCheck {
@@ -87,14 +92,16 @@ func main() {
 	}
 
 	// Set up debug logging early
-	f, err := tea.LogToFile("debug.log", "debug")
-	if err != nil {
-		log.Printf("Fatal: %v", err)
-		os.Exit(1)
+	if debugLog != "" {
+		f, err := tea.LogToFile(debugLog, "debug")
+		if err != nil {
+			log.Printf("Fatal: %v", err)
+			os.Exit(1)
+		}
+		defer f.Close()
+		log.SetOutput(f)
 	}
-	defer f.Close()
 
-	log.SetOutput(f)
 	log.Println("Debug logging enabled")
 	log.Printf("OSC port configured: %d", oscPort)
 
