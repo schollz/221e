@@ -100,6 +100,8 @@ func main() {
 		}
 		defer f.Close()
 		log.SetOutput(f)
+		// Set log flags to include file and line number for VS Code clickable links
+		log.SetFlags(log.LstdFlags | log.Lshortfile)
 	}
 
 	log.Println("Debug logging enabled")
