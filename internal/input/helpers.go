@@ -2021,6 +2021,9 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 			effectiveGate = 80 // Default Gate value
 		}
 
+		// Calculate delta time in seconds (time per row * DT)
+		deltaTimeSeconds := calculateDeltaTimeSeconds(m, phrase, row)
+
 		// Convert ADSR values using the conversion functions from types package
 		attack := float32(0.02) // Default
 		if rawAttack != -1 {
@@ -2050,6 +2053,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 			rawChordAdd,
 			rawChordTrans,
 			effectiveGate,
+			deltaTimeSeconds,
 			attack,
 			decay,
 			sustain,
@@ -2110,6 +2114,41 @@ func rowDurationMS(m *model.Model) float64 {
 	} else {
 		// DT > 0: hold for DT number of ticks
 		return baseMs * float64(dtRaw)
+	}
+}
+
+// calculateDeltaTimeSeconds calculates the DT value in seconds for a specific phrase/row
+// This is the time per row (based on BPM/PPQ) multiplied by the DT value
+func calculateDeltaTimeSeconds(m *model.Model, phrase, row int) float32 {
+	// Guard against invalid BPM/PPQ
+	if m.BPM <= 0 || m.PPQ <= 0 {
+		// Fallback to a sane default: 120 BPM, PPQ=2  => 0.25s per row
+		return 0.25
+	}
+
+	// Calculate base time per row (tick) in seconds
+	beatsPerSecond := float64(m.BPM) / 60.0
+	ticksPerSecond := beatsPerSecond * float64(m.PPQ)
+	baseSecondsPerTick := 1.0 / ticksPerSecond
+
+	// Bounds checks (255 x 255 grid)
+	if phrase < 0 || phrase >= 255 || row < 0 || row >= 255 {
+		return float32(baseSecondsPerTick)
+	}
+
+	// Get the correct phrases data based on current track type
+	phrasesData := GetPhrasesDataForTrack(m, m.CurrentTrack)
+	dtRaw := (*phrasesData)[phrase][row][types.ColDeltaTime] // row-local DT
+	
+	if dtRaw == -1 {
+		// -- behaves like 01 (1 tick)
+		return float32(baseSecondsPerTick)
+	} else if dtRaw == 0 {
+		// 00 means skip row (0 ticks)
+		return 0.0
+	} else {
+		// DT > 0: hold for DT number of ticks
+		return float32(baseSecondsPerTick * float64(dtRaw))
 	}
 }
 

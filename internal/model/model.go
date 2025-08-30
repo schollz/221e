@@ -752,6 +752,7 @@ type InstrumentOSCParams struct {
 	ChordAddition      int     // Chord addition (A parameter)
 	ChordTransposition int     // Chord transposition (T parameter)
 	Gate               int     // Gate value (GT parameter, raw value)
+	DeltaTime          float32 // Delta time in seconds (DT parameter, time per row * DT)
 	Attack             float32 // Attack time in seconds (A parameter)
 	Decay              float32 // Decay time in seconds (D parameter)
 	Sustain            float32 // Sustain level (S parameter)
@@ -821,7 +822,7 @@ func NewSamplerOSCParamsWithRetrigger(filename string, trackId, sliceCount, slic
 }
 
 // NewInstrumentOSCParams creates instrument parameters
-func NewInstrumentOSCParams(trackId, midiNote int, velocity float32, chordType, chordAddition, chordTransposition, gate int, attack, decay, sustain, release float32, arpeggioIndex, midiSettingsIndex, soundMakerIndex int) InstrumentOSCParams {
+func NewInstrumentOSCParams(trackId, midiNote int, velocity float32, chordType, chordAddition, chordTransposition, gate int, deltaTime, attack, decay, sustain, release float32, arpeggioIndex, midiSettingsIndex, soundMakerIndex int) InstrumentOSCParams {
 	return InstrumentOSCParams{
 		TrackId:            trackId,
 		NoteOn:             1,
@@ -831,6 +832,7 @@ func NewInstrumentOSCParams(trackId, midiNote int, velocity float32, chordType, 
 		ChordAddition:      chordAddition,
 		ChordTransposition: chordTransposition,
 		Gate:               gate,
+		DeltaTime:          deltaTime,
 		Attack:             attack,
 		Decay:              decay,
 		Sustain:            sustain,
@@ -863,6 +865,8 @@ func (m *Model) SendOSCInstrumentMessage(params InstrumentOSCParams) {
 	msg.Append(float32(params.Release))
 	msg.Append("gate")
 	msg.Append(int32(params.Gate))
+	msg.Append("duration")
+	msg.Append(float32(params.DeltaTime))
 
 	err := m.oscClient.Send(msg)
 	if err != nil {
