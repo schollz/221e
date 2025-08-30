@@ -50,7 +50,7 @@ func TestChordAdditionToString(t *testing.T) {
 
 func TestChordTranspositionToString(t *testing.T) {
 	tests := []struct {
-		name      string
+		name       string
 		chordTrans ChordTransposition
 		expected   string
 	}{
@@ -72,15 +72,15 @@ func TestChordTranspositionToString(t *testing.T) {
 
 func TestAttackToSeconds(t *testing.T) {
 	tests := []struct {
-		name     string
-		hexValue int
-		expected float32
+		name      string
+		hexValue  int
+		expected  float32
 		tolerance float64
 	}{
 		{"Minimum value (00)", 0, 0.02, 0.001},
 		{"Maximum value (FE)", 254, 30.0, 0.001},
-		{"Middle value", 127, 0.776, 0.01}, // Approximate middle of exponential curve
-		{"Negative value", -1, 0.02, 0.001}, // Should return default
+		{"Middle value", 127, 0.776, 0.01},   // Approximate middle of exponential curve
+		{"Negative value", -1, 0.02, 0.001},  // Should return default
 		{"Overflow value", 255, 0.02, 0.001}, // Should return default
 	}
 
@@ -94,15 +94,15 @@ func TestAttackToSeconds(t *testing.T) {
 
 func TestDecayToSeconds(t *testing.T) {
 	tests := []struct {
-		name     string
-		hexValue int
-		expected float32
+		name      string
+		hexValue  int
+		expected  float32
 		tolerance float64
 	}{
 		{"Minimum value (00)", 0, 0.0, 0.001},
 		{"Maximum value (FE)", 254, 30.0, 0.001},
-		{"Middle value", 127, 15.0, 0.1}, // Linear mapping
-		{"Negative value", -1, 0.0, 0.001}, // Should return default
+		{"Middle value", 127, 15.0, 0.1},    // Linear mapping
+		{"Negative value", -1, 0.0, 0.001},  // Should return default
 		{"Overflow value", 255, 0.0, 0.001}, // Should return default
 	}
 
@@ -116,15 +116,15 @@ func TestDecayToSeconds(t *testing.T) {
 
 func TestSustainToLevel(t *testing.T) {
 	tests := []struct {
-		name     string
-		hexValue int
-		expected float32
+		name      string
+		hexValue  int
+		expected  float32
 		tolerance float64
 	}{
 		{"Minimum value (00)", 0, 0.0, 0.001},
 		{"Maximum value (FE)", 254, 1.0, 0.001},
-		{"Middle value", 127, 0.5, 0.01}, // Linear mapping
-		{"Negative value", -1, 0.0, 0.001}, // Should return default
+		{"Middle value", 127, 0.5, 0.01},    // Linear mapping
+		{"Negative value", -1, 0.0, 0.001},  // Should return default
 		{"Overflow value", 255, 0.0, 0.001}, // Should return default
 	}
 
@@ -138,15 +138,15 @@ func TestSustainToLevel(t *testing.T) {
 
 func TestReleaseToSeconds(t *testing.T) {
 	tests := []struct {
-		name     string
-		hexValue int
-		expected float32
+		name      string
+		hexValue  int
+		expected  float32
 		tolerance float64
 	}{
 		{"Minimum value (00)", 0, 0.02, 0.001},
 		{"Maximum value (FE)", 254, 30.0, 0.001},
-		{"Middle value", 127, 0.776, 0.01}, // Same as Attack (exponential)
-		{"Negative value", -1, 0.02, 0.001}, // Should return default
+		{"Middle value", 127, 0.776, 0.01},   // Same as Attack (exponential)
+		{"Negative value", -1, 0.02, 0.001},  // Should return default
 		{"Overflow value", 255, 0.02, 0.001}, // Should return default
 	}
 

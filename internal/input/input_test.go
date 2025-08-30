@@ -94,7 +94,7 @@ func TestViewSwitchConfig(t *testing.T) {
 
 func TestSwitchToView(t *testing.T) {
 	m := createTestModel()
-	
+
 	// Set initial state
 	m.CurrentRow = 10
 	m.CurrentCol = 5
@@ -187,7 +187,7 @@ func TestTickFunction(t *testing.T) {
 
 func TestAdvancePlayback(t *testing.T) {
 	m := createTestModel()
-	
+
 	// Set up playback state
 	m.IsPlaying = true
 	m.PlaybackRow = 0
@@ -210,7 +210,7 @@ func TestPlaybackAdvancementEdgeCases(t *testing.T) {
 	m.PlaybackRow = 5
 
 	AdvancePlayback(m)
-	
+
 	// When not playing, should not crash
 	assert.NotNil(t, m)
 
@@ -269,7 +269,7 @@ func TestInputHelpers(t *testing.T) {
 	m := createTestModel()
 
 	// Test various input scenarios that should not crash
-	
+
 	// Test with different view modes
 	viewModes := []types.ViewMode{
 		types.SongView,
@@ -283,7 +283,7 @@ func TestInputHelpers(t *testing.T) {
 	for _, viewMode := range viewModes {
 		t.Run("View "+string(rune(viewMode)), func(t *testing.T) {
 			m.ViewMode = viewMode
-			
+
 			// Test navigation in this view
 			keyMsg := tea.KeyMsg{Type: tea.KeyDown}
 			cmd := HandleKeyInput(m, keyMsg)
@@ -333,7 +333,7 @@ func TestScrollAndVisibility(t *testing.T) {
 func BenchmarkHandleKeyInput(b *testing.B) {
 	m := createTestModel()
 	keyMsg := tea.KeyMsg{Type: tea.KeyDown}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		HandleKeyInput(m, keyMsg)
@@ -343,7 +343,7 @@ func BenchmarkHandleKeyInput(b *testing.B) {
 func BenchmarkAdvancePlayback(b *testing.B) {
 	m := createTestModel()
 	m.IsPlaying = true
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		AdvancePlayback(m)

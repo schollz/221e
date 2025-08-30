@@ -61,7 +61,7 @@ func TestModelDataStructures(t *testing.T) {
 	phraseType := m.GetPhraseViewType()
 	assert.Equal(t, types.SamplerPhraseView, phraseType) // Track type defaults to sampler
 
-	m.CurrentTrack = 5 // Sampler track  
+	m.CurrentTrack = 5 // Sampler track
 	phraseType = m.GetPhraseViewType()
 	assert.Equal(t, types.SamplerPhraseView, phraseType)
 }
@@ -73,7 +73,7 @@ func TestModelDataManipulation(t *testing.T) {
 	m.SetChainsData(0, 0, 10)
 	assert.Equal(t, 10, m.ChainsData[0][0])
 
-	// Test SetPhrasesData method  
+	// Test SetPhrasesData method
 	m.SetPhrasesData(5, 10, int(types.ColNote), 0x60)
 	assert.Equal(t, 0x60, m.PhrasesData[5][10][types.ColNote])
 
@@ -212,7 +212,7 @@ func BenchmarkModelInitialization(b *testing.B) {
 func BenchmarkWaveformBufferPush(b *testing.B) {
 	m := NewModel(0, "")
 	maxCols := 100
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		m.PushWaveformSample(0.5, maxCols)

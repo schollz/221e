@@ -36,3 +36,4 @@ debug.log
 tracker-save.json
 internal/sox/test.wav
 cpu.prof
+test-tracker.json
