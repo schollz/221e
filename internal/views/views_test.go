@@ -27,11 +27,11 @@ func TestRenderSongView(t *testing.T) {
 
 	view := RenderSongView(m)
 	assert.NotEmpty(t, view)
-	
+
 	// Verify basic structure
 	lines := strings.Split(view, "\n")
 	assert.Greater(t, len(lines), 10) // Should have header, content, status
-	
+
 	// Should contain track or song structure
 	// (Output depends on current model state and view implementation)
 }
@@ -44,10 +44,10 @@ func TestRenderChainView(t *testing.T) {
 
 	view := RenderChainView(m)
 	assert.NotEmpty(t, view)
-	
+
 	lines := strings.Split(view, "\n")
 	assert.Greater(t, len(lines), 5)
-	
+
 	// Should contain phrase references
 	// Chain view shows phrase numbers in hex format
 }
@@ -61,20 +61,20 @@ func TestRenderPhraseView(t *testing.T) {
 
 	view := RenderPhraseView(m)
 	assert.NotEmpty(t, view)
-	
+
 	lines := strings.Split(view, "\n")
 	assert.Greater(t, len(lines), 10)
-	
+
 	// Should render different content for sampler vs instrument tracks
 	// Test both track types
 	m.CurrentTrack = 2 // Instrument track
 	instrumentView := RenderPhraseView(m)
 	assert.NotEmpty(t, instrumentView)
-	
+
 	m.CurrentTrack = 6 // Sampler track
 	samplerView := RenderPhraseView(m)
 	assert.NotEmpty(t, samplerView)
-	
+
 	// Both views should render successfully
 	// (Specific differences depend on track type configuration and data)
 }
@@ -87,10 +87,10 @@ func TestRenderFileView(t *testing.T) {
 
 	view := RenderFileView(m)
 	assert.NotEmpty(t, view)
-	
+
 	lines := strings.Split(view, "\n")
 	assert.Greater(t, len(lines), 5)
-	
+
 	// Should contain file listings
 	for _, file := range m.Files {
 		assert.Contains(t, view, file)
@@ -107,10 +107,10 @@ func TestRenderSettingsView(t *testing.T) {
 
 	view := RenderSettingsView(m)
 	assert.NotEmpty(t, view)
-	
+
 	lines := strings.Split(view, "\n")
 	assert.Greater(t, len(lines), 8)
-	
+
 	// Should contain settings values
 	assert.Contains(t, view, "BPM")
 	assert.Contains(t, view, "140") // BPM value
@@ -120,7 +120,7 @@ func TestRenderFileMetadataView(t *testing.T) {
 	m := createTestModel()
 	m.ViewMode = types.FileMetadataView
 	m.MetadataEditingFile = "test.wav"
-	
+
 	// Set up some file metadata
 	metadata := types.FileMetadata{
 		BPM:    128.0,
@@ -131,10 +131,10 @@ func TestRenderFileMetadataView(t *testing.T) {
 
 	view := RenderFileMetadataView(m)
 	assert.NotEmpty(t, view)
-	
+
 	lines := strings.Split(view, "\n")
 	assert.Greater(t, len(lines), 5)
-	
+
 	// Should contain file metadata information
 	assert.Contains(t, view, "test.wav")
 }
@@ -146,10 +146,10 @@ func TestRenderRetriggerView(t *testing.T) {
 
 	view := RenderRetriggerView(m)
 	assert.NotEmpty(t, view)
-	
+
 	lines := strings.Split(view, "\n")
 	assert.Greater(t, len(lines), 5)
-	
+
 	// Should contain retrigger settings
 	assert.Contains(t, view, "05") // Hex index
 }
@@ -161,10 +161,10 @@ func TestRenderTimestrechView(t *testing.T) {
 
 	view := RenderTimestrechView(m)
 	assert.NotEmpty(t, view)
-	
+
 	lines := strings.Split(view, "\n")
 	assert.Greater(t, len(lines), 5)
-	
+
 	// Should contain timestretch settings
 	assert.Contains(t, view, "0A") // Hex index
 }
@@ -176,10 +176,10 @@ func TestRenderArpeggioView(t *testing.T) {
 
 	view := RenderArpeggioView(m)
 	assert.NotEmpty(t, view)
-	
+
 	lines := strings.Split(view, "\n")
 	assert.Greater(t, len(lines), 10) // Arpeggio has 16 rows
-	
+
 	// Should contain arpeggio settings
 	assert.Contains(t, view, "0F") // Hex index
 }
@@ -191,10 +191,10 @@ func TestRenderMidiView(t *testing.T) {
 
 	view := RenderMidiView(m)
 	assert.NotEmpty(t, view)
-	
+
 	lines := strings.Split(view, "\n")
 	assert.Greater(t, len(lines), 5)
-	
+
 	// Should contain MIDI settings
 	assert.Contains(t, view, "14") // Hex index
 }
@@ -206,10 +206,10 @@ func TestRenderSoundMakerView(t *testing.T) {
 
 	view := RenderSoundMakerView(m)
 	assert.NotEmpty(t, view)
-	
+
 	lines := strings.Split(view, "\n")
 	assert.Greater(t, len(lines), 5)
-	
+
 	// Should contain SoundMaker settings
 	assert.Contains(t, view, "19") // Hex index
 }
@@ -221,28 +221,28 @@ func TestRenderMixerView(t *testing.T) {
 
 	view := RenderMixerView(m)
 	assert.NotEmpty(t, view)
-	
+
 	lines := strings.Split(view, "\n")
 	assert.Greater(t, len(lines), 8) // Should show all 8 tracks
-	
+
 	// Should contain mixer information
 	// (Output depends on mixer state and implementation)
 }
 
 func TestRenderSplashScreen(t *testing.T) {
 	splashState := NewSplashState(3 * time.Second)
-	
+
 	view := RenderSplashScreen(80, 24, splashState)
 	assert.NotEmpty(t, view)
-	
+
 	lines := strings.Split(view, "\n")
-	assert.Greater(t, len(lines), 10) // Should have substantial content
+	assert.Greater(t, len(lines), 10)     // Should have substantial content
 	assert.LessOrEqual(t, len(lines), 30) // Should be reasonable size
 }
 
 func TestGetCommonStyles(t *testing.T) {
 	styles := getCommonStyles()
-	
+
 	assert.NotNil(t, styles)
 	assert.NotNil(t, styles.Selected)
 	assert.NotNil(t, styles.Normal)
@@ -259,7 +259,7 @@ func TestGetCommonStyles(t *testing.T) {
 
 func TestRenderViewWithCommonPattern(t *testing.T) {
 	m := createTestModel()
-	
+
 	// Test the common rendering pattern function
 	view := renderViewWithCommonPattern(
 		m,
@@ -271,7 +271,7 @@ func TestRenderViewWithCommonPattern(t *testing.T) {
 		"Status Message",
 		10,
 	)
-	
+
 	assert.NotEmpty(t, view)
 	assert.Contains(t, view, "Test Header")
 	assert.Contains(t, view, "Right Header")
@@ -281,7 +281,7 @@ func TestRenderViewWithCommonPattern(t *testing.T) {
 
 func TestViewRenderingWithDifferentTerminalSizes(t *testing.T) {
 	m := createTestModel()
-	
+
 	terminalSizes := []struct {
 		width  int
 		height int
@@ -297,7 +297,7 @@ func TestViewRenderingWithDifferentTerminalSizes(t *testing.T) {
 		t.Run(size.name, func(t *testing.T) {
 			m.TermWidth = size.width
 			m.TermHeight = size.height
-			
+
 			// Test multiple views with this terminal size
 			views := []types.ViewMode{
 				types.SongView,
@@ -305,12 +305,12 @@ func TestViewRenderingWithDifferentTerminalSizes(t *testing.T) {
 				types.PhraseView,
 				types.FileView,
 			}
-			
+
 			for _, viewMode := range views {
 				m.ViewMode = viewMode
 				view := renderViewForMode(m, viewMode)
 				assert.NotEmpty(t, view)
-				
+
 				// Verify view doesn't exceed terminal bounds
 				lines := strings.Split(view, "\n")
 				assert.LessOrEqual(t, len(lines), size.height+15) // Allow generous margin for small terminals
@@ -341,17 +341,17 @@ func renderViewForMode(m *model.Model, viewMode types.ViewMode) string {
 
 func TestViewRenderingWithData(t *testing.T) {
 	m := createTestModel()
-	
+
 	// Add some test data to make rendering more interesting
 	// Add some song data
 	m.SongData[0][0] = 5  // Track 0, Row 0 = Chain 5
 	m.SongData[1][2] = 10 // Track 1, Row 2 = Chain 10
-	
+
 	// Add some chain data
 	if len(m.SamplerChainsData) > 5 {
 		m.SamplerChainsData[5] = []int{0, 1, 2, -1, -1, 3, 4, 5, -1, -1, -1, -1, -1, -1, -1, -1}
 	}
-	
+
 	// Add some phrase data with actual notes
 	if len(m.SamplerPhrasesData[0]) > 0 {
 		m.SamplerPhrasesData[0][0][types.ColNote] = 0x60      // C note
@@ -359,20 +359,20 @@ func TestViewRenderingWithData(t *testing.T) {
 		m.SamplerPhrasesData[0][1][types.ColNote] = 0x64      // E note
 		m.SamplerPhrasesData[0][1][types.ColDeltaTime] = 0x08 // Delta time
 	}
-	
+
 	// Test rendering with data
 	views := []types.ViewMode{
 		types.SongView,
 		types.ChainView,
 		types.PhraseView,
 	}
-	
+
 	for _, viewMode := range views {
 		t.Run("View with data "+string(rune(viewMode)), func(t *testing.T) {
 			m.ViewMode = viewMode
 			view := renderViewForMode(m, viewMode)
 			assert.NotEmpty(t, view)
-			
+
 			// Views with data should be more substantial
 			lines := strings.Split(view, "\n")
 			assert.Greater(t, len(lines), 8)
@@ -385,10 +385,10 @@ func TestWaveformRendering(t *testing.T) {
 	width := 50
 	height := 5
 	data := []float64{0.0, 0.5, 1.0, 0.5, 0.0, -0.5, -1.0, -0.5, 0.0}
-	
+
 	waveform := RenderWaveform(width, height, data)
 	assert.NotEmpty(t, waveform)
-	
+
 	lines := strings.Split(waveform, "\n")
 	assert.Equal(t, height, len(lines))
 }
@@ -396,21 +396,21 @@ func TestWaveformRendering(t *testing.T) {
 func TestSplashState(t *testing.T) {
 	duration := 2 * time.Second
 	splash := NewSplashState(duration)
-	
+
 	assert.NotNil(t, splash)
-	
+
 	// Test splash rendering
 	view := RenderSplashScreen(80, 24, splash)
 	assert.NotEmpty(t, view)
-	
+
 	lines := strings.Split(view, "\n")
-	assert.Greater(t, len(lines), 10) // Should have substantial content
+	assert.Greater(t, len(lines), 10)     // Should have substantial content
 	assert.LessOrEqual(t, len(lines), 30) // Should be reasonable size
 }
 
 func TestViewStylesConsistency(t *testing.T) {
 	styles := getCommonStyles()
-	
+
 	// Test that styles are consistently defined
 	styleTests := []struct {
 		name  string
@@ -428,7 +428,7 @@ func TestViewStylesConsistency(t *testing.T) {
 		{"Dir", &styles.Dir},
 		{"AssignedFile", &styles.AssignedFile},
 	}
-	
+
 	for _, test := range styleTests {
 		t.Run(test.name+" style", func(t *testing.T) {
 			assert.NotNil(t, test.style)
@@ -441,7 +441,7 @@ func TestViewStylesConsistency(t *testing.T) {
 
 func TestClipboardHighlighting(t *testing.T) {
 	m := createTestModel()
-	
+
 	// Set up clipboard with highlight data
 	m.Clipboard = types.ClipboardData{
 		HasData:         true,
@@ -453,23 +453,23 @@ func TestClipboardHighlighting(t *testing.T) {
 		HighlightPhrase: 10,
 		HighlightView:   types.PhraseView,
 	}
-	
+
 	// Test that phrase view shows highlighting
 	m.ViewMode = types.PhraseView
 	m.CurrentPhrase = 10
 	view := RenderPhraseView(m)
 	assert.NotEmpty(t, view)
-	
+
 	// Highlighting should affect the rendered output
 	// (specific highlighting behavior depends on implementation)
 }
 
 func TestEmptyDataRendering(t *testing.T) {
 	m := createTestModel()
-	
+
 	// Test rendering with completely empty data
 	// All arrays should be initialized but contain no meaningful data
-	
+
 	views := []types.ViewMode{
 		types.SongView,
 		types.ChainView,
@@ -483,13 +483,13 @@ func TestEmptyDataRendering(t *testing.T) {
 		types.MidiView,
 		types.SoundMakerView,
 	}
-	
+
 	for _, viewMode := range views {
 		t.Run("Empty "+string(rune(viewMode)), func(t *testing.T) {
 			m.ViewMode = viewMode
 			view := renderViewForMode(m, viewMode)
 			assert.NotEmpty(t, view)
-			
+
 			// Should handle empty data gracefully
 			lines := strings.Split(view, "\n")
 			assert.Greater(t, len(lines), 1)
@@ -500,7 +500,7 @@ func TestEmptyDataRendering(t *testing.T) {
 func BenchmarkRenderSongView(b *testing.B) {
 	m := createTestModel()
 	m.ViewMode = types.SongView
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		RenderSongView(m)
@@ -510,7 +510,7 @@ func BenchmarkRenderSongView(b *testing.B) {
 func BenchmarkRenderPhraseView(b *testing.B) {
 	m := createTestModel()
 	m.ViewMode = types.PhraseView
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		RenderPhraseView(m)
@@ -524,7 +524,7 @@ func BenchmarkRenderWaveform(b *testing.B) {
 	for i := range data {
 		data[i] = float64(i) / 100.0
 	}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		RenderWaveform(width, height, data)

@@ -43,7 +43,7 @@ const (
 type PhraseColumn int
 
 const (
-	ColNote                                   PhraseColumn = iota // Column 0: Note value (hex)
+	ColNote               PhraseColumn = iota // Column 0: Note value (hex)
 	ColPitch                                  // Column 1: Pitch value (hex, default 80/0x80 = 0.0 pitch)
 	ColDeltaTime                              // Column 2: Delta time (hex) - controls playback: >0=play, <=0=skip
 	ColGate                                   // Column 3: Gate value (hex, default 128/0x80)

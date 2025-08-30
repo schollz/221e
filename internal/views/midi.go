@@ -68,8 +68,8 @@ func RenderMidiView(m *model.Model) string {
 
 		// Available MIDI devices list (scrollable)
 		visibleRows := m.GetVisibleRows() - 6 // Reserve space for header, settings, and labels
-		deviceStartRow := 2 // Devices start at row 2 (after Device and Channel settings)
-		
+		deviceStartRow := 2                   // Devices start at row 2 (after Device and Channel settings)
+
 		for i := 0; i < visibleRows && i+m.ScrollOffset < len(m.AvailableMidiDevices); i++ {
 			dataIndex := i + m.ScrollOffset
 			deviceRow := deviceStartRow + i

@@ -1121,7 +1121,7 @@ func handleC(m *model.Model) tea.Cmd {
 					break
 				}
 			}
-			
+
 			if firstPhraseNumber != -1 {
 				EmitRowDataFor(m, firstPhraseNumber, 0, track) // Emit first row of the first phrase
 				log.Printf("Emitting data for Song T%d R%02X -> Chain %02X -> Phrase %02X",
@@ -1247,7 +1247,7 @@ func handleCtrlH(m *model.Model) tea.Cmd {
 		phrasesData := m.GetCurrentPhrasesData()
 		phraseViewType := m.GetPhraseViewType()
 		if phraseViewType == types.InstrumentPhraseView {
-			}
+		}
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColNote)] = -1      // Clear note
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColPitch)] = 128    // Reset pitch to default (hex 80)
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColDeltaTime)] = -1 // Clear deltatime (for samplers this also clears playback)

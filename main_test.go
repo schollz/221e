@@ -1,6 +1,8 @@
 package main
 
 import (
+	"io"
+	"log"
 	"strings"
 	"testing"
 
@@ -10,6 +12,10 @@ import (
 
 	"github.com/schollz/2n/internal/types"
 )
+
+func init() {
+	log.SetOutput((io.Discard))
+}
 
 func createTestModel() *TrackerModel {
 	// Create a test model with skip-jack-check enabled
@@ -65,11 +71,11 @@ func TestTrackerModelView(t *testing.T) {
 
 	// Test main application views
 	tm.showingSplash = false
-	
+
 	// Test each view mode
 	viewModes := []types.ViewMode{
 		types.SongView,
-		types.ChainView, 
+		types.ChainView,
 		types.PhraseView,
 		types.SettingsView,
 		types.FileMetadataView,
@@ -95,28 +101,28 @@ func TestTrackerModelMessageHandling(t *testing.T) {
 	tm := createTestModel()
 
 	tests := []struct {
-		name        string
-		msg         tea.Msg
+		name         string
+		msg          tea.Msg
 		expectSplash bool
-		expectCmd   bool
+		expectCmd    bool
 	}{
 		{
-			name:        "SplashTickMsg during splash",
-			msg:         SplashTickMsg{},
+			name:         "SplashTickMsg during splash",
+			msg:          SplashTickMsg{},
 			expectSplash: true,
-			expectCmd:   true,
+			expectCmd:    true,
 		},
 		{
-			name:        "WaveformTickMsg after splash",
-			msg:         WaveformTickMsg{},
+			name:         "WaveformTickMsg after splash",
+			msg:          WaveformTickMsg{},
 			expectSplash: false,
-			expectCmd:   true,
+			expectCmd:    true,
 		},
 		{
-			name:        "scReadyMsg hides splash",
-			msg:         scReadyMsg{},
+			name:         "scReadyMsg hides splash",
+			msg:          scReadyMsg{},
 			expectSplash: false,
-			expectCmd:   false,
+			expectCmd:    false,
 		},
 	}
 
@@ -124,10 +130,10 @@ func TestTrackerModelMessageHandling(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Reset to splash state for each test
 			tm.showingSplash = tt.name != "WaveformTickMsg after splash"
-			
+
 			newModel, cmd := tm.Update(tt.msg)
 			resultTM := newModel.(*TrackerModel)
-			
+
 			assert.Equal(t, tt.expectSplash, resultTM.showingSplash)
 			if tt.expectCmd {
 				assert.NotNil(t, cmd)
@@ -157,7 +163,7 @@ func TestTrackerModelViewRendering(t *testing.T) {
 			},
 		},
 		{
-			name:     "Chain View", 
+			name:     "Chain View",
 			viewMode: types.ChainView,
 			setup: func(tm *TrackerModel) {
 				tm.model.CurrentRow = 5
@@ -192,13 +198,13 @@ func TestTrackerModelViewRendering(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			tm.model.ViewMode = test.viewMode
 			test.setup(tm)
-			
+
 			view := tm.View()
 			assert.NotEmpty(t, view)
-			
+
 			// Verify view contains expected structure
 			lines := len(strings.Split(view, "\n"))
-			assert.Greater(t, lines, 5) // Should have multiple lines
+			assert.Greater(t, lines, 5)                         // Should have multiple lines
 			assert.LessOrEqual(t, lines, tm.model.TermHeight+5) // Should not exceed reasonable bounds
 		})
 	}
@@ -223,7 +229,7 @@ func TestTrackerModelKeyNavigation(t *testing.T) {
 	// Test basic navigation keys
 	navigationKeys := []tea.KeyType{
 		tea.KeyUp,
-		tea.KeyDown, 
+		tea.KeyDown,
 		tea.KeyLeft,
 		tea.KeyRight,
 		tea.KeyTab,
@@ -236,7 +242,7 @@ func TestTrackerModelKeyNavigation(t *testing.T) {
 		t.Run(keyType.String(), func(t *testing.T) {
 			keyMsg := tea.KeyMsg{Type: keyType}
 			newModel, cmd := tm.Update(keyMsg)
-			
+
 			// Should not crash and should return a model
 			assert.NotNil(t, newModel)
 			// Input handling might return a command (could be nil)
@@ -248,7 +254,7 @@ func TestTrackerModelKeyNavigation(t *testing.T) {
 func TestTrackerModelPlaybackControls(t *testing.T) {
 	tm := createTestModel()
 	tm.showingSplash = false
-	
+
 	// Test playback control keys
 	playbackKeys := []string{
 		"p", // Play/pause
@@ -260,7 +266,7 @@ func TestTrackerModelPlaybackControls(t *testing.T) {
 		t.Run("Key "+key, func(t *testing.T) {
 			keyMsg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{rune(key[0])}}
 			newModel, cmd := tm.Update(keyMsg)
-			
+
 			// Should not crash
 			assert.NotNil(t, newModel)
 			// Command might be nil
@@ -288,12 +294,12 @@ func TestTrackerModelViewSwitching(t *testing.T) {
 		t.Run("View switch "+test.key, func(t *testing.T) {
 			keyMsg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{rune(test.key[0])}}
 			newModel, cmd := tm.Update(keyMsg)
-			
+
 			// Should not crash
 			assert.NotNil(t, newModel)
 			// Command might be nil
 			_ = cmd
-			
+
 			// Check that model is valid
 			resultTM := newModel.(*TrackerModel)
 			assert.NotNil(t, resultTM.model)
@@ -305,7 +311,7 @@ func BenchmarkTrackerModelUpdate(b *testing.B) {
 	tm := createTestModel()
 	tm.showingSplash = false
 	keyMsg := tea.KeyMsg{Type: tea.KeySpace}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		tm.Update(keyMsg)
@@ -317,7 +323,7 @@ func BenchmarkTrackerModelView(b *testing.B) {
 	tm.showingSplash = false
 	tm.model.TermWidth = 120
 	tm.model.TermHeight = 40
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		tm.View()

@@ -122,7 +122,6 @@ func RenderSamplerPhraseView(m *model.Model) string {
 			pitchCell = normalStyle.Render(pitchText)
 		}
 
-
 		// Gate (GT) - now at position 4
 		gtText := "--"
 		if (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColGate] != -1 {

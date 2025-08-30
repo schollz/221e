@@ -82,12 +82,12 @@ type Model struct {
 	TimestrechSettings     [255]types.TimestrechSettings // Array of timestretch settings (00-FE)
 	TimestrechEditingIndex int                           // Currently editing timestretch index
 	// Arpeggio settings management
-	ArpeggioSettings     [255]types.ArpeggioSettings // Array of arpeggio settings (00-FE)
-	ArpeggioEditingIndex int                         // Currently editing arpeggio index
-	MidiSettings         [255]types.MidiSettings     // Array of MIDI settings (00-FE)
-	MidiEditingIndex     int                         // Currently editing MIDI index
-	SoundMakerSettings   [255]types.SoundMakerSettings // Array of SoundMaker settings (00-FE)
-	SoundMakerEditingIndex int                       // Currently editing SoundMaker index
+	ArpeggioSettings       [255]types.ArpeggioSettings   // Array of arpeggio settings (00-FE)
+	ArpeggioEditingIndex   int                           // Currently editing arpeggio index
+	MidiSettings           [255]types.MidiSettings       // Array of MIDI settings (00-FE)
+	MidiEditingIndex       int                           // Currently editing MIDI index
+	SoundMakerSettings     [255]types.SoundMakerSettings // Array of SoundMaker settings (00-FE)
+	SoundMakerEditingIndex int                           // Currently editing SoundMaker index
 	// View navigation state
 	LastChainRow  int // Last selected row in chain view
 	LastPhraseRow int // Last selected row in phrase view
@@ -572,7 +572,7 @@ func (m *Model) initializeDefaultData() {
 			m.InstrumentPhrasesData[p][i][types.ColChordTransposition] = int(types.ChordTransNone) // Default: "-"
 			m.InstrumentPhrasesData[p][i][types.ColArpeggio] = -1                                  // Default: "--" (no arpeggio)
 			m.InstrumentPhrasesData[p][i][types.ColMidi] = -1                                      // Default: "--" (sticky)
-			m.InstrumentPhrasesData[p][i][types.ColSoundMaker] = -1                             // Default: "--" (sticky)
+			m.InstrumentPhrasesData[p][i][types.ColSoundMaker] = -1                                // Default: "--" (sticky)
 			// Initialize ADSR columns (all sticky, default to undefined)
 			m.InstrumentPhrasesData[p][i][types.ColAttack] = -1  // Default: "--" (sticky)
 			m.InstrumentPhrasesData[p][i][types.ColDecay] = -1   // Default: "--" (sticky)
@@ -734,19 +734,19 @@ type SamplerOSCParams struct {
 }
 
 type InstrumentOSCParams struct {
-	TrackId             int     // Track ID
-	MidiNote            int     // MIDI note number (0-127)
-	Velocity            float32 // Note velocity (0.0-1.0)
-	ChordType           int     // Chord type (C parameter)
-	ChordAddition       int     // Chord addition (A parameter) 
-	ChordTransposition  int     // Chord transposition (T parameter)
-	Attack              float32 // Attack time in seconds (A parameter)
-	Decay               float32 // Decay time in seconds (D parameter)
-	Sustain             float32 // Sustain level (S parameter)
-	Release             float32 // Release time in seconds (R parameter)
-	ArpeggioIndex       int     // Arpeggio settings index (AR parameter)
-	MidiSettingsIndex   int     // MIDI settings index (MI parameter)
-	SoundMakerIndex     int     // SoundMaker settings index (SO parameter)
+	TrackId            int     // Track ID
+	MidiNote           int     // MIDI note number (0-127)
+	Velocity           float32 // Note velocity (0.0-1.0)
+	ChordType          int     // Chord type (C parameter)
+	ChordAddition      int     // Chord addition (A parameter)
+	ChordTransposition int     // Chord transposition (T parameter)
+	Attack             float32 // Attack time in seconds (A parameter)
+	Decay              float32 // Decay time in seconds (D parameter)
+	Sustain            float32 // Sustain level (S parameter)
+	Release            float32 // Release time in seconds (R parameter)
+	ArpeggioIndex      int     // Arpeggio settings index (AR parameter)
+	MidiSettingsIndex  int     // MIDI settings index (MI parameter)
+	SoundMakerIndex    int     // SoundMaker settings index (SO parameter)
 }
 
 // NewSamplerOSCParams creates sampler parameters with custom slice duration
@@ -811,19 +811,19 @@ func NewSamplerOSCParamsWithRetrigger(filename string, trackId, sliceCount, slic
 // NewInstrumentOSCParams creates instrument parameters
 func NewInstrumentOSCParams(trackId, midiNote int, velocity float32, chordType, chordAddition, chordTransposition int, attack, decay, sustain, release float32, arpeggioIndex, midiSettingsIndex, soundMakerIndex int) InstrumentOSCParams {
 	return InstrumentOSCParams{
-		TrackId:             trackId,
-		MidiNote:            midiNote,
-		Velocity:            velocity,
-		ChordType:           chordType,
-		ChordAddition:       chordAddition,
-		ChordTransposition:  chordTransposition,
-		Attack:              attack,
-		Decay:               decay,
-		Sustain:             sustain,
-		Release:             release,
-		ArpeggioIndex:       arpeggioIndex,
-		MidiSettingsIndex:   midiSettingsIndex,
-		SoundMakerIndex:     soundMakerIndex,
+		TrackId:            trackId,
+		MidiNote:           midiNote,
+		Velocity:           velocity,
+		ChordType:          chordType,
+		ChordAddition:      chordAddition,
+		ChordTransposition: chordTransposition,
+		Attack:             attack,
+		Decay:              decay,
+		Sustain:            sustain,
+		Release:            release,
+		ArpeggioIndex:      arpeggioIndex,
+		MidiSettingsIndex:  midiSettingsIndex,
+		SoundMakerIndex:    soundMakerIndex,
 	}
 }
 

@@ -547,7 +547,7 @@ func ModifyMidiValue(m *model.Model, baseDelta float32) {
 		// Use the actual available MIDI devices list, with "None" as first option
 		devices := []string{"None"}
 		devices = append(devices, m.AvailableMidiDevices...)
-		
+
 		// Find current index
 		currentIndex := -1
 		for i, dev := range devices {
@@ -556,12 +556,12 @@ func ModifyMidiValue(m *model.Model, baseDelta float32) {
 				break
 			}
 		}
-		
+
 		// If current device not found, start from beginning
 		if currentIndex == -1 {
 			currentIndex = 0
 		}
-		
+
 		// Apply delta with wrapping
 		newIndex := currentIndex + delta
 		if newIndex < 0 {
@@ -569,7 +569,7 @@ func ModifyMidiValue(m *model.Model, baseDelta float32) {
 		} else if newIndex >= len(devices) {
 			newIndex = 0 // Wrap to first device
 		}
-		
+
 		oldDevice := settings.Device
 		settings.Device = devices[newIndex]
 		log.Printf("Modified MIDI %02X Device: %s -> %s", m.MidiEditingIndex, oldDevice, settings.Device)
@@ -583,7 +583,7 @@ func ModifyMidiValue(m *model.Model, baseDelta float32) {
 		}
 
 		channels := []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "all"}
-		
+
 		// Find current index
 		currentIndex := -1
 		for i, ch := range channels {
@@ -592,12 +592,12 @@ func ModifyMidiValue(m *model.Model, baseDelta float32) {
 				break
 			}
 		}
-		
+
 		// If current channel not found, start from beginning
 		if currentIndex == -1 {
 			currentIndex = 0
 		}
-		
+
 		// Apply delta with wrapping
 		newIndex := currentIndex + delta
 		if newIndex < 0 {
@@ -605,7 +605,7 @@ func ModifyMidiValue(m *model.Model, baseDelta float32) {
 		} else if newIndex >= len(channels) {
 			newIndex = 0 // Wrap to "1"
 		}
-		
+
 		oldChannel := settings.Channel
 		settings.Channel = channels[newIndex]
 		log.Printf("Modified MIDI %02X Channel: %s -> %s", m.MidiEditingIndex, oldChannel, settings.Channel)
@@ -633,7 +633,7 @@ func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
 
 		// Use the available SoundMaker names
 		soundMakers := []string{"None", "Polyperc", "Infinite Pad"}
-		
+
 		// Find current index
 		currentIndex := -1
 		for i, sm := range soundMakers {
@@ -642,12 +642,12 @@ func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
 				break
 			}
 		}
-		
+
 		// If current SoundMaker not found, start from beginning
 		if currentIndex == -1 {
 			currentIndex = 0
 		}
-		
+
 		// Apply delta with wrapping
 		newIndex := currentIndex + delta
 		if newIndex < 0 {
@@ -655,7 +655,7 @@ func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
 		} else if newIndex >= len(soundMakers) {
 			newIndex = 0 // Wrap to first SoundMaker
 		}
-		
+
 		oldName := settings.Name
 		settings.Name = soundMakers[newIndex]
 		log.Printf("Modified SoundMaker %02X Name: %s -> %s", m.SoundMakerEditingIndex, oldName, settings.Name)
@@ -1812,7 +1812,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 			formatHex(rawMidi),
 			formatHex(rawSoundMaker),
 		)
-		
+
 		// Show effective values for sticky parameters
 		effAttack := GetEffectiveValueForTrack(m, phrase, row, int(types.ColAttack), trackId)
 		effDecay := GetEffectiveValueForTrack(m, phrase, row, int(types.ColDecay), trackId)
@@ -1821,7 +1821,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 		effArpeggio := GetEffectiveValueForTrack(m, phrase, row, int(types.ColArpeggio), trackId)
 		effMidi := GetEffectiveValueForTrack(m, phrase, row, int(types.ColMidi), trackId)
 		effSoundMaker := GetEffectiveValueForTrack(m, phrase, row, int(types.ColSoundMaker), trackId)
-		
+
 		log.Printf("Eff:  NN=%s A=%s D=%s S=%s R=%s AR=%s MI=%s SO=%s",
 			formatHex(effectiveNote),
 			formatHex(effAttack),
@@ -1872,7 +1872,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 	// Only emit if we have playback enabled and a concrete note
 	// For samplers, also check that we have a filename
 	needsFile := trackId >= 0 && trackId < 8 && m.TrackTypes[trackId] // Sampler tracks need files
-	
+
 	// Unified DT-based playback condition: DT > 0 means play for both instruments and samplers
 	if !IsRowPlayable(rawDeltaTime) || rawNote == -1 || (needsFile && effectiveFilename == "none") {
 		if !IsRowPlayable(rawDeltaTime) {
@@ -1998,47 +1998,47 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 		if velocity > 1.0 {
 			velocity = 1.0
 		}
-		
+
 		// Extract chord parameters
 		rawChord := rowData[types.ColChord]
 		rawChordAdd := rowData[types.ColChordAddition]
 		rawChordTrans := rowData[types.ColChordTransposition]
-		
+
 		// Extract ADSR parameters with effective values (sticky)
 		rawAttack := GetEffectiveValueForTrack(m, phrase, row, int(types.ColAttack), trackId)
 		rawDecay := GetEffectiveValueForTrack(m, phrase, row, int(types.ColDecay), trackId)
 		rawSustain := GetEffectiveValueForTrack(m, phrase, row, int(types.ColSustain), trackId)
 		rawRelease := GetEffectiveValueForTrack(m, phrase, row, int(types.ColRelease), trackId)
-		
+
 		// Extract other parameters with effective values (sticky)
 		rawArpeggio := GetEffectiveValueForTrack(m, phrase, row, int(types.ColArpeggio), trackId)
 		rawMidi := GetEffectiveValueForTrack(m, phrase, row, int(types.ColMidi), trackId)
 		rawSoundMaker := GetEffectiveValueForTrack(m, phrase, row, int(types.ColSoundMaker), trackId)
-		
+
 		// Convert ADSR values using the conversion functions from types package
 		attack := float32(0.02) // Default
 		if rawAttack != -1 {
 			attack = types.AttackToSeconds(rawAttack)
 		}
-		
+
 		decay := float32(0.0) // Default
 		if rawDecay != -1 {
 			decay = types.DecayToSeconds(rawDecay)
 		}
-		
+
 		sustain := float32(1.0) // Default
 		if rawSustain != -1 {
 			sustain = types.SustainToLevel(rawSustain)
 		}
-		
+
 		release := float32(0.02) // Default
 		if rawRelease != -1 {
 			release = types.ReleaseToSeconds(rawRelease)
 		}
-		
+
 		instrumentParams := model.NewInstrumentOSCParams(
-			trackId, 
-			effectiveNote, 
+			trackId,
+			effectiveNote,
 			velocity,
 			rawChord,
 			rawChordAdd,
@@ -2130,11 +2130,11 @@ func shouldEmitRowForTrack(m *model.Model, trackId int) bool {
 	if !IsRowPlayable(dtRaw) {
 		return false
 	}
-	
+
 	if nn == -1 {
 		return false
 	}
-	
+
 	return true
 }
 
@@ -2743,7 +2743,7 @@ func FillSequentialPhrase(m *model.Model) {
 			// Current cell is "--" (value <= 0): Find last non-"--" value and copy it down
 			lastNonEmptyValue := 1 // Default to 1 if no previous value found
 			fillStartRow := 0
-			
+
 			// Find the last non-"--" value going upward
 			for row := currentRow - 1; row >= 0; row-- {
 				cellValue := (*phrasesData)[m.CurrentPhrase][row][colIndex]
@@ -2753,7 +2753,7 @@ func FillSequentialPhrase(m *model.Model) {
 					break
 				}
 			}
-			
+
 			// Fill from fillStartRow to currentRow with lastNonEmptyValue
 			for row := fillStartRow; row <= currentRow; row++ {
 				(*phrasesData)[m.CurrentPhrase][row][colIndex] = lastNonEmptyValue
