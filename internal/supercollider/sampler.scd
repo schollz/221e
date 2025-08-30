@@ -15,7 +15,8 @@ s.waitForBoot({
 			attack=1.0,
 			effectDryOut,
 			effectReverb = 0.0, effectReverbOut,
-			effectComb = 0.0, effectCombOut
+			effectComb = 0.0, effectCombOut,
+			a=0,b=0,c=0,d=0, // a,b,c,d vary between 0 and 1.0
 			;
 			var snd;
 			var freq = note.midicps;
