@@ -250,7 +250,16 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "T",
 			}
-		case 6: // A - attack column
+		case 6: // GT - gate column
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColGate),
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "GT",
+			}
+		case 7: // A - attack column
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColAttack),
 				IsEditable:      true,
@@ -259,7 +268,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "A",
 			}
-		case 7: // D - decay column
+		case 8: // D - decay column
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColDecay),
 				IsEditable:      true,
@@ -268,7 +277,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "D",
 			}
-		case 8: // S - sustain column
+		case 9: // S - sustain column
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColSustain),
 				IsEditable:      true,
@@ -277,7 +286,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "S",
 			}
-		case 9: // R - release column
+		case 10: // R - release column
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColRelease),
 				IsEditable:      true,
@@ -286,7 +295,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "R",
 			}
-		case 10: // AR - arpeggio column
+		case 11: // AR - arpeggio column
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColArpeggio),
 				IsEditable:      true,
@@ -295,7 +304,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "AR",
 			}
-		case 11: // MI - MIDI column
+		case 12: // MI - MIDI column
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColMidi),
 				IsEditable:      true,
@@ -304,7 +313,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "MI",
 			}
-		case 12: // SO - SoundMaker column
+		case 13: // SO - SoundMaker column
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColSoundMaker),
 				IsEditable:      true,
@@ -541,7 +550,7 @@ func (m *Model) initializeDefaultData() {
 			m.PhrasesData[p][i][types.ColNote] = -1                // Note value (-1 means no data "--")
 			m.PhrasesData[p][i][types.ColPitch] = 128              // Pitch value (128 = 0x80 = 0.0 pitch, default)
 			m.PhrasesData[p][i][types.ColDeltaTime] = -1           // Delta time (-1 means no data "--", controls playback)
-			m.PhrasesData[p][i][types.ColGate] = 128               // Gate value (128 = 1.0, default)
+			m.PhrasesData[p][i][types.ColGate] = 80                // Gate value (80 = 0x50, default)
 			m.PhrasesData[p][i][types.ColRetrigger] = -1           // Retrigger index (-1 means no retrigger)
 			m.PhrasesData[p][i][types.ColTimestretch] = -1         // Timestretch index (-1 means no timestretch)
 			m.PhrasesData[p][i][types.ColEffectReverse] = -1       // Reverse effect (-1 means no effect)
@@ -566,6 +575,7 @@ func (m *Model) initializeDefaultData() {
 			// For instruments, initialize with minimal defaults
 			m.InstrumentPhrasesData[p][i][types.ColNote] = -1      // No note by default
 			m.InstrumentPhrasesData[p][i][types.ColDeltaTime] = -1 // DT controls playback for instruments too
+			m.InstrumentPhrasesData[p][i][types.ColGate] = -1      // Gate value (sticky)
 			// Initialize chord columns (use int values corresponding to enum defaults)
 			m.InstrumentPhrasesData[p][i][types.ColChord] = int(types.ChordNone)                   // Default: "-"
 			m.InstrumentPhrasesData[p][i][types.ColChordAddition] = int(types.ChordAddNone)        // Default: "-"
@@ -590,7 +600,7 @@ func (m *Model) initializeDefaultData() {
 			m.SamplerPhrasesData[p][i][types.ColNote] = -1           // Note value (-1 means no data "--")
 			m.SamplerPhrasesData[p][i][types.ColPitch] = 128         // Pitch value (128 = 0x80 = 0.0 pitch, default)
 			m.SamplerPhrasesData[p][i][types.ColDeltaTime] = -1      // Delta time (-1 means no data "--", controls playback)
-			m.SamplerPhrasesData[p][i][types.ColGate] = 128          // Gate value (128 = 1.0, default)
+			m.SamplerPhrasesData[p][i][types.ColGate] = 80           // Gate value (80 = 0x50, default)
 			m.SamplerPhrasesData[p][i][types.ColRetrigger] = -1      // Retrigger index (-1 means no retrigger)
 			m.SamplerPhrasesData[p][i][types.ColTimestretch] = -1    // Timestretch index (-1 means no timestretch)
 			m.SamplerPhrasesData[p][i][types.ColEffectReverse] = -1  // Reverse effect (-1 means no effect)
@@ -741,6 +751,7 @@ type InstrumentOSCParams struct {
 	ChordType          int     // Chord type (C parameter)
 	ChordAddition      int     // Chord addition (A parameter)
 	ChordTransposition int     // Chord transposition (T parameter)
+	Gate               int     // Gate value (GT parameter, raw value)
 	Attack             float32 // Attack time in seconds (A parameter)
 	Decay              float32 // Decay time in seconds (D parameter)
 	Sustain            float32 // Sustain level (S parameter)
@@ -810,7 +821,7 @@ func NewSamplerOSCParamsWithRetrigger(filename string, trackId, sliceCount, slic
 }
 
 // NewInstrumentOSCParams creates instrument parameters
-func NewInstrumentOSCParams(trackId, midiNote int, velocity float32, chordType, chordAddition, chordTransposition int, attack, decay, sustain, release float32, arpeggioIndex, midiSettingsIndex, soundMakerIndex int) InstrumentOSCParams {
+func NewInstrumentOSCParams(trackId, midiNote int, velocity float32, chordType, chordAddition, chordTransposition, gate int, attack, decay, sustain, release float32, arpeggioIndex, midiSettingsIndex, soundMakerIndex int) InstrumentOSCParams {
 	return InstrumentOSCParams{
 		TrackId:            trackId,
 		NoteOn:             1,
@@ -819,6 +830,7 @@ func NewInstrumentOSCParams(trackId, midiNote int, velocity float32, chordType, 
 		ChordType:          chordType,
 		ChordAddition:      chordAddition,
 		ChordTransposition: chordTransposition,
+		Gate:               gate,
 		Attack:             attack,
 		Decay:              decay,
 		Sustain:            sustain,
@@ -849,6 +861,8 @@ func (m *Model) SendOSCInstrumentMessage(params InstrumentOSCParams) {
 	msg.Append(float32(params.Sustain))
 	msg.Append("release")
 	msg.Append(float32(params.Release))
+	msg.Append("gate")
+	msg.Append(int32(params.Gate))
 
 	err := m.oscClient.Send(msg)
 	if err != nil {

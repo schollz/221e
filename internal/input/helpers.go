@@ -2015,6 +2015,12 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 		rawMidi := GetEffectiveValueForTrack(m, phrase, row, int(types.ColMidi), trackId)
 		rawSoundMaker := GetEffectiveValueForTrack(m, phrase, row, int(types.ColSoundMaker), trackId)
 
+		// Extract Gate parameter with effective value (sticky)
+		effectiveGate := GetEffectiveValueForTrack(m, phrase, row, int(types.ColGate), trackId)
+		if effectiveGate == -1 {
+			effectiveGate = 80 // Default Gate value
+		}
+
 		// Convert ADSR values using the conversion functions from types package
 		attack := float32(0.02) // Default
 		if rawAttack != -1 {
@@ -2043,6 +2049,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 			rawChord,
 			rawChordAdd,
 			rawChordTrans,
+			effectiveGate,
 			attack,
 			decay,
 			sustain,

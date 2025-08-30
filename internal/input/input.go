@@ -301,7 +301,7 @@ func handleShiftRight(m *model.Model) tea.Cmd {
 			// Set appropriate starting column based on view type
 			phraseViewType := m.GetPhraseViewType()
 			if phraseViewType == types.InstrumentPhraseView {
-				m.CurrentCol = 1 // Instrument: Start on P column
+				m.CurrentCol = int(types.InstrumentColDT) // Instrument: Start on DT column
 			} else {
 				m.CurrentCol = 2 // Sampler: Start on Note column
 			}
@@ -623,7 +623,7 @@ func handleShiftLeft(m *model.Model) tea.Cmd {
 		var arColumn int
 		phraseViewType := m.GetPhraseViewType()
 		if phraseViewType == types.InstrumentPhraseView {
-			arColumn = 10 // AR column is column 10 in instrument view (after adding ADSR columns)
+			arColumn = int(types.InstrumentColAR) // AR column in instrument view
 		} else {
 			arColumn = 1 // AR is not accessible in sampler view, default to P column
 		}
@@ -633,7 +633,7 @@ func handleShiftLeft(m *model.Model) tea.Cmd {
 		var miColumn int
 		phraseViewType := m.GetPhraseViewType()
 		if phraseViewType == types.InstrumentPhraseView {
-			miColumn = 11 // MI column is column 11 in instrument view (after AR column)
+			miColumn = int(types.InstrumentColMI) // MI column in instrument view
 		} else {
 			miColumn = 1 // MI is not accessible in sampler view, default to P column
 		}
@@ -643,7 +643,7 @@ func handleShiftLeft(m *model.Model) tea.Cmd {
 		var soColumn int
 		phraseViewType := m.GetPhraseViewType()
 		if phraseViewType == types.InstrumentPhraseView {
-			soColumn = 12 // SO column is column 12 in instrument view (after MI column)
+			soColumn = int(types.InstrumentColSO) // SO column in instrument view
 		} else {
 			soColumn = 1 // SO is not accessible in sampler view, default to P column
 		}
@@ -854,7 +854,7 @@ func handleRight(m *model.Model) tea.Cmd {
 		phraseViewType := m.GetPhraseViewType()
 		var maxValidCol int
 		if phraseViewType == types.InstrumentPhraseView {
-			maxValidCol = 12 // Instrument: last valid column is 12 (SO - SoundMaker) after adding SoundMaker column
+			maxValidCol = int(types.InstrumentColSO) // Instrument: last valid column is SO (SoundMaker)
 		} else {
 			maxValidCol = 13 // Sampler: last valid column is 13 (FI)
 		}
@@ -1251,7 +1251,7 @@ func handleCtrlH(m *model.Model) tea.Cmd {
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColNote)] = -1      // Clear note
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColPitch)] = 128    // Reset pitch to default (hex 80)
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColDeltaTime)] = -1 // Clear deltatime (for samplers this also clears playback)
-		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColGate)] = 128     // Reset gate to default
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColGate)] = 80      // Reset gate to default
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColRetrigger)] = -1 // Clear retrigger
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColFilename)] = -1  // Clear filename
 		log.Printf("Deleted phrase %d row %d (cleared all columns)", m.CurrentPhrase, m.CurrentRow)

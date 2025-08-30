@@ -46,7 +46,7 @@ const (
 	ColNote               PhraseColumn = iota // Column 0: Note value (hex)
 	ColPitch                                  // Column 1: Pitch value (hex, default 80/0x80 = 0.0 pitch)
 	ColDeltaTime                              // Column 2: Delta time (hex) - controls playback: >0=play, <=0=skip
-	ColGate                                   // Column 3: Gate value (hex, default 128/0x80)
+	ColGate                                   // Column 3: Gate value (hex, default 80/0x50, sticky)
 	ColRetrigger                              // Column 4: Retrigger setting index (hex, 00-FE)
 	ColTimestretch                            // Column 5: Timestretch setting index (hex, 00-FE)
 	ColEffectReverse                          // Column 6: Я (reverse) 0/1
@@ -146,6 +146,26 @@ func ChordAdditionToString(chordAdd ChordAddition) string {
 		return "-"
 	}
 }
+
+// UI Column positions for Instrument Phrase View - to prevent hardcoding issues
+type InstrumentUIColumn int
+
+const (
+	InstrumentColSL    InstrumentUIColumn = 0  // SL - Slice (display only)
+	InstrumentColDT    InstrumentUIColumn = 1  // DT - Delta Time
+	InstrumentColNOT   InstrumentUIColumn = 2  // NOT - Note
+	InstrumentColC     InstrumentUIColumn = 3  // C - Chord
+	InstrumentColA     InstrumentUIColumn = 4  // A - Chord Addition
+	InstrumentColT     InstrumentUIColumn = 5  // T - Chord Transposition
+	InstrumentColGT    InstrumentUIColumn = 6  // GT - Gate
+	InstrumentColATK   InstrumentUIColumn = 7  // A - Attack
+	InstrumentColDECAY InstrumentUIColumn = 8  // D - Decay
+	InstrumentColSUS   InstrumentUIColumn = 9  // S - Sustain
+	InstrumentColREL   InstrumentUIColumn = 10 // R - Release
+	InstrumentColAR    InstrumentUIColumn = 11 // AR - Arpeggio
+	InstrumentColMI    InstrumentUIColumn = 12 // MI - MIDI
+	InstrumentColSO    InstrumentUIColumn = 13 // SO - SoundMaker
+)
 
 // ChordTranspositionToString converts a ChordTransposition enum to its display string
 func ChordTranspositionToString(chordTrans ChordTransposition) string {
