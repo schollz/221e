@@ -1641,12 +1641,20 @@ func IsRowEmpty(m *model.Model) bool {
 		return true
 	}
 
-	rowData := m.PhrasesData[m.CurrentPhrase][m.CurrentRow]
+	// Use track-aware data access
+	phrasesData := m.GetCurrentPhrasesData()
+	rowData := (*phrasesData)[m.CurrentPhrase][m.CurrentRow]
 
-	// A row is considered empty if all data fields are at their default values
-	return rowData[types.ColNote] == -1 &&
-		rowData[types.ColDeltaTime] == -1 &&
-		rowData[types.ColFilename] == -1
+	// A row is considered empty if all key data fields are at their default values
+	// For both instrument and sampler tracks, check Note and DeltaTime
+	isEmpty := rowData[types.ColNote] == -1 && rowData[types.ColDeltaTime] == -1
+
+	// For sampler tracks, also check filename
+	if m.GetPhraseViewType() == types.SamplerPhraseView {
+		isEmpty = isEmpty && rowData[types.ColFilename] == -1
+	}
+
+	return isEmpty
 }
 
 // GetEffectiveValue searches backwards from the current row to find the first non-null value for a given column
