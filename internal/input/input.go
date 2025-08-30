@@ -1057,10 +1057,9 @@ func handleC(m *model.Model) tea.Cmd {
 			EmitRowData(m)
 		}
 	} else if m.ViewMode == types.ChainView {
-		// Only fill if the current chain slot is empty
 		chainsData := m.GetCurrentChainsData()
 		if (*chainsData)[m.CurrentChain][m.CurrentRow] == -1 {
-			// Seed: prefer previous row's phrase, else start so 00 is first checked
+			// If chain slot is empty, fill it with next unused phrase
 			seed := 254 // 254 => first check will be 0 (wrap-around)
 			if m.CurrentRow > 0 && (*chainsData)[m.CurrentChain][m.CurrentRow-1] != -1 {
 				seed = (*chainsData)[m.CurrentChain][m.CurrentRow-1]
@@ -1076,15 +1075,20 @@ func handleC(m *model.Model) tea.Cmd {
 			log.Printf("Filled Chain %02X Row %02X with next empty phrase %02X",
 				m.CurrentChain, m.CurrentRow, next)
 			storage.AutoSave(m)
+		} else {
+			// If chain slot is not empty, emit the phrase data for that slot
+			phraseNumber := (*chainsData)[m.CurrentChain][m.CurrentRow]
+			EmitRowDataFor(m, phraseNumber, 0, m.CurrentTrack) // Emit first row of the phrase
+			log.Printf("Emitting data for Chain %02X Row %02X -> Phrase %02X",
+				m.CurrentChain, m.CurrentRow, phraseNumber)
 		}
 		return nil
 	} else if m.ViewMode == types.SongView {
 		track := m.CurrentCol
 		row := m.CurrentRow
 
-		// Only fill if the current song slot is empty
 		if m.SongData[track][row] == -1 {
-			// Seed search: prefer previous row on the same track, else start so 00 is first
+			// If song slot is empty, fill it with next unused chain
 			seed := 254 // 254 => first check will be 0 (wrap-around)
 			if row > 0 && m.SongData[track][row-1] != -1 {
 				seed = m.SongData[track][row-1]
@@ -1099,6 +1103,26 @@ func handleC(m *model.Model) tea.Cmd {
 			m.SongData[track][row] = next
 			log.Printf("Filled Song T%d R%02X with next empty chain %02X", track, row, next)
 			storage.AutoSave(m)
+		} else {
+			// If song slot is not empty, emit the chain data for that slot
+			chainNumber := m.SongData[track][row]
+			// Find the first non-empty phrase in this chain
+			chainsData := m.GetChainsDataForTrack(track)
+			firstPhraseNumber := -1
+			for chainRow := 0; chainRow < 16; chainRow++ {
+				if (*chainsData)[chainNumber][chainRow] != -1 {
+					firstPhraseNumber = (*chainsData)[chainNumber][chainRow]
+					break
+				}
+			}
+			
+			if firstPhraseNumber != -1 {
+				EmitRowDataFor(m, firstPhraseNumber, 0, track) // Emit first row of the first phrase
+				log.Printf("Emitting data for Song T%d R%02X -> Chain %02X -> Phrase %02X",
+					track, row, chainNumber, firstPhraseNumber)
+			} else {
+				log.Printf("Chain %02X is empty, cannot emit data", chainNumber)
+			}
 		}
 		return nil
 	} else if m.ViewMode == types.RetriggerView {

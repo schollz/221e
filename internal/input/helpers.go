@@ -662,10 +662,20 @@ func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
 	} else if m.CurrentRow >= 1 && m.CurrentRow <= 4 { // Parameters A, B, C, D
 		// Parameters cycle through 00-FE or -- (which is -1)
 		var delta int
-		if baseDelta > 0 {
-			delta = 1
+		if baseDelta >= 1.0 || baseDelta <= -1.0 {
+			// Coarse control: Ctrl+Up/Down = ±16
+			if baseDelta > 0 {
+				delta = 16
+			} else {
+				delta = -16
+			}
 		} else {
-			delta = -1
+			// Fine control: Ctrl+Left/Right = ±1
+			if baseDelta > 0 {
+				delta = 1
+			} else {
+				delta = -1
+			}
 		}
 
 		// Get the current parameter value
@@ -1768,21 +1778,51 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 	log.Printf("DeltaTime (playback control): %d", rawDeltaTime)
 	// Show different debug info based on track type
 	if trackId >= 0 && trackId < 8 && !m.TrackTypes[trackId] {
-		// Instrument track - show chord information
+		// Instrument track - show all instrument parameters
 		rawChord := rowData[types.ColChord]
 		rawChordAdd := rowData[types.ColChordAddition]
 		rawChordTrans := rowData[types.ColChordTransposition]
+		rawAttack := rowData[types.ColAttack]
+		rawDecay := rowData[types.ColDecay]
+		rawSustain := rowData[types.ColSustain]
+		rawRelease := rowData[types.ColRelease]
 		rawArpeggio := rowData[types.ColArpeggio]
+		rawMidi := rowData[types.ColMidi]
+		rawSoundMaker := rowData[types.ColSoundMaker]
 
-		log.Printf("Raw:  NN=%s C=%d A=%d T=%d AR=%s",
+		log.Printf("Raw:  NN=%s GT=%s C=%d A=%d T=%d A=%s D=%s S=%s R=%s AR=%s MI=%s SO=%s",
 			formatHex(rawNote),
+			formatHex(rawGate),
 			rawChord,
 			rawChordAdd,
 			rawChordTrans,
+			formatHex(rawAttack),
+			formatHex(rawDecay),
+			formatHex(rawSustain),
+			formatHex(rawRelease),
 			formatHex(rawArpeggio),
+			formatHex(rawMidi),
+			formatHex(rawSoundMaker),
 		)
-		log.Printf("Eff:  NN=%s (Instrument track - chord data shown above)",
+		
+		// Show effective values for sticky parameters
+		effAttack := GetEffectiveValueForTrack(m, phrase, row, int(types.ColAttack), trackId)
+		effDecay := GetEffectiveValueForTrack(m, phrase, row, int(types.ColDecay), trackId)
+		effSustain := GetEffectiveValueForTrack(m, phrase, row, int(types.ColSustain), trackId)
+		effRelease := GetEffectiveValueForTrack(m, phrase, row, int(types.ColRelease), trackId)
+		effArpeggio := GetEffectiveValueForTrack(m, phrase, row, int(types.ColArpeggio), trackId)
+		effMidi := GetEffectiveValueForTrack(m, phrase, row, int(types.ColMidi), trackId)
+		effSoundMaker := GetEffectiveValueForTrack(m, phrase, row, int(types.ColSoundMaker), trackId)
+		
+		log.Printf("Eff:  NN=%s A=%s D=%s S=%s R=%s AR=%s MI=%s SO=%s",
 			formatHex(effectiveNote),
+			formatHex(effAttack),
+			formatHex(effDecay),
+			formatHex(effSustain),
+			formatHex(effRelease),
+			formatHex(effArpeggio),
+			formatHex(effMidi),
+			formatHex(effSoundMaker),
 		)
 	} else {
 		// Sampler track - show traditional sampler information
@@ -1945,9 +1985,64 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 
 	// Determine track type and emit appropriate message
 	if isInstrumentTrack(m, trackId) {
-		// For instrument tracks, emit simplified instrument message
-		velocity := float32(1.0) // Default velocity - could be derived from Gate in future
-		instrumentParams := model.NewInstrumentOSCParams(trackId, effectiveNote, velocity)
+		// For instrument tracks, extract all instrument-specific parameters
+		velocity := float32(rawGate) / 128.0 // Convert gate to velocity (0.0-1.0)
+		if velocity > 1.0 {
+			velocity = 1.0
+		}
+		
+		// Extract chord parameters
+		rawChord := rowData[types.ColChord]
+		rawChordAdd := rowData[types.ColChordAddition]
+		rawChordTrans := rowData[types.ColChordTransposition]
+		
+		// Extract ADSR parameters with effective values (sticky)
+		rawAttack := GetEffectiveValueForTrack(m, phrase, row, int(types.ColAttack), trackId)
+		rawDecay := GetEffectiveValueForTrack(m, phrase, row, int(types.ColDecay), trackId)
+		rawSustain := GetEffectiveValueForTrack(m, phrase, row, int(types.ColSustain), trackId)
+		rawRelease := GetEffectiveValueForTrack(m, phrase, row, int(types.ColRelease), trackId)
+		
+		// Extract other parameters with effective values (sticky)
+		rawArpeggio := GetEffectiveValueForTrack(m, phrase, row, int(types.ColArpeggio), trackId)
+		rawMidi := GetEffectiveValueForTrack(m, phrase, row, int(types.ColMidi), trackId)
+		rawSoundMaker := GetEffectiveValueForTrack(m, phrase, row, int(types.ColSoundMaker), trackId)
+		
+		// Convert ADSR values using the conversion functions from types package
+		attack := float32(0.02) // Default
+		if rawAttack != -1 {
+			attack = types.AttackToSeconds(rawAttack)
+		}
+		
+		decay := float32(0.0) // Default
+		if rawDecay != -1 {
+			decay = types.DecayToSeconds(rawDecay)
+		}
+		
+		sustain := float32(1.0) // Default
+		if rawSustain != -1 {
+			sustain = types.SustainToLevel(rawSustain)
+		}
+		
+		release := float32(0.02) // Default
+		if rawRelease != -1 {
+			release = types.ReleaseToSeconds(rawRelease)
+		}
+		
+		instrumentParams := model.NewInstrumentOSCParams(
+			trackId, 
+			effectiveNote, 
+			velocity,
+			rawChord,
+			rawChordAdd,
+			rawChordTrans,
+			attack,
+			decay,
+			sustain,
+			release,
+			rawArpeggio,
+			rawMidi,
+			rawSoundMaker,
+		)
 		m.SendOSCInstrumentMessage(instrumentParams)
 	} else {
 		// For sampler tracks, emit full sampler message

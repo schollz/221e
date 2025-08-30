@@ -734,9 +734,19 @@ type SamplerOSCParams struct {
 }
 
 type InstrumentOSCParams struct {
-	TrackId  int     // Track ID
-	MidiNote int     // MIDI note number (0-127)
-	Velocity float32 // Note velocity (0.0-1.0)
+	TrackId             int     // Track ID
+	MidiNote            int     // MIDI note number (0-127)
+	Velocity            float32 // Note velocity (0.0-1.0)
+	ChordType           int     // Chord type (C parameter)
+	ChordAddition       int     // Chord addition (A parameter) 
+	ChordTransposition  int     // Chord transposition (T parameter)
+	Attack              float32 // Attack time in seconds (A parameter)
+	Decay               float32 // Decay time in seconds (D parameter)
+	Sustain             float32 // Sustain level (S parameter)
+	Release             float32 // Release time in seconds (R parameter)
+	ArpeggioIndex       int     // Arpeggio settings index (AR parameter)
+	MidiSettingsIndex   int     // MIDI settings index (MI parameter)
+	SoundMakerIndex     int     // SoundMaker settings index (SO parameter)
 }
 
 // NewSamplerOSCParams creates sampler parameters with custom slice duration
@@ -799,11 +809,21 @@ func NewSamplerOSCParamsWithRetrigger(filename string, trackId, sliceCount, slic
 }
 
 // NewInstrumentOSCParams creates instrument parameters
-func NewInstrumentOSCParams(trackId, midiNote int, velocity float32) InstrumentOSCParams {
+func NewInstrumentOSCParams(trackId, midiNote int, velocity float32, chordType, chordAddition, chordTransposition int, attack, decay, sustain, release float32, arpeggioIndex, midiSettingsIndex, soundMakerIndex int) InstrumentOSCParams {
 	return InstrumentOSCParams{
-		TrackId:  trackId,
-		MidiNote: midiNote,
-		Velocity: velocity,
+		TrackId:             trackId,
+		MidiNote:            midiNote,
+		Velocity:            velocity,
+		ChordType:           chordType,
+		ChordAddition:       chordAddition,
+		ChordTransposition:  chordTransposition,
+		Attack:              attack,
+		Decay:               decay,
+		Sustain:             sustain,
+		Release:             release,
+		ArpeggioIndex:       arpeggioIndex,
+		MidiSettingsIndex:   midiSettingsIndex,
+		SoundMakerIndex:     soundMakerIndex,
 	}
 }
 
@@ -820,13 +840,34 @@ func (m *Model) SendOSCInstrumentMessage(params InstrumentOSCParams) {
 	msg.Append(int32(params.MidiNote))
 	msg.Append("velocity")
 	msg.Append(float32(params.Velocity))
+	msg.Append("chordType")
+	msg.Append(int32(params.ChordType))
+	msg.Append("chordAddition")
+	msg.Append(int32(params.ChordAddition))
+	msg.Append("chordTransposition")
+	msg.Append(int32(params.ChordTransposition))
+	msg.Append("attack")
+	msg.Append(float32(params.Attack))
+	msg.Append("decay")
+	msg.Append(float32(params.Decay))
+	msg.Append("sustain")
+	msg.Append(float32(params.Sustain))
+	msg.Append("release")
+	msg.Append(float32(params.Release))
+	msg.Append("arpeggioIndex")
+	msg.Append(int32(params.ArpeggioIndex))
+	msg.Append("midiSettingsIndex")
+	msg.Append(int32(params.MidiSettingsIndex))
+	msg.Append("soundMakerIndex")
+	msg.Append(int32(params.SoundMakerIndex))
 
 	err := m.oscClient.Send(msg)
 	if err != nil {
 		log.Printf("Error sending OSC instrument message: %v", err)
 	} else {
-		log.Printf("OSC instrument message sent: /instrument track=%d note=%d velocity=%.2f",
-			params.TrackId, params.MidiNote, params.Velocity)
+		log.Printf("OSC instrument message sent: /instrument track=%d note=%d velocity=%.2f chord=%d/%d/%d ADSR=%.2f/%.2f/%.2f/%.2f arpeggio=%d midi=%d soundmaker=%d",
+			params.TrackId, params.MidiNote, params.Velocity, params.ChordType, params.ChordAddition, params.ChordTransposition,
+			params.Attack, params.Decay, params.Sustain, params.Release, params.ArpeggioIndex, params.MidiSettingsIndex, params.SoundMakerIndex)
 	}
 }
 
