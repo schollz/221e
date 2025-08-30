@@ -55,7 +55,10 @@ Defaults: OSC **57120**, save file **tracker-save.json**.
 - **Backspace** – Clear cell/value
 - **Ctrl+H** – Delete entire row
 - **S** – Paste last edited row
-- **C** – Trigger row playback OR copy last row with increment (if empty)
+- **C** – Smart trigger/fill function:
+  - **Non-empty values**: Triggers `EmitRowDataFor` (plays row with full parameters)
+  - **Empty values**: Fills with next available content or copies last row
+  - Works in Song, Chain, and Phrase views
 
 ### Copy & Paste
 - **Ctrl+C** – Copy cell
@@ -92,6 +95,26 @@ Defaults: OSC **57120**, save file **tracker-save.json**.
 - **Mixer** – Per-track volume levels
 - **Settings** – Global settings (BPM, PPQ, audio gains, etc.)
 
+## Smart 'C' Key Functionality
+
+The **C** key provides context-aware trigger and fill functionality across all views:
+
+### Phrase View
+- **Non-empty row**: Triggers `EmitRowDataFor` with complete parameter set:
+  - **Instrument tracks**: Note, Chord (C/A/T), ADSR (A/D/S/R), Arpeggio (AR), MIDI (MI), SoundMaker (SO)
+  - **Sampler tracks**: All traditional sampler parameters
+- **Empty row**: Copies last row with increment
+
+### Chain View  
+- **Non-empty slot**: Triggers first row of the referenced phrase
+- **Empty slot**: Fills with next unused phrase
+
+### Song View
+- **Non-empty slot**: Finds first phrase in referenced chain and triggers its first row
+- **Empty slot**: Fills with next unused chain
+
+This unified approach allows instant playback testing of any musical element while maintaining the original fill functionality for composition workflow.
+
 
 ## Phrase Columns
 
@@ -102,7 +125,7 @@ SL  DT  NN  PI  GT  RT  TS  Я  PA  LP  HP  CO  VE  FI
 
 ### Instrument View  
 ```
-SL  DT  NOT  CAT  A D S R  AR
+SL  DT  NOT  C  A  T  A D S R  AR  MI  SO
 ```
 
 ### Column Descriptions
@@ -119,9 +142,13 @@ SL  DT  NOT  CAT  A D S R  AR
 - **CO** (comb) – Comb filter effect
 - **VE** (reverb) – Reverb effect
 - **FI** (file index) – Sample file selection (sampler only)
-- **CAT** (chord/addition/transposition) – Chord notation (instrument only)
+- **C** (chord) – Chord type: None(-), Major(M), minor(m), Dominant(d) (instrument only)
+- **A** (chord addition) – Chord addition: None(-), 7th(7), 9th(9), 4th(4) (instrument only)  
+- **T** (transposition) – Chord transposition: 0-F semitones (instrument only)
 - **A D S R** (ADSR) – Attack/Decay/Sustain/Release envelope (instrument only)
 - **AR** (arpeggio) – Arpeggio pattern index (instrument only)
+- **MI** (MIDI) – MIDI settings index for external MIDI output (instrument only)
+- **SO** (SoundMaker) – SoundMaker settings index for built-in synthesis (instrument only)
 
 ### Key Feature: Unified DT Column
 Both Sampler and Instrument views now use the same **DT** (Delta Time) column for playback control, replacing the previous separate P/DT system. This provides consistent behavior across both track types.
