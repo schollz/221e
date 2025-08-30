@@ -190,7 +190,7 @@ func TestModelDataInitialization(t *testing.T) {
 	assert.Equal(t, -1, m.SamplerPhrasesData[0][0][types.ColNote])
 	assert.Equal(t, 128, m.SamplerPhrasesData[0][0][types.ColPitch])
 	assert.Equal(t, -1, m.SamplerPhrasesData[0][0][types.ColDeltaTime])
-	assert.Equal(t, 128, m.SamplerPhrasesData[0][0][types.ColGate])
+	assert.Equal(t, 80, m.SamplerPhrasesData[0][0][types.ColGate])
 
 	// Check phrase data defaults for instrument
 	assert.Equal(t, -1, m.InstrumentPhrasesData[0][0][types.ColNote])
