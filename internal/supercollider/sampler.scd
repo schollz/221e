@@ -19,6 +19,7 @@ s.waitForBoot({
 			decay=1.0,
 			sustain=0.7,
 			release=0.5,
+			duration=30,
 			effectDryOut,
 			effectReverb = 0.0, effectReverbOut,
 			effectComb = 0.0, effectCombOut,
@@ -28,7 +29,9 @@ s.waitForBoot({
 			var env;
 			snd = Pulse.ar(note.midicps, 0.5);
 			snd = MoogFF.ar(snd, 2000, 1.5);
-			env=EnvGen.ar(Env.adsr(attack,decay,sustain,release),gate,doneAction:2);
+			env = EnvGen.ar(Env.adsr(attack,decay,sustain,release),1-EnvGen.kr(Env.new([0,0,1],[duration,0])),doneAction:2);
+			env = env * EnvGen.ar(Env.adsr(0.01,0.01,1.0,release),gate);
+			snd = snd * env;
 			snd = Pan2.ar(snd,pan);
 			Out.ar(effectDryOut, snd);
 			Out.ar(effectCombOut, snd*effectComb);

@@ -725,6 +725,7 @@ type SamplerOSCParams struct {
 	SliceDuration         float32 // Duration multiplier (default 1.0)
 	BPMSource             float32 // Source BPM from file metadata
 	BPMTarget             float32 // Target BPM from global settings
+	DeltaTime             float32 // Delta time in seconds (DT parameter, time per row * DT)
 	Pitch                 float32 // Pitch value (-24 to +24, default 0.0 when hex 80)
 	RetriggerNumTotal     int     // Retrigger Settings "Times"
 	RetriggerBeats        float32 // Retrigger Settings "Beats"
@@ -863,10 +864,8 @@ func (m *Model) SendOSCInstrumentMessage(params InstrumentOSCParams) {
 	msg.Append(float32(params.Sustain))
 	msg.Append("release")
 	msg.Append(float32(params.Release))
-	msg.Append("gate")
-	msg.Append(int32(params.Gate))
 	msg.Append("duration")
-	msg.Append(float32(params.DeltaTime))
+	msg.Append(float32(params.DeltaTime) * float32(params.Gate) / 128.0) // Effective duration in seconds
 
 	err := m.oscClient.Send(msg)
 	if err != nil {
