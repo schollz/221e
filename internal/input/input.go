@@ -249,6 +249,12 @@ func HandleKeyInput(m *model.Model, msg tea.KeyMsg) tea.Cmd {
 
 func handleShiftRight(m *model.Model) tea.Cmd {
 	if m.ViewMode == types.SongView {
+		// Don't navigate when on track type row (row -1)
+		if m.CurrentRow == -1 {
+			log.Printf("Cannot navigate from track type row (Sampler/Instrument toggle)")
+			return nil
+		}
+
 		// Navigate to chain view for the selected song cell's chain
 		track := m.CurrentCol
 		row := m.CurrentRow
