@@ -1905,6 +1905,9 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 	gateMultiplier := float32(rawGate) / 96.0
 	sliceDuration := baseDuration * gateMultiplier
 
+	// Calculate delta time in seconds (time per row * DT)
+	deltaTimeSeconds := calculateDeltaTimeSeconds(m, phrase, row)
+
 	var oscParams model.SamplerOSCParams
 	if rawRetrigger != -1 && rawRetrigger >= 0 && rawRetrigger < 255 {
 		retriggerSettings := m.RetriggerSettings[rawRetrigger]
@@ -1916,9 +1919,10 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 			retriggerSettings.End,
 			retriggerSettings.PitchChange,
 			retriggerSettings.VolumeDB,
+			deltaTimeSeconds,
 		)
 	} else {
-		oscParams = model.NewSamplerOSCParams(effectiveFilename, trackId, sliceCount, sliceNumber, bpmSource, m.BPM, sliceDuration)
+		oscParams = model.NewSamplerOSCParams(effectiveFilename, trackId, sliceCount, sliceNumber, bpmSource, m.BPM, sliceDuration, deltaTimeSeconds)
 	}
 
 	// Pitch conversion from hex to float: 128 (0x80) = 0.0, range 0-254 maps to -24 to +24
@@ -2139,7 +2143,7 @@ func calculateDeltaTimeSeconds(m *model.Model, phrase, row int) float32 {
 	// Get the correct phrases data based on current track type
 	phrasesData := GetPhrasesDataForTrack(m, m.CurrentTrack)
 	dtRaw := (*phrasesData)[phrase][row][types.ColDeltaTime] // row-local DT
-	
+
 	if dtRaw == -1 {
 		// -- behaves like 01 (1 tick)
 		return float32(baseSecondsPerTick)

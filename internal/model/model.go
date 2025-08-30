@@ -764,7 +764,7 @@ type InstrumentOSCParams struct {
 }
 
 // NewSamplerOSCParams creates sampler parameters with custom slice duration
-func NewSamplerOSCParams(filename string, trackId int, sliceCount, sliceNumber int, bpmSource, bpmTarget, sliceDuration float32) SamplerOSCParams {
+func NewSamplerOSCParams(filename string, trackId int, sliceCount, sliceNumber int, bpmSource, bpmTarget, sliceDuration, deltaTime float32) SamplerOSCParams {
 	return SamplerOSCParams{
 		Filename:              filename,
 		TrackId:               trackId,
@@ -773,6 +773,7 @@ func NewSamplerOSCParams(filename string, trackId int, sliceCount, sliceNumber i
 		SliceDuration:         sliceDuration,
 		BPMSource:             bpmSource,
 		BPMTarget:             bpmTarget,
+		DeltaTime:             deltaTime,
 		Pitch:                 0.0, // Default pitch (hex 80 = 0.0 pitch)
 		RetriggerNumTotal:     0,
 		RetriggerBeats:        0,
@@ -794,7 +795,7 @@ func NewSamplerOSCParams(filename string, trackId int, sliceCount, sliceNumber i
 
 // NewSamplerOSCParamsWithRetrigger creates sampler parameters with retrigger settings
 func NewSamplerOSCParamsWithRetrigger(filename string, trackId, sliceCount, sliceNumber int, bpmSource, bpmTarget, sliceDuration float32,
-	retrigTimes int, retrigBeats float32, retrigRateStart, retrigRateEnd, retrigPitch, retrigVolume float32) SamplerOSCParams {
+	retrigTimes int, retrigBeats float32, retrigRateStart, retrigRateEnd, retrigPitch, retrigVolume, deltaTime float32) SamplerOSCParams {
 	return SamplerOSCParams{
 		Filename:              filename,
 		TrackId:               trackId,
@@ -819,6 +820,7 @@ func NewSamplerOSCParamsWithRetrigger(filename string, trackId, sliceCount, slic
 		HighPassFilter:        20,    // Default no filter (20Hz)
 		EffectComb:            0,
 		EffectReverb:          0,
+		DeltaTime:             deltaTime, // Delta time in seconds
 	}
 }
 
@@ -928,6 +930,8 @@ func (m *Model) SendOSCSamplerMessage(params SamplerOSCParams) {
 	msg.Append(float32(params.EffectComb))
 	msg.Append("effectReverb")
 	msg.Append(float32(params.EffectReverb))
+	msg.Append("deltaTime")
+	msg.Append(float32(params.DeltaTime))
 
 	err := m.oscClient.Send(msg)
 	if err != nil {
