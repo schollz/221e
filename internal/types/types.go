@@ -167,6 +167,35 @@ const (
 	InstrumentColSO    InstrumentUIColumn = 13 // SO - SoundMaker
 )
 
+// UI Column positions for Sampler Phrase View - to prevent hardcoding issues
+type SamplerUIColumn int
+
+const (
+	SamplerColSL   SamplerUIColumn = 0  // SL - Slice (display only)
+	SamplerColDT   SamplerUIColumn = 1  // DT - Delta Time
+	SamplerColNN   SamplerUIColumn = 2  // NN - Note
+	SamplerColPI   SamplerUIColumn = 3  // PI - Pitch
+	SamplerColGT   SamplerUIColumn = 4  // GT - Gate
+	SamplerColRT   SamplerUIColumn = 5  // RT - Retrigger
+	SamplerColTS   SamplerUIColumn = 6  // TS - Timestretch
+	SamplerColREV  SamplerUIColumn = 7  // Я - Reverse
+	SamplerColPA   SamplerUIColumn = 8  // PA - Pan
+	SamplerColLP   SamplerUIColumn = 9  // LP - Low Pass Filter
+	SamplerColHP   SamplerUIColumn = 10 // HP - High Pass Filter
+	SamplerColCO   SamplerUIColumn = 11 // CO - Comb
+	SamplerColVE   SamplerUIColumn = 12 // VE - Reverb
+	SamplerColFI   SamplerUIColumn = 13 // FI - Filename
+)
+
+// UI Column positions for Arpeggio View - to prevent hardcoding issues
+type ArpeggioUIColumn int
+
+const (
+	ArpeggioColDI  ArpeggioUIColumn = 0 // DI - Direction
+	ArpeggioColCO  ArpeggioUIColumn = 1 // CO - Count
+	ArpeggioColDIV ArpeggioUIColumn = 2 // Divisor
+)
+
 // ChordTranspositionToString converts a ChordTransposition enum to its display string
 func ChordTranspositionToString(chordTrans ChordTransposition) string {
 	switch chordTrans {

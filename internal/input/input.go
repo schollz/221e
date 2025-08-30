@@ -303,7 +303,7 @@ func handleShiftRight(m *model.Model) tea.Cmd {
 			if phraseViewType == types.InstrumentPhraseView {
 				m.CurrentCol = int(types.InstrumentColDT) // Instrument: Start on DT column
 			} else {
-				m.CurrentCol = 2 // Sampler: Start on Note column
+				m.CurrentCol = int(types.SamplerColNN) // Sampler: Start on Note column
 			}
 			m.ScrollOffset = 0
 
@@ -818,7 +818,7 @@ func handleLeft(m *model.Model) tea.Cmd {
 			storage.AutoSave(m)
 		}
 	} else if m.ViewMode == types.ArpeggioView {
-		if m.CurrentCol > 0 { // 3 columns: 0=DI, 1=CO, 2=Divisor
+		if m.CurrentCol > int(types.ArpeggioColDI) { // 3 columns: DI, CO, Divisor
 			m.CurrentCol = m.CurrentCol - 1
 			storage.AutoSave(m)
 		}
@@ -864,7 +864,7 @@ func handleRight(m *model.Model) tea.Cmd {
 			storage.AutoSave(m)
 		}
 	} else if m.ViewMode == types.ArpeggioView {
-		if m.CurrentCol < 2 { // 3 columns: 0=DI, 1=CO, 2=Divisor
+		if m.CurrentCol < int(types.ArpeggioColDIV) { // 3 columns: DI, CO, Divisor
 			m.CurrentCol = m.CurrentCol + 1
 			storage.AutoSave(m)
 		}

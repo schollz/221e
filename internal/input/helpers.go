@@ -460,7 +460,7 @@ func ModifyArpeggioValue(m *model.Model, baseDelta float32) {
 	settings := m.ArpeggioSettings[m.ArpeggioEditingIndex]
 	currentRow := &settings.Rows[m.CurrentRow] // Get reference to specific row
 
-	if m.CurrentCol == 0 { // DI (Direction) column
+	if m.CurrentCol == int(types.ArpeggioColDI) { // DI (Direction) column
 		// Direction cycles through: 0="--", 1="u-", 2="d-"
 		var delta int
 		if baseDelta > 0 {
@@ -477,7 +477,7 @@ func ModifyArpeggioValue(m *model.Model, baseDelta float32) {
 		}
 		currentRow.Direction = newDirection
 		log.Printf("Modified arpeggio %02X row %02X Direction: %d -> %d", m.ArpeggioEditingIndex, m.CurrentRow, currentRow.Direction-delta, currentRow.Direction)
-	} else if m.CurrentCol == 1 { // CO (Count) column
+	} else if m.CurrentCol == int(types.ArpeggioColCO) { // CO (Count) column
 		// Count: -1="--", 0-254 for hex values 00-FE
 		var delta int
 		if baseDelta == 1.0 || baseDelta == -1.0 {
@@ -496,7 +496,7 @@ func ModifyArpeggioValue(m *model.Model, baseDelta float32) {
 		}
 		currentRow.Count = newCount
 		log.Printf("Modified arpeggio %02X row %02X Count: %d -> %d (delta: %d)", m.ArpeggioEditingIndex, m.CurrentRow, currentRow.Count-delta, currentRow.Count, delta)
-	} else if m.CurrentCol == 2 { // Divisor (/) column
+	} else if m.CurrentCol == int(types.ArpeggioColDIV) { // Divisor (/) column
 		// Divisor: -1="--", 1-254 for hex values 01-FE (never allow 00)
 		var delta int
 		if baseDelta == 1.0 || baseDelta == -1.0 {

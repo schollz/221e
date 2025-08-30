@@ -196,7 +196,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 	if phraseViewType == types.InstrumentPhraseView {
 		// Instrument view: SL (0), DT (1), NOT (2)
 		switch uiColumn {
-		case 0: // SL - display only
+		case int(types.InstrumentColSL): // SL - display only
 			return &ColumnMapping{
 				DataColumnIndex: -1, // No data column mapping
 				IsEditable:      false,
@@ -205,7 +205,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     false,
 				DisplayName:     "SL",
 			}
-		case 1: // DT - delta time column (unified playback control)
+		case int(types.InstrumentColDT): // DT - delta time column (unified playback control)
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColDeltaTime),
 				IsEditable:      true,
@@ -214,7 +214,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "DT",
 			}
-		case 2: // NOT - note column
+		case int(types.InstrumentColNOT): // NOT - note column
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColNote),
 				IsEditable:      true,
@@ -223,7 +223,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "NOT",
 			}
-		case 3: // C - chord column
+		case int(types.InstrumentColC): // C - chord column
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColChord),
 				IsEditable:      true,
@@ -232,7 +232,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "C",
 			}
-		case 4: // A - chord addition column
+		case int(types.InstrumentColA): // A - chord addition column
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColChordAddition),
 				IsEditable:      true,
@@ -241,7 +241,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "A",
 			}
-		case 5: // T - chord transposition column
+		case int(types.InstrumentColT): // T - chord transposition column
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColChordTransposition),
 				IsEditable:      true,
@@ -250,7 +250,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "T",
 			}
-		case 6: // GT - gate column
+		case int(types.InstrumentColGT): // GT - gate column
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColGate),
 				IsEditable:      true,
@@ -259,7 +259,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "GT",
 			}
-		case 7: // A - attack column
+		case int(types.InstrumentColATK): // A - attack column
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColAttack),
 				IsEditable:      true,
@@ -268,7 +268,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "A",
 			}
-		case 8: // D - decay column
+		case int(types.InstrumentColDECAY): // D - decay column
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColDecay),
 				IsEditable:      true,
@@ -277,7 +277,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "D",
 			}
-		case 9: // S - sustain column
+		case int(types.InstrumentColSUS): // S - sustain column
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColSustain),
 				IsEditable:      true,
@@ -286,7 +286,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "S",
 			}
-		case 10: // R - release column
+		case int(types.InstrumentColREL): // R - release column
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColRelease),
 				IsEditable:      true,
@@ -295,7 +295,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "R",
 			}
-		case 11: // AR - arpeggio column
+		case int(types.InstrumentColAR): // AR - arpeggio column
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColArpeggio),
 				IsEditable:      true,
@@ -304,7 +304,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "AR",
 			}
-		case 12: // MI - MIDI column
+		case int(types.InstrumentColMI): // MI - MIDI column
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColMidi),
 				IsEditable:      true,
@@ -313,7 +313,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "MI",
 			}
-		case 13: // SO - SoundMaker column
+		case int(types.InstrumentColSO): // SO - SoundMaker column
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColSoundMaker),
 				IsEditable:      true,
@@ -329,7 +329,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 		// Sampler view: Custom mapping after removing P column and moving DT to front
 		// New order: SL (0), DT (1), NN (2), PI (3), GT (4), RT (5), TS (6), Я (7), PA (8), LP (9), HP (10), CO (11), VE (12), FI (13)
 		switch uiColumn {
-		case 0: // SL - display only
+		case int(types.SamplerColSL): // SL - display only
 			return &ColumnMapping{
 				DataColumnIndex: -1,
 				IsEditable:      false,
@@ -338,7 +338,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     false,
 				DisplayName:     "SL",
 			}
-		case 1: // DT - Delta Time (moved from position 4)
+		case int(types.SamplerColDT): // DT - Delta Time (moved from position 4)
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColDeltaTime),
 				IsEditable:      true,
@@ -347,7 +347,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "DT",
 			}
-		case 2: // NN - Note
+		case int(types.SamplerColNN): // NN - Note
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColNote), // Now index 0
 				IsEditable:      true,
@@ -356,7 +356,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "NN",
 			}
-		case 3: // PI - Pitch
+		case int(types.SamplerColPI): // PI - Pitch
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColPitch), // Now index 1
 				IsEditable:      true,
@@ -365,7 +365,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "PI",
 			}
-		case 4: // GT - Gate
+		case int(types.SamplerColGT): // GT - Gate
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColGate), // Now index 3
 				IsEditable:      true,
@@ -374,7 +374,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "GT",
 			}
-		case 5: // RT - Retrigger
+		case int(types.SamplerColRT): // RT - Retrigger
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColRetrigger), // Now index 4
 				IsEditable:      true,
@@ -383,7 +383,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "RT",
 			}
-		case 6: // TS - Timestretch
+		case int(types.SamplerColTS): // TS - Timestretch
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColTimestretch), // Now index 5
 				IsEditable:      true,
@@ -392,7 +392,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "TS",
 			}
-		case 7: // Я - Reverse
+		case int(types.SamplerColREV): // Я - Reverse
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColEffectReverse), // Now index 6
 				IsEditable:      true,
@@ -401,7 +401,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "Я",
 			}
-		case 8: // PA - Pan
+		case int(types.SamplerColPA): // PA - Pan
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColPan), // Now index 7
 				IsEditable:      true,
@@ -410,7 +410,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "PA",
 			}
-		case 9: // LP - Low Pass Filter
+		case int(types.SamplerColLP): // LP - Low Pass Filter
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColLowPassFilter), // Now index 8
 				IsEditable:      true,
@@ -419,7 +419,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "LP",
 			}
-		case 10: // HP - High Pass Filter
+		case int(types.SamplerColHP): // HP - High Pass Filter
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColHighPassFilter), // Now index 9
 				IsEditable:      true,
@@ -428,7 +428,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "HP",
 			}
-		case 11: // CO - Comb
+		case int(types.SamplerColCO): // CO - Comb
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColEffectComb), // Now index 10
 				IsEditable:      true,
@@ -437,7 +437,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "CO",
 			}
-		case 12: // VE - Reverb
+		case int(types.SamplerColVE): // VE - Reverb
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColEffectReverb), // Now index 11
 				IsEditable:      true,
@@ -446,7 +446,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "VE",
 			}
-		case 13: // FI - Filename
+		case int(types.SamplerColFI): // FI - Filename
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColFilename), // Now index 12
 				IsEditable:      true,
