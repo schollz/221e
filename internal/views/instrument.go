@@ -41,20 +41,11 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 		arrow := " "
 		if m.IsPlaying {
 			if m.PlaybackMode == types.SongView {
-				// Song playback mode - check only instrument tracks (0-3) for instrument phrase view
-				playingTracksCount := 0
-				for track := 0; track < 4; track++ {
-					if m.SongPlaybackActive[track] &&
-						m.SongPlaybackPhrase[track] == m.CurrentPhrase &&
-						m.SongPlaybackRowInPhrase[track] == dataIndex {
-						playingTracksCount++
-					}
-				}
-				if playingTracksCount == 1 {
+				// Song playback mode - check the current track context
+				if m.SongPlaybackActive[m.CurrentTrack] &&
+					m.SongPlaybackPhrase[m.CurrentTrack] == m.CurrentPhrase &&
+					m.SongPlaybackRowInPhrase[m.CurrentTrack] == dataIndex {
 					arrow = playbackStyle.Render("▶")
-				} else if playingTracksCount > 1 {
-					// Multiple tracks playing at this position - show double arrow
-					arrow = playbackStyle.Render("▶▶")
 				}
 			} else {
 				// Chain/Phrase playback mode - use existing logic
