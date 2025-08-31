@@ -104,6 +104,7 @@ type Model struct {
 	SongPlaybackChainRow    [8]int  // Current row within chain for each track
 	SongPlaybackPhrase      [8]int  // Current phrase being played for each track
 	SongPlaybackRowInPhrase [8]int  // Current row within phrase for each track
+	SongPlaybackTicksLeft   [8]int  // Remaining ticks until next row advance for each track
 	// Save file configuration
 	SaveFile string // Path to the save file
 	// Recording state
@@ -698,6 +699,7 @@ func (m *Model) initializeDefaultData() {
 		m.SongPlaybackChainRow[track] = 0
 		m.SongPlaybackPhrase[track] = -1
 		m.SongPlaybackRowInPhrase[track] = 0
+		m.SongPlaybackTicksLeft[track] = 0
 	}
 
 	// Initialize current directory
@@ -1114,4 +1116,81 @@ func (m *Model) sendOSCMessage(config OSCMessageConfig) {
 			log.Printf(config.LogFormat, config.LogArgs...)
 		}
 	}
+}
+
+// extractDTFromRow extracts delta time from a phrase row
+func extractDTFromRow(row []int) int {
+	if row == nil || len(row) <= int(types.ColDeltaTime) {
+		return -1
+	}
+	return row[types.ColDeltaTime]
+}
+
+// LoadTicksLeftForTrack loads the DT ticks for the given track's current row
+func (m *Model) LoadTicksLeftForTrack(track int) {
+	if track < 0 || track >= 8 {
+		return
+	}
+
+	phraseNum := m.SongPlaybackPhrase[track]
+	if phraseNum < 0 || phraseNum >= 255 {
+		m.SongPlaybackTicksLeft[track] = 0
+		return
+	}
+
+	rowNum := m.SongPlaybackRowInPhrase[track]
+	if rowNum < 0 || rowNum >= 255 {
+		m.SongPlaybackTicksLeft[track] = 0
+		return
+	}
+
+	phrasesData := m.GetPhrasesDataForTrack(track)
+	if phrasesData == nil {
+		m.SongPlaybackTicksLeft[track] = 0
+		return
+	}
+
+	dtValue := (*phrasesData)[phraseNum][rowNum][types.ColDeltaTime]
+	if dtValue <= 0 {
+		m.SongPlaybackTicksLeft[track] = 0
+	} else {
+		// Set to dtValue - 1 because row was already emitted during initialization/advancement
+		m.SongPlaybackTicksLeft[track] = dtValue - 1
+	}
+}
+
+// GetPhrasesDataForTrack returns the appropriate phrases data based on track type
+func (m *Model) GetPhrasesDataForTrack(track int) *[255][][]int {
+	if track >= 0 && track < 8 && !m.TrackTypes[track] {
+		return &m.InstrumentPhrasesData
+	}
+	return &m.SamplerPhrasesData
+}
+
+// skipInvalidDTRowsForTrack advances track to the next playable row (DT >= 1)
+// Returns true if a valid row was found, false if no valid rows remain
+func (m *Model) skipInvalidDTRowsForTrack(track int) bool {
+	if track < 0 || track >= 8 {
+		return false
+	}
+
+	phraseNum := m.SongPlaybackPhrase[track]
+	if phraseNum < 0 || phraseNum >= 255 {
+		return false
+	}
+
+	phrasesData := m.GetPhrasesDataForTrack(track)
+	if phrasesData == nil {
+		return false
+	}
+
+	currentRow := m.SongPlaybackRowInPhrase[track]
+	for row := currentRow; row < 255; row++ {
+		dtValue := (*phrasesData)[phraseNum][row][types.ColDeltaTime]
+		if dtValue >= 1 {
+			m.SongPlaybackRowInPhrase[track] = row
+			return true
+		}
+	}
+	return false
 }

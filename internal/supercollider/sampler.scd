@@ -303,7 +303,7 @@ s.waitForBoot({
 			);
 			snd = snd * Lag.kr(volumeDB).dbamp * Lag.kr(postgain).dbamp;
 
-			SendReply.kr(Impulse.kr(30),'/waveform',Normalizer.ar(LPF.ar(snd,3000)));
+			SendReply.kr(Impulse.kr(30),'/waveform',Normalizer.ar(LPF.ar(snd,60)));
 			ReplaceOut.ar(0,snd);
 			Out.ar(busDisk, snd);
 		}).add;

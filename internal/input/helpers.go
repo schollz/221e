@@ -1069,125 +1069,46 @@ func AdvancePlayback(m *model.Model) {
 	oldRow := m.PlaybackRow
 
 	if m.PlaybackMode == types.SongView {
-		// Song playback mode - advance each active track independently
+		// Song playback mode with per-track tick counting
 		log.Printf("Song playback advancing - checking %d tracks", 8)
 		activeTrackCount := 0
+
 		for track := 0; track < 8; track++ {
 			if !m.SongPlaybackActive[track] {
 				continue
 			}
 			activeTrackCount++
+			log.Printf("DEBUG_SONG: Processing active track %d, ticksLeft=%d", track, m.SongPlaybackTicksLeft[track])
 
-			oldPhraseRow := m.SongPlaybackRowInPhrase[track]
+			// Decrement ticks for this track
+			if m.SongPlaybackTicksLeft[track] > 0 {
+				m.SongPlaybackTicksLeft[track]--
+				log.Printf("Song track %d: %d ticks remaining", track, m.SongPlaybackTicksLeft[track])
+			}
 
-			// Declare variables early to avoid goto issues
-			var chainID int
-			var nextPhraseFound bool
-			var currentChain int
-			var chainsData *[][]int
+			// Only advance this track when its ticks reach 0
+			if m.SongPlaybackTicksLeft[track] > 0 {
+				continue
+			}
 
-			// Advance within current phrase
+			// Now advance to next playable row for this track
+			if !advanceToNextPlayableRowForTrack(m, track) {
+				// Track finished, deactivate
+				m.SongPlaybackActive[track] = false
+				log.Printf("Song track %d deactivated (end of sequence)", track)
+				continue
+			}
+
+			// Load new ticks for the advanced row
+			m.LoadTicksLeftForTrack(track)
+
+			// Emit the newly advanced row immediately (at start of its DT period)
 			phraseNum := m.SongPlaybackPhrase[track]
-			if phraseNum >= 0 && phraseNum < 255 {
-				// Find next row with playback enabled in current phrase
-				phrasesData := GetPhrasesDataForTrack(m, track)
-				for i := m.SongPlaybackRowInPhrase[track] + 1; i < 255; i++ {
-					// Unified DT-based playback: DT > 0 means playable for both instruments and samplers
-					dtValue := (*phrasesData)[phraseNum][i][types.ColDeltaTime]
-					if IsRowPlayable(dtValue) {
-						m.SongPlaybackRowInPhrase[track] = i
-						EmitRowDataFor(m, phraseNum, i, track)
-						log.Printf("Song track %d advanced within phrase from row %d to %d", track, oldPhraseRow, i)
-						goto nextTrack
-					}
-				}
+			currentRow := m.SongPlaybackRowInPhrase[track]
+			if phraseNum >= 0 && phraseNum < 255 && currentRow >= 0 && currentRow < 255 {
+				EmitRowDataFor(m, phraseNum, currentRow, track)
+				log.Printf("Song track %d emitted phrase %02X row %d with %d ticks", track, phraseNum, currentRow, m.SongPlaybackTicksLeft[track])
 			}
-
-			// End of phrase reached, advance within current chain first
-			currentChain = m.SongPlaybackChain[track]
-
-			// Try to find next phrase slot in current chain
-			nextPhraseFound = false
-			chainsData = m.GetChainsDataForTrack(track)
-			for chainRow := m.SongPlaybackChainRow[track] + 1; chainRow < 16; chainRow++ {
-				if (*chainsData)[currentChain][chainRow] != -1 {
-					// Found next phrase in chain
-					m.SongPlaybackChainRow[track] = chainRow
-					m.SongPlaybackPhrase[track] = (*chainsData)[currentChain][chainRow]
-					m.SongPlaybackRowInPhrase[track] = FindFirstNonEmptyRowInPhraseForTrack(m, m.SongPlaybackPhrase[track], track)
-					EmitRowDataFor(m, m.SongPlaybackPhrase[track], m.SongPlaybackRowInPhrase[track], track)
-					log.Printf("Song track %d advanced within chain to chain row %d, phrase %02X", track, chainRow, m.SongPlaybackPhrase[track])
-					nextPhraseFound = true
-					break
-				}
-			}
-
-			if !nextPhraseFound {
-				// End of chain reached, find next valid song row
-				startSearchRow := m.SongPlaybackRow[track] + 1
-				foundValidChain := false
-
-				// Search from next row onwards, wrapping around to beginning if needed
-				for searchOffset := 0; searchOffset < 16; searchOffset++ {
-					searchRow := (startSearchRow + searchOffset) % 16
-					chainID = m.SongData[track][searchRow]
-
-					if chainID != -1 {
-						// Found valid chain, check if it has phrases
-						firstPhraseID := -1
-						for chainRow := 0; chainRow < 16; chainRow++ {
-							if (*chainsData)[chainID][chainRow] != -1 {
-								firstPhraseID = (*chainsData)[chainID][chainRow]
-								break
-							}
-						}
-
-						if firstPhraseID != -1 {
-							// Found valid chain with phrases
-							m.SongPlaybackRow[track] = searchRow
-							foundValidChain = true
-
-							if searchRow < startSearchRow {
-								log.Printf("Song track %d looped back to row %02X", track, searchRow)
-							} else {
-								log.Printf("Song track %d advanced to row %02X", track, searchRow)
-							}
-							break
-						}
-					}
-				}
-
-				if !foundValidChain {
-					// No valid chains found in entire song, deactivate track
-					m.SongPlaybackActive[track] = false
-					log.Printf("Song track %d deactivated (no valid chains found in song)", track)
-					continue
-				}
-
-				// Use the chainID and phrase info found in the search above
-				chainID = m.SongData[track][m.SongPlaybackRow[track]]
-				m.SongPlaybackChain[track] = chainID
-
-				// Find first phrase in this chain (we know it exists from the search)
-				firstPhraseID := -1
-				firstChainRow := -1
-				for chainRow := 0; chainRow < 16; chainRow++ {
-					if (*chainsData)[chainID][chainRow] != -1 {
-						firstPhraseID = (*chainsData)[chainID][chainRow]
-						firstChainRow = chainRow
-						break
-					}
-				}
-
-				m.SongPlaybackChainRow[track] = firstChainRow
-				m.SongPlaybackPhrase[track] = firstPhraseID
-				m.SongPlaybackRowInPhrase[track] = FindFirstNonEmptyRowInPhraseForTrack(m, firstPhraseID, track)
-				EmitRowDataFor(m, firstPhraseID, m.SongPlaybackRowInPhrase[track], track)
-				log.Printf("Song track %d now at row %02X, chain %02X (chain row %d), phrase %02X", track, m.SongPlaybackRow[track], chainID, firstChainRow, firstPhraseID)
-			}
-
-		nextTrack:
-			continue
 		}
 		log.Printf("Song playback: processed %d active tracks", activeTrackCount)
 	} else if m.PlaybackMode == types.ChainView {
@@ -1265,6 +1186,91 @@ func AdvancePlayback(m *model.Model) {
 		DebugLogRowEmission(m)
 		log.Printf("Phrase playback looped from row %d back to %d", oldRow, m.PlaybackRow)
 	}
+}
+
+// advanceToNextPlayableRowForTrack advances a track to its next playable row
+// Returns true if successful, false if track should be stopped
+func advanceToNextPlayableRowForTrack(m *model.Model, track int) bool {
+	if track < 0 || track >= 8 {
+		return false
+	}
+
+	// Try to advance within current phrase first
+	phraseNum := m.SongPlaybackPhrase[track]
+	if phraseNum >= 0 && phraseNum < 255 {
+		phrasesData := GetPhrasesDataForTrack(m, track)
+		for i := m.SongPlaybackRowInPhrase[track] + 1; i < 255; i++ {
+			dtValue := (*phrasesData)[phraseNum][i][types.ColDeltaTime]
+			if dtValue >= 1 {
+				m.SongPlaybackRowInPhrase[track] = i
+				log.Printf("Song track %d advanced within phrase to row %d", track, i)
+				return true
+			}
+		}
+	}
+
+	// End of phrase reached, try to advance within current chain
+	currentChain := m.SongPlaybackChain[track]
+	chainsData := m.GetChainsDataForTrack(track)
+	for chainRow := m.SongPlaybackChainRow[track] + 1; chainRow < 16; chainRow++ {
+		phraseID := (*chainsData)[currentChain][chainRow]
+		if phraseID != -1 {
+			// Found next phrase in chain, find its first playable row
+			m.SongPlaybackChainRow[track] = chainRow
+			m.SongPlaybackPhrase[track] = phraseID
+			if findFirstPlayableRowInPhraseForTrack(m, phraseID, track) {
+				log.Printf("Song track %d advanced to chain row %d, phrase %02X", track, chainRow, phraseID)
+				return true
+			}
+		}
+	}
+
+	// End of chain reached, find next valid song row
+	startSearchRow := m.SongPlaybackRow[track] + 1
+	for searchOffset := 0; searchOffset < 16; searchOffset++ {
+		searchRow := (startSearchRow + searchOffset) % 16
+		chainID := m.SongData[track][searchRow]
+
+		if chainID != -1 {
+			// Check if this chain has any phrases with playable rows
+			for chainRow := 0; chainRow < 16; chainRow++ {
+				phraseID := (*chainsData)[chainID][chainRow]
+				if phraseID != -1 {
+					// Found a phrase, check if it has playable rows
+					if findFirstPlayableRowInPhraseForTrack(m, phraseID, track) {
+						// Valid chain found
+						m.SongPlaybackRow[track] = searchRow
+						m.SongPlaybackChain[track] = chainID
+						m.SongPlaybackChainRow[track] = chainRow
+						m.SongPlaybackPhrase[track] = phraseID
+						log.Printf("Song track %d advanced to song row %02X, chain %02X", track, searchRow, chainID)
+						return true
+					}
+				}
+			}
+		}
+	}
+
+	// No valid sequences found, track should stop
+	return false
+}
+
+// findFirstPlayableRowInPhraseForTrack finds the first playable row in a phrase for a track
+// Sets the track's SongPlaybackRowInPhrase and returns true if found
+func findFirstPlayableRowInPhraseForTrack(m *model.Model, phraseNum, track int) bool {
+	if phraseNum < 0 || phraseNum >= 255 || track < 0 || track >= 8 {
+		return false
+	}
+
+	phrasesData := GetPhrasesDataForTrack(m, track)
+	for row := 0; row < 255; row++ {
+		dtValue := (*phrasesData)[phraseNum][row][types.ColDeltaTime]
+		if dtValue >= 1 {
+			m.SongPlaybackRowInPhrase[track] = row
+			return true
+		}
+	}
+	return false
 }
 
 func DebugLogRowEmission(m *model.Model) {
@@ -1725,6 +1731,8 @@ func EmitLastSelectedPhraseRowData(m *model.Model) {
 // EmitRowDataFor logs row data (rich debug) and emits OSC if applicable.
 // This is the single canonical emitter used by both manual "c" triggers and playback ("space").
 func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
+	log.Printf("DEBUG_EMIT: EmitRowDataFor called with phrase=%d, row=%d, trackId=%d", phrase, row, trackId)
+	
 	// Use track-aware data access for correct playback
 	phrasesData := GetPhrasesDataForTrack(m, trackId)
 	rowData := (*phrasesData)[phrase][row]
@@ -1886,7 +1894,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 	}
 
 	// shouldEmitRow() hook (kept from playback path; e.g., to skip DT==00, etc.)
-	if shouldEmitRowForTrack(m, trackId) == false {
+	if shouldEmitRowForTrackAtPosition(m, phrase, row, trackId) == false {
 		log.Printf("ROW_EMIT: skipped by shouldEmitRow()")
 		return
 	}
@@ -1906,7 +1914,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 	sliceDuration := baseDuration * gateMultiplier
 
 	// Calculate delta time in seconds (time per row * DT)
-	deltaTimeSeconds := calculateDeltaTimeSeconds(m, phrase, row)
+	deltaTimeSeconds := calculateDeltaTimeSeconds(m, phrase, row, trackId)
 
 	var oscParams model.SamplerOSCParams
 	if rawRetrigger != -1 && rawRetrigger >= 0 && rawRetrigger < 255 {
@@ -2026,7 +2034,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 		}
 
 		// Calculate delta time in seconds (time per row * DT)
-		deltaTimeSeconds := calculateDeltaTimeSeconds(m, phrase, row)
+		deltaTimeSeconds := calculateDeltaTimeSeconds(m, phrase, row, trackId)
 
 		// Convert ADSR values using the conversion functions from types package
 		attack := float32(0.02) // Default
@@ -2123,7 +2131,7 @@ func rowDurationMS(m *model.Model) float64 {
 
 // calculateDeltaTimeSeconds calculates the DT value in seconds for a specific phrase/row
 // This is the time per row (based on BPM/PPQ) multiplied by the DT value
-func calculateDeltaTimeSeconds(m *model.Model, phrase, row int) float32 {
+func calculateDeltaTimeSeconds(m *model.Model, phrase, row, trackId int) float32 {
 	// Guard against invalid BPM/PPQ
 	if m.BPM <= 0 || m.PPQ <= 0 {
 		// Fallback to a sane default: 120 BPM, PPQ=2  => 0.25s per row
@@ -2140,8 +2148,8 @@ func calculateDeltaTimeSeconds(m *model.Model, phrase, row int) float32 {
 		return float32(baseSecondsPerTick)
 	}
 
-	// Get the correct phrases data based on current track type
-	phrasesData := GetPhrasesDataForTrack(m, m.CurrentTrack)
+	// Get the correct phrases data based on specified track type
+	phrasesData := GetPhrasesDataForTrack(m, trackId)
 	dtRaw := (*phrasesData)[phrase][row][types.ColDeltaTime] // row-local DT
 
 	if dtRaw == -1 {
@@ -2185,6 +2193,25 @@ func shouldEmitRowForTrack(m *model.Model, trackId int) bool {
 		return false
 	}
 
+	return true
+}
+
+func shouldEmitRowForTrackAtPosition(m *model.Model, phrase, row, trackId int) bool {
+	if phrase < 0 || phrase >= 255 || row < 0 || row >= 255 {
+		return false
+	}
+
+	phrasesData := GetPhrasesDataForTrack(m, trackId)
+	nn := (*phrasesData)[phrase][row][types.ColNote]
+	dtRaw := (*phrasesData)[phrase][row][types.ColDeltaTime]
+
+	// Unified DT-based playback: DT > 0 means play, DT <= 0 means don't play
+	if !IsRowPlayable(dtRaw) {
+		return false
+	}
+	if nn == -1 {
+		return false
+	}
 	return true
 }
 
@@ -2275,7 +2302,12 @@ func startPlaybackWithConfig(m *model.Model, config PlaybackConfig) tea.Cmd {
 	m.PlaybackMode = config.Mode
 
 	if config.Mode == types.SongView {
-		// Song playback mode - initialize all tracks with data
+		// Song playback mode - reset single-track playback variables and initialize all tracks with data
+		m.PlaybackPhrase = -1
+		m.PlaybackRow = -1 
+		m.PlaybackChain = -1
+		m.PlaybackChainRow = -1
+		
 		startRow := 0
 		if config.UseCurrentRow && config.Row >= 0 && config.Row < 16 {
 			startRow = config.Row
@@ -2319,10 +2351,13 @@ func startPlaybackWithConfig(m *model.Model, config PlaybackConfig) tea.Cmd {
 				m.SongPlaybackChainRow[track] = firstChainRow
 				m.SongPlaybackPhrase[track] = firstPhraseID
 				m.SongPlaybackRowInPhrase[track] = FindFirstNonEmptyRowInPhraseForTrack(m, firstPhraseID, track)
+				
+				// Initialize ticks for this track
+				m.LoadTicksLeftForTrack(track)
 
 				// Emit initial row for this track
 				EmitRowDataFor(m, firstPhraseID, m.SongPlaybackRowInPhrase[track], track)
-				log.Printf("Song track %d started at row %02X, chain %02X (chain row %d), phrase %02X", track, startRow, chainID, firstChainRow, firstPhraseID)
+				log.Printf("Song track %d started at row %02X, chain %02X (chain row %d), phrase %02X with %d ticks", track, startRow, chainID, firstChainRow, firstPhraseID, m.SongPlaybackTicksLeft[track])
 			} else {
 				// Chain exists but has no phrases
 				m.SongPlaybackActive[track] = false
@@ -2348,8 +2383,10 @@ func startPlaybackWithConfig(m *model.Model, config PlaybackConfig) tea.Cmd {
 			m.SongPlaybackChainRow[0] = 0
 			m.SongPlaybackPhrase[0] = 0 // Use phrase 0 as fallback
 			m.SongPlaybackRowInPhrase[0] = FindFirstNonEmptyRowInPhraseForTrack(m, 0, 0)
+			// Initialize ticks for fallback track 0
+			m.LoadTicksLeftForTrack(0)
 			EmitRowDataFor(m, 0, m.SongPlaybackRowInPhrase[0], 0)
-			log.Printf("Song track 0 fallback started at phrase 0, row %d", m.SongPlaybackRowInPhrase[0])
+			log.Printf("Song track 0 fallback started at phrase 0, row %d with %d ticks", m.SongPlaybackRowInPhrase[0], m.SongPlaybackTicksLeft[0])
 		}
 	} else if config.Mode == types.ChainView {
 		// Chain playback mode - find appropriate starting phrase
