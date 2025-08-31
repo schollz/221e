@@ -824,8 +824,8 @@ func ModifyValue(m *model.Model, delta int) {
 			}
 			(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newValue
 
-			// Auto-set DT=1 when any note is added in both views
-			if newValue != -1 {
+			// Auto-set DT=1 only when changing from no note (-1) to a note
+			if currentValue == -1 && newValue != -1 {
 				(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColDeltaTime)] = 1
 			}
 		} else if phraseViewType == types.InstrumentPhraseView && colIndex == int(types.ColChord) {
