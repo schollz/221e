@@ -337,7 +337,20 @@ s.waitForBoot({
 				\effectReverbOut, ~busReverb,
 				\trackId, track,
 			];
-			["track",track,"noteOn",noteOn].postln;
+			var notes = Array.new();
+			var nonNoteIndex = 3;
+			var keepSearching = true;
+			// find where msg[3:] is not a float
+			msg[3..].do({ |v,i|
+				if (v.isNumber && keepSearching,{
+					notes = notes.add(v);
+					nonNoteIndex = i + 4;
+				},{
+					// break out of do loop
+					keepSearching = false;
+				});
+			});
+			["track",track,"noteOn",noteOn,"notes",notes].postln;
 			// create a new dictionary if it doesn't exist
 			if (~synthsPlaying.at(track).isNil,{
 				~synthsPlaying.put(track, Dictionary.new());
@@ -347,19 +360,25 @@ s.waitForBoot({
 				arg syn;
 				if (syn.isPlaying,{
 					if (syn.notNil,{
+						[syn,"stopped"].postln;
 						syn.set(\gate,0);
 					});
 				});
 			});
 			if (noteOn > 0,{
-				args = args ++ msg[3..];
-				~synthsPlaying.at(track).put(synName,
-					Synth.head(s,"PolyPerc",args).onFree({
-						[synName,"freed"].postln;
-						~synthsPlaying.at(track).removeAt(synName);
-					});
-				);
-				NodeWatcher.register(~synthsPlaying.at(track).at(synName));
+				args = args ++ msg[nonNoteIndex..];
+				notes.do({ arg n;
+					var synthArgs = args ++ [\note,n];
+					var synthName = synName ++ "_" ++ n.asString;
+					[synthName,"started",synthArgs].postln;
+					~synthsPlaying.at(track).put(synthName,
+						Synth.head(Server.default,"PolyPerc",synthArgs).onFree({
+							[synthName,"freed"].postln;
+							~synthsPlaying.at(track).removeAt(synthName);
+						});
+					);
+					NodeWatcher.register(~synthsPlaying.at(track).at(synthName));
+				});
 			});
 		};
 
@@ -552,7 +571,7 @@ s.waitForBoot({
 		// 	});
 		// }.play;
 		// Routine {
-		// 	NetAddr.new("127.0.0.1", NetAddr.langPort).sendMsg("/note_on");
+		// 	NetAddr.new("127.0.0.1", NetAddr.langPort).sendMsg("/instrument",0,1,60.1,63.9,67,"duration",2,"attack",1,"release",2);
 		// }.play;
 	}.play;
 });

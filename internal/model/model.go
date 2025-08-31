@@ -747,22 +747,22 @@ type SamplerOSCParams struct {
 }
 
 type InstrumentOSCParams struct {
-	TrackId            int // Track ID
+	TrackId            int32 // Track ID
 	NoteOn             int32
-	MidiNote           int     // MIDI note number (0-127)
-	Velocity           float32 // Note velocity (0.0-1.0)
-	ChordType          int     // Chord type (C parameter)
-	ChordAddition      int     // Chord addition (A parameter)
-	ChordTransposition int     // Chord transposition (T parameter)
-	Gate               int     // Gate value (GT parameter, raw value)
-	DeltaTime          float32 // Delta time in seconds (DT parameter, time per row * DT)
-	Attack             float32 // Attack time in seconds (A parameter)
-	Decay              float32 // Decay time in seconds (D parameter)
-	Sustain            float32 // Sustain level (S parameter)
-	Release            float32 // Release time in seconds (R parameter)
-	ArpeggioIndex      int     // Arpeggio settings index (AR parameter)
-	MidiSettingsIndex  int     // MIDI settings index (MI parameter)
-	SoundMakerIndex    int     // SoundMaker settings index (SO parameter)
+	Notes              []float32 // Note number (MIDI values, but can be fractional)
+	Velocity           float32   // Note velocity (0.0-1.0)
+	ChordType          int       // Chord type (C parameter)
+	ChordAddition      int       // Chord addition (A parameter)
+	ChordTransposition int       // Chord transposition (T parameter)
+	Gate               int       // Gate value (GT parameter, raw value)
+	DeltaTime          float32   // Delta time in seconds (DT parameter, time per row * DT)
+	Attack             float32   // Attack time in seconds (A parameter)
+	Decay              float32   // Decay time in seconds (D parameter)
+	Sustain            float32   // Sustain level (S parameter)
+	Release            float32   // Release time in seconds (R parameter)
+	ArpeggioIndex      int       // Arpeggio settings index (AR parameter)
+	MidiSettingsIndex  int       // MIDI settings index (MI parameter)
+	SoundMakerIndex    int       // SoundMaker settings index (SO parameter)
 }
 
 // NewSamplerOSCParams creates sampler parameters with custom slice duration
@@ -827,11 +827,10 @@ func NewSamplerOSCParamsWithRetrigger(filename string, trackId, sliceCount, slic
 }
 
 // NewInstrumentOSCParams creates instrument parameters
-func NewInstrumentOSCParams(trackId, midiNote int, velocity float32, chordType, chordAddition, chordTransposition, gate int, deltaTime, attack, decay, sustain, release float32, arpeggioIndex, midiSettingsIndex, soundMakerIndex int) InstrumentOSCParams {
+func NewInstrumentOSCParams(trackId int32, velocity float32, chordType, chordAddition, chordTransposition, gate int, deltaTime, attack, decay, sustain, release float32, arpeggioIndex, midiSettingsIndex, soundMakerIndex int) InstrumentOSCParams {
 	return InstrumentOSCParams{
 		TrackId:            trackId,
 		NoteOn:             1,
-		MidiNote:           midiNote,
 		Velocity:           velocity,
 		ChordType:          chordType,
 		ChordAddition:      chordAddition,
@@ -856,10 +855,12 @@ func (m *Model) SendOSCInstrumentMessage(params InstrumentOSCParams) {
 	msg := osc.NewMessage("/instrument")
 	msg.Append(int32(params.TrackId)) // Track ID
 	msg.Append(int32(params.NoteOn))  // Note on (1) or off (0)
+	// add all notes as float32
+	for _, note := range params.Notes {
+		msg.Append(float32(note))
+	}
 	msg.Append("trackVolume")
 	msg.Append(float32(m.TrackSetLevels[params.TrackId]))
-	msg.Append("note")
-	msg.Append(int32(params.MidiNote))
 	msg.Append("attack")
 	msg.Append(float32(params.Attack))
 	msg.Append("decay")

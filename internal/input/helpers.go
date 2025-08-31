@@ -1063,8 +1063,8 @@ func TogglePlaybackFromLastSongRow(m *model.Model) tea.Cmd {
 	config := PlaybackConfig{
 		Mode:          types.SongView,
 		UseCurrentRow: false,
-		Chain:         -1,    // Not used for song mode
-		Phrase:        -1,    // Not used for song mode
+		Chain:         -1,            // Not used for song mode
+		Phrase:        -1,            // Not used for song mode
 		Row:           m.LastSongRow, // Start from last selected song row
 	}
 
@@ -1745,7 +1745,7 @@ func EmitLastSelectedPhraseRowData(m *model.Model) {
 // This is the single canonical emitter used by both manual "c" triggers and playback ("space").
 func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 	log.Printf("DEBUG_EMIT: EmitRowDataFor called with phrase=%d, row=%d, trackId=%d", phrase, row, trackId)
-	
+
 	// Use track-aware data access for correct playback
 	phrasesData := GetPhrasesDataForTrack(m, trackId)
 	rowData := (*phrasesData)[phrase][row]
@@ -2071,8 +2071,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 		}
 
 		instrumentParams := model.NewInstrumentOSCParams(
-			trackId,
-			effectiveNote,
+			int32(trackId),
 			velocity,
 			rawChord,
 			rawChordAdd,
@@ -2087,6 +2086,9 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 			rawMidi,
 			rawSoundMaker,
 		)
+		// add notes
+		instrumentParams.Notes = make([]float32, 1)
+		instrumentParams.Notes[0] = float32(midiNote)
 		m.SendOSCInstrumentMessage(instrumentParams)
 	} else {
 		// For sampler tracks, emit full sampler message
@@ -2317,10 +2319,10 @@ func startPlaybackWithConfig(m *model.Model, config PlaybackConfig) tea.Cmd {
 	if config.Mode == types.SongView {
 		// Song playback mode - reset single-track playback variables and initialize all tracks with data
 		m.PlaybackPhrase = -1
-		m.PlaybackRow = -1 
+		m.PlaybackRow = -1
 		m.PlaybackChain = -1
 		m.PlaybackChainRow = -1
-		
+
 		startRow := 0
 		if config.UseCurrentRow && config.Row >= 0 && config.Row < 16 {
 			startRow = config.Row
@@ -2364,7 +2366,7 @@ func startPlaybackWithConfig(m *model.Model, config PlaybackConfig) tea.Cmd {
 				m.SongPlaybackChainRow[track] = firstChainRow
 				m.SongPlaybackPhrase[track] = firstPhraseID
 				m.SongPlaybackRowInPhrase[track] = FindFirstNonEmptyRowInPhraseForTrack(m, firstPhraseID, track)
-				
+
 				// Initialize ticks for this track
 				m.LoadTicksLeftForTrack(track)
 
