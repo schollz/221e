@@ -1192,8 +1192,8 @@ func handleSpace(m *model.Model) tea.Cmd {
 }
 
 func handleCtrlSpace(m *model.Model) tea.Cmd {
-	// Ctrl+Space works from anywhere to stop playback or start from top
-	return TogglePlaybackFromTopGlobal(m)
+	// Ctrl+Space always plays ALL tracks from last selected Song view row, regardless of current view
+	return TogglePlaybackFromLastSongRow(m)
 }
 
 func handleBackspace(m *model.Model) tea.Cmd {

@@ -1058,6 +1058,19 @@ func TogglePlaybackFromTopGlobal(m *model.Model) tea.Cmd {
 	return togglePlaybackWithConfig(m, config)
 }
 
+func TogglePlaybackFromLastSongRow(m *model.Model) tea.Cmd {
+	// Always play ALL tracks from the last Song view row, regardless of current view
+	config := PlaybackConfig{
+		Mode:          types.SongView,
+		UseCurrentRow: false,
+		Chain:         -1,    // Not used for song mode
+		Phrase:        -1,    // Not used for song mode
+		Row:           m.LastSongRow, // Start from last selected song row
+	}
+
+	return togglePlaybackWithConfig(m, config)
+}
+
 func Tick(m *model.Model) tea.Cmd {
 	ms := rowDurationMS(m)
 	return tea.Tick(time.Duration(ms)*time.Millisecond, func(t time.Time) tea.Msg {
