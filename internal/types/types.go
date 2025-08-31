@@ -162,9 +162,14 @@ const (
 	InstrumentColDECAY InstrumentUIColumn = 8  // D - Decay
 	InstrumentColSUS   InstrumentUIColumn = 9  // S - Sustain
 	InstrumentColREL   InstrumentUIColumn = 10 // R - Release
-	InstrumentColAR    InstrumentUIColumn = 11 // AR - Arpeggio
-	InstrumentColMI    InstrumentUIColumn = 12 // MI - MIDI
-	InstrumentColSO    InstrumentUIColumn = 13 // SO - SoundMaker
+	InstrumentColRE    InstrumentUIColumn = 11 // RE - Reverb
+	InstrumentColCO    InstrumentUIColumn = 12 // CO - Comb
+	InstrumentColPA    InstrumentUIColumn = 13 // PA - Pan
+	InstrumentColLP    InstrumentUIColumn = 14 // LP - LowPass
+	InstrumentColHP    InstrumentUIColumn = 15 // HP - HighPass
+	InstrumentColAR    InstrumentUIColumn = 16 // AR - Arpeggio
+	InstrumentColMI    InstrumentUIColumn = 17 // MI - MIDI
+	InstrumentColSO    InstrumentUIColumn = 18 // SO - SoundMaker
 )
 
 // UI Column positions for Sampler Phrase View - to prevent hardcoding issues

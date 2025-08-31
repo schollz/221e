@@ -296,6 +296,51 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "R",
 			}
+		case int(types.InstrumentColRE): // RE - reverb column
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColEffectReverb),
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "RE",
+			}
+		case int(types.InstrumentColCO): // CO - comb column
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColEffectComb),
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "CO",
+			}
+		case int(types.InstrumentColPA): // PA - pan column
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColPan),
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "PA",
+			}
+		case int(types.InstrumentColLP): // LP - low pass filter column
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColLowPassFilter),
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "LP",
+			}
+		case int(types.InstrumentColHP): // HP - high pass filter column
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColHighPassFilter),
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "HP",
+			}
 		case int(types.InstrumentColAR): // AR - arpeggio column
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColArpeggio),
@@ -589,6 +634,12 @@ func (m *Model) initializeDefaultData() {
 			m.InstrumentPhrasesData[p][i][types.ColDecay] = -1   // Default: "--" (sticky)
 			m.InstrumentPhrasesData[p][i][types.ColSustain] = -1 // Default: "--" (sticky)
 			m.InstrumentPhrasesData[p][i][types.ColRelease] = -1 // Default: "--" (sticky)
+			// Initialize effect columns (same defaults as Sampler view)
+			m.InstrumentPhrasesData[p][i][types.ColPan] = -1            // Pan (-1 = null, will use effective value or default to center)
+			m.InstrumentPhrasesData[p][i][types.ColLowPassFilter] = -1  // Low pass filter (-1 means no filter/20kHz)
+			m.InstrumentPhrasesData[p][i][types.ColHighPassFilter] = -1 // High pass filter (-1 means no filter/20Hz)
+			m.InstrumentPhrasesData[p][i][types.ColEffectComb] = -1     // Comb effect (-1 means no effect)
+			m.InstrumentPhrasesData[p][i][types.ColEffectReverb] = -1   // Reverb effect (-1 means no effect)
 			// Other columns can stay -1 (unused for instruments)
 		}
 	}

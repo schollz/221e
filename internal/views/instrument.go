@@ -2,6 +2,7 @@ package views
 
 import (
 	"fmt"
+	"math"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -28,7 +29,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 	var content strings.Builder
 
 	// Render header for Instrument view (row, playback, note, and chord columns)
-	columnHeader := "  SL  DT  NOT  CAT  GT A D S R   AR  MI  SO"
+	columnHeader := "  SL  DT  NOT  CAT  GT A D S R   RE  CO  PA  LP  HP  AR  MI  SO"
 	phraseHeader := fmt.Sprintf("Instrument %02X", m.CurrentPhrase)
 	content.WriteString(RenderHeader(m, columnHeader, phraseHeader))
 
@@ -257,6 +258,106 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 			releaseCell = normalStyle.Render(fmt.Sprintf("%2s", releaseText))
 		}
 
+		// Reverb (RE) - display reverb value
+		reverbValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColEffectReverb]
+		reverbText := "--"
+		if reverbValue != -1 {
+			reverbText = fmt.Sprintf("%02X", reverbValue)
+		}
+
+		var reverbCell string
+		if m.CurrentRow == dataIndex && m.CurrentCol == int(types.InstrumentColRE) {
+			reverbCell = selectedStyle.Render(fmt.Sprintf("%2s", reverbText))
+		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
+			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == int(types.InstrumentColRE)) {
+				reverbCell = copiedStyle.Render(fmt.Sprintf("%2s", reverbText))
+			} else {
+				reverbCell = normalStyle.Render(fmt.Sprintf("%2s", reverbText))
+			}
+		} else {
+			reverbCell = normalStyle.Render(fmt.Sprintf("%2s", reverbText))
+		}
+
+		// Comb (CO) - display comb value
+		combValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColEffectComb]
+		combText := "--"
+		if combValue != -1 {
+			combText = fmt.Sprintf("%02X", combValue)
+		}
+
+		var combCell string
+		if m.CurrentRow == dataIndex && m.CurrentCol == int(types.InstrumentColCO) {
+			combCell = selectedStyle.Render(fmt.Sprintf("%2s", combText))
+		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
+			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == int(types.InstrumentColCO)) {
+				combCell = copiedStyle.Render(fmt.Sprintf("%2s", combText))
+			} else {
+				combCell = normalStyle.Render(fmt.Sprintf("%2s", combText))
+			}
+		} else {
+			combCell = normalStyle.Render(fmt.Sprintf("%2s", combText))
+		}
+
+		// Pan (PA) - display pan value
+		panValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColPan]
+		panText := "--"
+		if panValue != -1 {
+			panText = fmt.Sprintf("%02X", panValue)
+		}
+
+		var panCell string
+		if m.CurrentRow == dataIndex && m.CurrentCol == int(types.InstrumentColPA) {
+			panCell = selectedStyle.Render(fmt.Sprintf("%2s", panText))
+		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
+			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == int(types.InstrumentColPA)) {
+				panCell = copiedStyle.Render(fmt.Sprintf("%2s", panText))
+			} else {
+				panCell = normalStyle.Render(fmt.Sprintf("%2s", panText))
+			}
+		} else {
+			panCell = normalStyle.Render(fmt.Sprintf("%2s", panText))
+		}
+
+		// LowPass (LP) - display low pass filter value
+		lpValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColLowPassFilter]
+		lpText := "--"
+		if lpValue != -1 {
+			lpText = fmt.Sprintf("%02X", lpValue)
+		}
+
+		var lpCell string
+		if m.CurrentRow == dataIndex && m.CurrentCol == int(types.InstrumentColLP) {
+			lpCell = selectedStyle.Render(fmt.Sprintf("%2s", lpText))
+		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
+			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == int(types.InstrumentColLP)) {
+				lpCell = copiedStyle.Render(fmt.Sprintf("%2s", lpText))
+			} else {
+				lpCell = normalStyle.Render(fmt.Sprintf("%2s", lpText))
+			}
+		} else {
+			lpCell = normalStyle.Render(fmt.Sprintf("%2s", lpText))
+		}
+
+		// HighPass (HP) - display high pass filter value
+		hpValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColHighPassFilter]
+		hpText := "--"
+		if hpValue != -1 {
+			hpText = fmt.Sprintf("%02X", hpValue)
+		}
+
+		var hpCell string
+		if m.CurrentRow == dataIndex && m.CurrentCol == int(types.InstrumentColHP) {
+			hpCell = selectedStyle.Render(fmt.Sprintf("%2s", hpText))
+		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
+			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == int(types.InstrumentColHP)) {
+				hpCell = copiedStyle.Render(fmt.Sprintf("%2s", hpText))
+			} else {
+				hpCell = normalStyle.Render(fmt.Sprintf("%2s", hpText))
+			}
+		} else {
+			hpCell = normalStyle.Render(fmt.Sprintf("%2s", hpText))
+		}
+
 		// Arpeggio (AR) - display arpeggio index
 		arpeggioValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColArpeggio]
 		arpeggioText := "--"
@@ -317,7 +418,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 			soundMakerCell = normalStyle.Render(fmt.Sprintf("%2s", soundMakerText))
 		}
 
-		row := fmt.Sprintf("%s %-3s  %s  %s  %s%s%s  %s %s%s%s%s  %s  %s  %s", arrow, sliceCell, dtCell, noteCell, chordCell, chordAddCell, chordTransCell, gateCell, attackCell, decayCell, sustainCell, releaseCell, arpeggioCell, midiCell, soundMakerCell)
+		row := fmt.Sprintf("%s %-3s  %s  %s  %s%s%s  %s %s%s%s%s  %s  %s  %s  %s  %s  %s  %s  %s", arrow, sliceCell, dtCell, noteCell, chordCell, chordAddCell, chordTransCell, gateCell, attackCell, decayCell, sustainCell, releaseCell, reverbCell, combCell, panCell, lpCell, hpCell, arpeggioCell, midiCell, soundMakerCell)
 		content.WriteString(row)
 		content.WriteString("\n")
 	}
@@ -488,6 +589,118 @@ func GetInstrumentPhraseStatusMessage(m *model.Model) string {
 		} else {
 			releaseSeconds := types.ReleaseToSeconds(releaseValue)
 			statusMsg = fmt.Sprintf("Release: %02X (%.3fs, sticky)", releaseValue, releaseSeconds)
+		}
+	} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColEffectReverb) { // RE column
+		// Show Reverb info with sticky behavior
+		reverbValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColEffectReverb]
+		if reverbValue == -1 {
+			// Check for effective (sticky) Reverb value
+			effectiveReverbValue := input.GetEffectiveValueForTrack(m, m.CurrentPhrase, m.CurrentRow, int(types.ColEffectReverb), m.CurrentTrack)
+			if effectiveReverbValue == -1 {
+				statusMsg = "Reverb: -- (sticky)"
+			} else {
+				reverbFloat := float32(effectiveReverbValue) / 254.0
+				statusMsg = fmt.Sprintf("Reverb: -- (%.2f, sticky)", reverbFloat)
+			}
+		} else {
+			reverbFloat := float32(reverbValue) / 254.0
+			statusMsg = fmt.Sprintf("Reverb: %02X (%.2f, sticky)", reverbValue, reverbFloat)
+		}
+	} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColEffectComb) { // CO column
+		// Show Comb info with sticky behavior
+		combValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColEffectComb]
+		if combValue == -1 {
+			// Check for effective (sticky) Comb value
+			effectiveCombValue := input.GetEffectiveValueForTrack(m, m.CurrentPhrase, m.CurrentRow, int(types.ColEffectComb), m.CurrentTrack)
+			if effectiveCombValue == -1 {
+				statusMsg = "Comb: -- (sticky)"
+			} else {
+				combFloat := float32(effectiveCombValue) / 254.0
+				statusMsg = fmt.Sprintf("Comb: -- (%.2f, sticky)", combFloat)
+			}
+		} else {
+			combFloat := float32(combValue) / 254.0
+			statusMsg = fmt.Sprintf("Comb: %02X (%.2f, sticky)", combValue, combFloat)
+		}
+	} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColPan) { // PA column
+		// Show Pan info with sticky behavior
+		panValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColPan]
+		if panValue == -1 {
+			// Check for effective (sticky) Pan value - default is 80 (center/0.0)
+			effectivePanValue := input.GetEffectiveValueForTrack(m, m.CurrentPhrase, m.CurrentRow, int(types.ColPan), m.CurrentTrack)
+			if effectivePanValue == -1 {
+				statusMsg = "Pan: -- (0.0, sticky)"
+			} else {
+				panFloat := (float32(effectivePanValue) - 127.0) / 127.0 // Map 0-254 to -1.0 to 1.0
+				statusMsg = fmt.Sprintf("Pan: -- (%.2f, sticky)", panFloat)
+			}
+		} else {
+			panFloat := (float32(panValue) - 127.0) / 127.0 // Map 0-254 to -1.0 to 1.0
+			statusMsg = fmt.Sprintf("Pan: %02X (%.2f, sticky)", panValue, panFloat)
+		}
+	} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColLowPassFilter) { // LP column
+		// Show Low Pass Filter info with sticky behavior
+		lpValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColLowPassFilter]
+		if lpValue == -1 {
+			// Check for effective (sticky) Low Pass value - default is 20kHz
+			effectiveLpValue := input.GetEffectiveValueForTrack(m, m.CurrentPhrase, m.CurrentRow, int(types.ColLowPassFilter), m.CurrentTrack)
+			if effectiveLpValue == -1 {
+				statusMsg = "Low Pass: -- (20kHz, sticky)"
+			} else {
+				// Exponential mapping: 00 -> 20kHz, FE -> 20Hz
+				logMin := float32(1.301) // log10(20)
+				logMax := float32(4.301) // log10(20000)
+				logFreq := logMax - (float32(effectiveLpValue)/254.0)*(logMax-logMin)
+				freq := float32(math.Pow(10, float64(logFreq)))
+				if freq >= 1000 {
+					statusMsg = fmt.Sprintf("Low Pass: -- (%.1fkHz, sticky)", freq/1000)
+				} else {
+					statusMsg = fmt.Sprintf("Low Pass: -- (%.0fHz, sticky)", freq)
+				}
+			}
+		} else {
+			// Exponential mapping: 00 -> 20kHz, FE -> 20Hz
+			logMin := float32(1.301) // log10(20)
+			logMax := float32(4.301) // log10(20000)
+			logFreq := logMax - (float32(lpValue)/254.0)*(logMax-logMin)
+			freq := float32(math.Pow(10, float64(logFreq)))
+			if freq >= 1000 {
+				statusMsg = fmt.Sprintf("Low Pass: %02X (%.1fkHz, sticky)", lpValue, freq/1000)
+			} else {
+				statusMsg = fmt.Sprintf("Low Pass: %02X (%.0fHz, sticky)", lpValue, freq)
+			}
+		}
+	} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColHighPassFilter) { // HP column
+		// Show High Pass Filter info with sticky behavior
+		hpValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColHighPassFilter]
+		if hpValue == -1 {
+			// Check for effective (sticky) High Pass value - default is 20Hz
+			effectiveHpValue := input.GetEffectiveValueForTrack(m, m.CurrentPhrase, m.CurrentRow, int(types.ColHighPassFilter), m.CurrentTrack)
+			if effectiveHpValue == -1 {
+				statusMsg = "High Pass: -- (20Hz, sticky)"
+			} else {
+				// Exponential mapping: 00 -> 20Hz, FE -> 20kHz
+				logMin := float32(1.301) // log10(20)
+				logMax := float32(4.301) // log10(20000)
+				logFreq := logMin + (float32(effectiveHpValue)/254.0)*(logMax-logMin)
+				freq := float32(math.Pow(10, float64(logFreq)))
+				if freq >= 1000 {
+					statusMsg = fmt.Sprintf("High Pass: -- (%.1fkHz, sticky)", freq/1000)
+				} else {
+					statusMsg = fmt.Sprintf("High Pass: -- (%.0fHz, sticky)", freq)
+				}
+			}
+		} else {
+			// Exponential mapping: 00 -> 20Hz, FE -> 20kHz
+			logMin := float32(1.301) // log10(20)
+			logMax := float32(4.301) // log10(20000)
+			logFreq := logMin + (float32(hpValue)/254.0)*(logMax-logMin)
+			freq := float32(math.Pow(10, float64(logFreq)))
+			if freq >= 1000 {
+				statusMsg = fmt.Sprintf("High Pass: %02X (%.1fkHz, sticky)", hpValue, freq/1000)
+			} else {
+				statusMsg = fmt.Sprintf("High Pass: %02X (%.0fHz, sticky)", hpValue, freq)
+			}
 		}
 	} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColArpeggio) { // AR column
 		// Show Arpeggio info
