@@ -2087,8 +2087,12 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 			rawSoundMaker,
 		)
 		// add notes
-		instrumentParams.Notes = make([]float32, 1)
-		instrumentParams.Notes[0] = float32(midiNote)
+		midiNotes := types.GetChordNotes(rowData[types.ColNote], types.ChordType(rawChord), types.ChordAddition(rawChordAdd), types.ChordTransposition(rawChordTrans))
+		instrumentParams.Notes = make([]float32, len(midiNotes))
+		for i, note := range midiNotes {
+			// TODO: future add detuning things to this?
+			instrumentParams.Notes[i] = float32(note)
+		}
 		m.SendOSCInstrumentMessage(instrumentParams)
 	} else {
 		// For sampler tracks, emit full sampler message

@@ -14,6 +14,7 @@ s.waitForBoot({
 			trackVolume = 0,
 			pan=0,
 			note=0,
+			noteSize=1,
 			gate=1,
 			attack=0.1,
 			decay=1.0,
@@ -31,11 +32,11 @@ s.waitForBoot({
 			snd = MoogFF.ar(snd, 2000, 1.5);
 			env = EnvGen.ar(Env.adsr(attack,decay,sustain,release),1-EnvGen.kr(Env.new([0,0,1],[duration,0])),doneAction:2);
 			env = env * EnvGen.ar(Env.adsr(0.01,0.01,1.0,release),gate);
-			snd = snd * env;
+			snd = snd * env * (1.0 / noteSize.sqrt);
 			snd = Pan2.ar(snd,pan);
 			Out.ar(effectDryOut, snd);
-			Out.ar(effectCombOut, snd*effectComb);
-			Out.ar(effectReverbOut, snd*effectReverb);
+			Out.ar(effectCombOut, snd*0.1);
+			Out.ar(effectReverbOut, snd*0.5);
 		}).add;
 
 
@@ -368,7 +369,7 @@ s.waitForBoot({
 			if (noteOn > 0,{
 				args = args ++ msg[nonNoteIndex..];
 				notes.do({ arg n;
-					var synthArgs = args ++ [\note,n];
+					var synthArgs = args ++ [\note,n,\noteSize,notes.size];
 					var synthName = synName ++ "_" ++ n.asString;
 					[synthName,"started",synthArgs].postln;
 					~synthsPlaying.at(track).put(synthName,
