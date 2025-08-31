@@ -44,6 +44,13 @@ func TestNewModel(t *testing.T) {
 			assert.Equal(t, -1, m.SongData[i][j])
 		}
 	}
+
+	// Test effect column initialization in InstrumentPhrasesData
+	assert.Equal(t, -1, m.InstrumentPhrasesData[0][0][types.ColEffectReverb])
+	assert.Equal(t, -1, m.InstrumentPhrasesData[0][0][types.ColEffectComb])
+	assert.Equal(t, -1, m.InstrumentPhrasesData[0][0][types.ColPan])
+	assert.Equal(t, -1, m.InstrumentPhrasesData[0][0][types.ColLowPassFilter])
+	assert.Equal(t, -1, m.InstrumentPhrasesData[0][0][types.ColHighPassFilter])
 }
 
 func TestModelDataStructures(t *testing.T) {
