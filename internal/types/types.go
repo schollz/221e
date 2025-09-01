@@ -51,7 +51,7 @@ const (
 	ColTimestretch                            // Column 5: Timestretch setting index (hex, 00-FE)
 	ColEffectReverse                          // Column 6: Я (reverse) 0/1
 	ColPan                                    // Column 7: PA (pan) (hex, default 128/0x80, 00-FE maps -1.0 to 1.0)
-	ColLowPassFilter                          // Column 8: LP (low pass filter) (hex, default -1/null, 00-FE maps 20kHz to 20Hz exponentially)
+	ColLowPassFilter                          // Column 8: LP (low pass filter) (hex, default FE/20kHz, 00-FE maps 20Hz to 20kHz exponentially)
 	ColHighPassFilter                         // Column 9: HP (high pass filter) (hex, default -1/null, 00-FE maps 20Hz to 20kHz exponentially)
 	ColEffectComb                             // Column 10: CO (00-FE)
 	ColEffectReverb                           // Column 11: VE (00-FE)
@@ -454,6 +454,8 @@ func GetVirtualDefault(col PhraseColumn) *VirtualDefaultConfig {
 		return &VirtualDefaultConfig{DefaultValue: 0x80} // 0x80 = default gate
 	case ColPan:
 		return &VirtualDefaultConfig{DefaultValue: 0x80} // 0x80 = center pan
+	case ColLowPassFilter:
+		return &VirtualDefaultConfig{DefaultValue: 0xFE} // 0xFE = 20kHz (no filtering)
 	default:
 		return nil
 	}

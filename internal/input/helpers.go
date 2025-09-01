@@ -2010,10 +2010,10 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 
 	// Low Pass Filter: Use effective value, send 20000 Hz when -1, otherwise exponential mapping
 	if effectiveLowPassFilter != -1 {
-		// Exponential mapping: 00 -> 20kHz, FE -> 20Hz
+		// Exponential mapping: 00 -> 20Hz, FE -> 20kHz
 		logMin := float32(1.301) // log10(20)
 		logMax := float32(4.301) // log10(20000)
-		logFreq := logMax - (float32(effectiveLowPassFilter)/254.0)*(logMax-logMin)
+		logFreq := logMin + (float32(effectiveLowPassFilter)/254.0)*(logMax-logMin)
 		oscParams.LowPassFilter = float32(math.Pow(10, float64(logFreq)))
 	} else {
 		oscParams.LowPassFilter = 20000.0 // Send 20kHz when no effective value found

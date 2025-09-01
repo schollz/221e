@@ -397,10 +397,10 @@ func GetPhraseStatusMessage(m *model.Model) string {
 				if value == -1 {
 					statusMsg = "Low Pass: -- (20kHz, sticky)"
 				} else {
-					// Exponential mapping: 00 -> 20kHz, FE -> 20Hz
+					// Exponential mapping: 00 -> 20Hz, FE -> 20kHz
 					logMin := float32(1.301) // log10(20)
 					logMax := float32(4.301) // log10(20000)
-					logFreq := logMax - (float32(value)/254.0)*(logMax-logMin)
+					logFreq := logMin + (float32(value)/254.0)*(logMax-logMin)
 					freq := float32(math.Pow(10, float64(logFreq)))
 					if freq >= 1000 {
 						statusMsg = fmt.Sprintf("Low Pass: %02X (%.1fkHz, sticky)", value, freq/1000)
