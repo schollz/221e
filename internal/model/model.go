@@ -798,7 +798,7 @@ type SamplerOSCParams struct {
 }
 
 type InstrumentOSCParams struct {
-	TrackId            int32 // Track ID
+	TrackId            int32   // Track ID
 	NoteOn             int32
 	Notes              []float32 // Note number (MIDI values, but can be fractional)
 	Velocity           float32   // Note velocity (0.0-1.0)
@@ -811,6 +811,11 @@ type InstrumentOSCParams struct {
 	Decay              float32   // Decay time in seconds (D parameter)
 	Sustain            float32   // Sustain level (S parameter)
 	Release            float32   // Release time in seconds (R parameter)
+	Pan                float32   // -1.0 to 1.0 (pan position)
+	LowPassFilter      float32   // Frequency in Hz (20Hz to 20kHz) or -1 for no filter
+	HighPassFilter     float32   // Frequency in Hz (20Hz to 20kHz) or -1 for no filter
+	EffectComb         float32   // 0.0 .. 1.0
+	EffectReverb       float32   // 0.0 .. 1.0
 	ArpeggioIndex      int       // Arpeggio settings index (AR parameter)
 	MidiSettingsIndex  int       // MIDI settings index (MI parameter)
 	SoundMakerIndex    int       // SoundMaker settings index (SO parameter)
@@ -878,7 +883,7 @@ func NewSamplerOSCParamsWithRetrigger(filename string, trackId, sliceCount, slic
 }
 
 // NewInstrumentOSCParams creates instrument parameters
-func NewInstrumentOSCParams(trackId int32, velocity float32, chordType, chordAddition, chordTransposition, gate int, deltaTime, attack, decay, sustain, release float32, arpeggioIndex, midiSettingsIndex, soundMakerIndex int) InstrumentOSCParams {
+func NewInstrumentOSCParams(trackId int32, velocity float32, chordType, chordAddition, chordTransposition, gate int, deltaTime, attack, decay, sustain, release, pan, lowPassFilter, highPassFilter, effectComb, effectReverb float32, arpeggioIndex, midiSettingsIndex, soundMakerIndex int) InstrumentOSCParams {
 	return InstrumentOSCParams{
 		TrackId:            trackId,
 		NoteOn:             1,
@@ -892,6 +897,11 @@ func NewInstrumentOSCParams(trackId int32, velocity float32, chordType, chordAdd
 		Decay:              decay,
 		Sustain:            sustain,
 		Release:            release,
+		Pan:                pan,
+		LowPassFilter:      lowPassFilter,
+		HighPassFilter:     highPassFilter,
+		EffectComb:         effectComb,
+		EffectReverb:       effectReverb,
 		ArpeggioIndex:      arpeggioIndex,
 		MidiSettingsIndex:  midiSettingsIndex,
 		SoundMakerIndex:    soundMakerIndex,

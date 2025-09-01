@@ -2061,6 +2061,13 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 		rawSustain := GetEffectiveValueForTrack(m, phrase, row, int(types.ColSustain), trackId)
 		rawRelease := GetEffectiveValueForTrack(m, phrase, row, int(types.ColRelease), trackId)
 
+		// Extract effect parameters with effective values (sticky)
+		rawPan := GetEffectiveValueForTrack(m, phrase, row, int(types.ColPan), trackId)
+		rawLowPassFilter := GetEffectiveValueForTrack(m, phrase, row, int(types.ColLowPassFilter), trackId)
+		rawHighPassFilter := GetEffectiveValueForTrack(m, phrase, row, int(types.ColHighPassFilter), trackId)
+		rawEffectComb := GetEffectiveValueForTrack(m, phrase, row, int(types.ColEffectComb), trackId)
+		rawEffectReverb := GetEffectiveValueForTrack(m, phrase, row, int(types.ColEffectReverb), trackId)
+
 		// Extract other parameters with effective values (sticky)
 		rawArpeggio := GetEffectiveValueForTrack(m, phrase, row, int(types.ColArpeggio), trackId)
 		rawMidi := GetEffectiveValueForTrack(m, phrase, row, int(types.ColMidi), trackId)
@@ -2096,6 +2103,40 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 			release = types.ReleaseToSeconds(rawRelease)
 		}
 
+		// Convert effect parameters (similar to sampler conversion logic)
+		pan := float32(0.0) // Default center pan
+		if rawPan != -1 {
+			pan = (float32(rawPan) - 127.0) / 127.0 // Map 0-254 to -1.0 to 1.0
+		}
+
+		lowPassFilter := float32(20000) // Default no filter (20kHz)
+		if rawLowPassFilter != -1 {
+			// Exponential mapping: 00 -> 20Hz, FE -> 20kHz
+			logMin := float32(1.301) // log10(20)
+			logMax := float32(4.301) // log10(20000)
+			logFreq := logMin + (float32(rawLowPassFilter)/254.0)*(logMax-logMin)
+			lowPassFilter = float32(math.Pow(10, float64(logFreq)))
+		}
+
+		highPassFilter := float32(20) // Default no filter (20Hz)
+		if rawHighPassFilter != -1 {
+			// Exponential mapping: 00 -> 20Hz, FE -> 20kHz
+			logMin := float32(1.301) // log10(20)
+			logMax := float32(4.301) // log10(20000)
+			logFreq := logMin + (float32(rawHighPassFilter)/254.0)*(logMax-logMin)
+			highPassFilter = float32(math.Pow(10, float64(logFreq)))
+		}
+
+		effectComb := float32(0) // Default
+		if rawEffectComb != -1 {
+			effectComb = float32(rawEffectComb) / 254.0
+		}
+
+		effectReverb := float32(0) // Default
+		if rawEffectReverb != -1 {
+			effectReverb = float32(rawEffectReverb) / 254.0
+		}
+
 		instrumentParams := model.NewInstrumentOSCParams(
 			int32(trackId),
 			velocity,
@@ -2108,6 +2149,11 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 			decay,
 			sustain,
 			release,
+			pan,
+			lowPassFilter,
+			highPassFilter,
+			effectComb,
+			effectReverb,
 			rawArpeggio,
 			rawMidi,
 			rawSoundMaker,
