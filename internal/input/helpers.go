@@ -1494,7 +1494,7 @@ func CutRowToClipboard(m *model.Model) {
 		var filename string
 		fileIndex := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColFilename]
 		phrasesFiles := m.GetCurrentPhrasesFiles()
-		if fileIndex >= 0 && fileIndex < len(*phrasesFiles) {
+		if phrasesFiles != nil && fileIndex >= 0 && fileIndex < len(*phrasesFiles) {
 			filename = (*phrasesFiles)[fileIndex]
 		}
 
@@ -1510,10 +1510,17 @@ func CutRowToClipboard(m *model.Model) {
 			HighlightView:   types.PhraseView,
 		}
 		m.Clipboard = clipboard
-		// Clear the row
+		// Clear the row - reset all columns to their default values
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColNote)] = -1      // Clear note
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColPitch)] = 128    // Reset pitch to default (0x80)
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColDeltaTime)] = -1 // Clear deltatime (clears playback for both views)
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColGate)] = 80      // Reset gate to default (0x50)
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColRetrigger)] = -1 // Clear retrigger
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColTimestretch)] = -1 // Clear timestretch
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColPan)] = -1       // Clear pan
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColFilename)] = -1  // Clear filename
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColChord)] = int(types.ChordNone) // Clear chord type
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColChordAddition)] = int(types.ChordAddNone) // Clear chord addition
 		log.Printf("Cut phrase row %d", m.CurrentRow)
 	}
 }
