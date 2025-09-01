@@ -922,6 +922,16 @@ func (m *Model) SendOSCInstrumentMessage(params InstrumentOSCParams) {
 	msg.Append(float32(params.Release))
 	msg.Append("duration")
 	msg.Append(float32(params.DeltaTime) * float32(params.Gate) / 128.0) // Effective duration in seconds
+	msg.Append("pan")
+	msg.Append(float32(params.Pan))
+	msg.Append("lowPassFilter")
+	msg.Append(float32(params.LowPassFilter))
+	msg.Append("highPassFilter")
+	msg.Append(float32(params.HighPassFilter))
+	msg.Append("effectComb")
+	msg.Append(float32(params.EffectComb))
+	msg.Append("effectReverb")
+	msg.Append(float32(params.EffectReverb))
 
 	err := m.oscClient.Send(msg)
 	if err != nil {

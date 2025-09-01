@@ -34,9 +34,9 @@ s.waitForBoot({
 			env = env * EnvGen.ar(Env.adsr(0.01,0.01,1.0,release),gate);
 			snd = snd * env * (1.0 / noteSize.sqrt);
 			snd = Pan2.ar(snd,pan);
-			Out.ar(effectDryOut, snd);
-			Out.ar(effectCombOut, snd*0.1);
-			Out.ar(effectReverbOut, snd*0.5);
+			Out.ar(effectDryOut, snd*(1.0 - effectReverb));
+			Out.ar(effectCombOut, snd*effectComb);
+			Out.ar(effectReverbOut, snd*effectReverb);
 		}).add;
 
 
