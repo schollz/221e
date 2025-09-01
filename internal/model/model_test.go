@@ -193,11 +193,11 @@ func TestModelDataInitialization(t *testing.T) {
 	m := NewModel(0, "")
 
 	// Test that data is properly initialized with defaults
-	// Check phrase data defaults for sampler
+	// Check phrase data defaults for sampler - virtual default columns now start as -1
 	assert.Equal(t, -1, m.SamplerPhrasesData[0][0][types.ColNote])
-	assert.Equal(t, 128, m.SamplerPhrasesData[0][0][types.ColPitch])
+	assert.Equal(t, -1, m.SamplerPhrasesData[0][0][types.ColPitch])  // Virtual default: displays "--", behaves as 80
 	assert.Equal(t, -1, m.SamplerPhrasesData[0][0][types.ColDeltaTime])
-	assert.Equal(t, 80, m.SamplerPhrasesData[0][0][types.ColGate])
+	assert.Equal(t, -1, m.SamplerPhrasesData[0][0][types.ColGate])   // Virtual default: displays "--", behaves as 80
 
 	// Check phrase data defaults for instrument
 	assert.Equal(t, -1, m.InstrumentPhrasesData[0][0][types.ColNote])

@@ -439,3 +439,22 @@ func ReleaseToSeconds(hexValue int) float32 {
 	ratio := float32(hexValue) / 254.0
 	return minSeconds * float32(math.Pow(float64(maxSeconds/minSeconds), float64(ratio)))
 }
+
+// VirtualDefaultConfig holds virtual default value for columns that display "--" but behave as a specific value
+type VirtualDefaultConfig struct {
+	DefaultValue int
+}
+
+// GetVirtualDefault returns the virtual default config for a column, or nil if no virtual default
+func GetVirtualDefault(col PhraseColumn) *VirtualDefaultConfig {
+	switch col {
+	case ColPitch:
+		return &VirtualDefaultConfig{DefaultValue: 0x80} // 0x80 = center pitch
+	case ColGate:
+		return &VirtualDefaultConfig{DefaultValue: 0x80} // 0x80 = default gate
+	case ColPan:
+		return &VirtualDefaultConfig{DefaultValue: 0x80} // 0x80 = center pan
+	default:
+		return nil
+	}
+}

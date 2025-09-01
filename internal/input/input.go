@@ -1249,9 +1249,9 @@ func handleCtrlH(m *model.Model) tea.Cmd {
 		if phraseViewType == types.InstrumentPhraseView {
 		}
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColNote)] = -1      // Clear note
-		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColPitch)] = 128    // Reset pitch to default (hex 80)
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColPitch)] = -1     // Clear pitch (displays "--", behaves as 80)
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColDeltaTime)] = -1 // Clear deltatime (for samplers this also clears playback)
-		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColGate)] = 80      // Reset gate to default
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColGate)] = -1      // Clear gate (displays "--", behaves as 80)
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColRetrigger)] = -1 // Clear retrigger
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColFilename)] = -1  // Clear filename
 		log.Printf("Deleted phrase %d row %d (cleared all columns)", m.CurrentPhrase, m.CurrentRow)

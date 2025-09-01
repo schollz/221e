@@ -519,11 +519,11 @@ func GetInstrumentPhraseStatusMessage(m *model.Model) string {
 			if effectiveGateValue == -1 {
 				statusMsg = "Gate: -- (80/100%, sticky)"
 			} else {
-				gatePercent := float32(effectiveGateValue) / 80.0 * 100.0
+				gatePercent := float32(effectiveGateValue) / 128.0 * 100.0
 				statusMsg = fmt.Sprintf("Gate: -- (%02X/%.0f%%, sticky)", effectiveGateValue, gatePercent)
 			}
 		} else {
-			gatePercent := float32(gateValue) / 80.0 * 100.0
+			gatePercent := float32(gateValue) / 128.0 * 100.0
 			statusMsg = fmt.Sprintf("Gate: %02X (%.0f%%, sticky)", gateValue, gatePercent)
 		}
 	} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColAttack) { // A column

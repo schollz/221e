@@ -594,9 +594,9 @@ func (m *Model) initializeDefaultData() {
 		for i := range m.PhrasesData[p] {
 			m.PhrasesData[p][i] = make([]int, int(types.ColCount)) // Use ColCount for array size
 			m.PhrasesData[p][i][types.ColNote] = -1                // Note value (-1 means no data "--")
-			m.PhrasesData[p][i][types.ColPitch] = 128              // Pitch value (128 = 0x80 = 0.0 pitch, default)
+			m.PhrasesData[p][i][types.ColPitch] = -1               // Pitch value (-1 displays "--", behaves as 80)
 			m.PhrasesData[p][i][types.ColDeltaTime] = -1           // Delta time (-1 means no data "--", controls playback)
-			m.PhrasesData[p][i][types.ColGate] = 80                // Gate value (80 = 0x50, default)
+			m.PhrasesData[p][i][types.ColGate] = -1                // Gate value (-1 displays "--", behaves as 80)
 			m.PhrasesData[p][i][types.ColRetrigger] = -1           // Retrigger index (-1 means no retrigger)
 			m.PhrasesData[p][i][types.ColTimestretch] = -1         // Timestretch index (-1 means no timestretch)
 			m.PhrasesData[p][i][types.ColEffectReverse] = -1       // Reverse effect (-1 means no effect)
@@ -650,9 +650,9 @@ func (m *Model) initializeDefaultData() {
 		for i := range m.SamplerPhrasesData[p] {
 			m.SamplerPhrasesData[p][i] = make([]int, int(types.ColCount))
 			m.SamplerPhrasesData[p][i][types.ColNote] = -1           // Note value (-1 means no data "--")
-			m.SamplerPhrasesData[p][i][types.ColPitch] = 128         // Pitch value (128 = 0x80 = 0.0 pitch, default)
+			m.SamplerPhrasesData[p][i][types.ColPitch] = -1          // Pitch value (-1 displays "--", behaves as 80)
 			m.SamplerPhrasesData[p][i][types.ColDeltaTime] = -1      // Delta time (-1 means no data "--", controls playback)
-			m.SamplerPhrasesData[p][i][types.ColGate] = 80           // Gate value (80 = 0x50, default)
+			m.SamplerPhrasesData[p][i][types.ColGate] = -1           // Gate value (-1 displays "--", behaves as 80)
 			m.SamplerPhrasesData[p][i][types.ColRetrigger] = -1      // Retrigger index (-1 means no retrigger)
 			m.SamplerPhrasesData[p][i][types.ColTimestretch] = -1    // Timestretch index (-1 means no timestretch)
 			m.SamplerPhrasesData[p][i][types.ColEffectReverse] = -1  // Reverse effect (-1 means no effect)

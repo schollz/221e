@@ -914,11 +914,17 @@ func ModifyValue(m *model.Model, delta int) {
 			}
 			(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newValue
 		} else {
-			// All other hex-ish columns (NN, DT, GT, RT, TS, CO, VE, FI index) - original behavior
+			// All other hex-ish columns (NN, DT, GT, RT, TS, CO, VE, FI index) - check for virtual defaults
+			virtualDefault := types.GetVirtualDefault(types.PhraseColumn(colIndex))
 			var newValue int
 			if currentValue == -1 {
-				// First edit on an empty cell: initialize to 00 and DO NOT apply delta
-				newValue = 0
+				if virtualDefault != nil {
+					// Virtual default column: start from virtual default value and apply delta
+					newValue = virtualDefault.DefaultValue + delta
+				} else {
+					// Regular column: initialize to 00 and DO NOT apply delta
+					newValue = 0
+				}
 			} else {
 				newValue = currentValue + delta
 			}
@@ -1512,9 +1518,9 @@ func CutRowToClipboard(m *model.Model) {
 		m.Clipboard = clipboard
 		// Clear the row - reset all columns to their default values
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColNote)] = -1      // Clear note
-		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColPitch)] = 128    // Reset pitch to default (0x80)
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColPitch)] = -1     // Clear pitch (displays "--", behaves as 80)
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColDeltaTime)] = -1 // Clear deltatime (clears playback for both views)
-		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColGate)] = 80      // Reset gate to default (0x50)
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColGate)] = -1      // Clear gate (displays "--", behaves as 80)
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColRetrigger)] = -1 // Clear retrigger
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColTimestretch)] = -1 // Clear timestretch
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColPan)] = -1       // Clear pan
