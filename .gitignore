@@ -38,3 +38,5 @@ internal/sox/test.wav
 cpu.prof
 test-tracker.json
 Limewax/*
+*.wav
+*.mkv
