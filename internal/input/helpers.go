@@ -1527,6 +1527,19 @@ func CutRowToClipboard(m *model.Model) {
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColFilename)] = -1  // Clear filename
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColChord)] = int(types.ChordNone) // Clear chord type
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColChordAddition)] = int(types.ChordAddNone) // Clear chord addition
+		// Clear Instrument-specific columns (A, D, S, R, RE, CO, LP, HP, AR, MI, SO)
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColAttack)] = -1 // Clear attack
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColDecay)] = -1 // Clear decay
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColSustain)] = -1 // Clear sustain
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColRelease)] = -1 // Clear release
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColEffectReverb)] = -1 // Clear reverb
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColEffectComb)] = -1 // Clear comb
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColLowPassFilter)] = -1 // Clear low pass
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColHighPassFilter)] = -1 // Clear high pass
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColArpeggio)] = -1 // Clear arpeggio
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColMidi)] = -1 // Clear MIDI
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColSoundMaker)] = -1 // Clear SoundMaker
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColChordTransposition)] = int(types.ChordTransNone) // Clear chord transposition
 		log.Printf("Cut phrase row %d", m.CurrentRow)
 	}
 }
