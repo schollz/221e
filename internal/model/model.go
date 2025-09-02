@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/hypebeast/go-osc/osc"
 
+	"github.com/schollz/2n/internal/midiplayer"
 	"github.com/schollz/2n/internal/types"
 )
 
@@ -1164,6 +1166,59 @@ func (m *Model) sendOSCInstrumentMessage(params InstrumentOSCParams) {
 	} else {
 		log.Printf("DEBUG: OSC instrument message sent successfully for track %d with notes %v", params.TrackId, params.Notes)
 		log.Printf("%s", msg)
+	}
+
+	// Also send MIDI message if configured
+	m.sendMIDIInstrumentMessage(params)
+}
+
+// sendMIDIInstrumentMessage sends MIDI messages for the given instrument parameters if MIDI is configured
+func (m *Model) sendMIDIInstrumentMessage(params InstrumentOSCParams) {
+	// Check if MIDI is configured (MidiSettingsIndex != -1 means "--" is not set)
+	if params.MidiSettingsIndex == -1 {
+		return // No MIDI configured
+	}
+
+	// Get MIDI settings
+	midiSettings := m.MidiSettings[params.MidiSettingsIndex]
+
+	// Check if device is not "None" (empty or default)
+	if midiSettings.Device == "None" || midiSettings.Device == "" {
+		log.Printf("DEBUG: MIDI device is None or empty, not sending MIDI messages")
+		return
+	}
+
+	// Parse channel (convert from string to int, 1-indexed to 0-indexed)
+	channel, err := strconv.Atoi(midiSettings.Channel)
+	if err != nil {
+		log.Printf("ERROR: Failed to parse MIDI channel '%s': %v", midiSettings.Channel, err)
+		return
+	}
+	// Convert from 1-indexed to 0-indexed
+	if channel < 1 || channel > 16 {
+		log.Printf("ERROR: Invalid MIDI channel %d, must be 1-16", channel)
+		return
+	}
+	channel = channel - 1
+
+	// Calculate duration same as OSC message
+	duration := float64(params.DeltaTime) * float64(params.Gate) / 128.0
+
+	// Hard-coded velocity as requested
+	velocity := 100.0
+
+	log.Printf("DEBUG: Sending MIDI messages for device=%s, channel=%d, notes=%v, velocity=%.0f, duration=%.3f",
+		midiSettings.Device, channel, params.Notes, velocity, duration)
+
+	// Send MIDI note-on for each note
+	for _, note := range params.Notes {
+		err := midiplayer.NoteOn(midiSettings.Device, float64(note), velocity, duration, channel)
+		if err != nil {
+			log.Printf("ERROR: Failed to send MIDI note-on for note %.1f: %v", note, err)
+		} else {
+			log.Printf("DEBUG: MIDI note-on sent: device=%s, note=%.1f, velocity=%.0f, duration=%.3f, channel=%d",
+				midiSettings.Device, note, velocity, duration, channel)
+		}
 	}
 }
 
