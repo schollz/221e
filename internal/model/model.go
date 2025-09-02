@@ -923,11 +923,16 @@ func (m *Model) SendOSCInstrumentMessageWithArpeggio(params InstrumentOSCParams)
 	log.Printf("DEBUG: Sending initial note for track %d: %v", params.TrackId, params.Notes)
 	m.sendOSCInstrumentMessage(params)
 
-	// Arpeggio example with notes [60,67] and divisions [2,1]
-	arpeggioNotes := []float32{60, 61, 62, 63, 67}
-	arpeggioDivisions := []float32{2, 2, 2, 1, 1}
-	log.Printf("DEBUG: Starting arpeggio with notes %v and divisions %v", arpeggioNotes, arpeggioDivisions)
-	m.PlayArpeggio(params, arpeggioNotes, arpeggioDivisions)
+	arpeggioNotes, arpeggioDivisions := m.ProcessArpeggio(params)
+	if len(arpeggioNotes) > 0 {
+		m.PlayArpeggio(params, arpeggioNotes, arpeggioDivisions)
+	}
+}
+
+func (m *Model) ProcessArpeggio(params InstrumentOSCParams) (arpeggioNotes []float32, arpeggioDivisions []float32) {
+	// arpeggioNotes = []float32{60, 61, 62, 63, 67}
+	// arpeggioDivisions = []float32{2, 2, 2, 1, 1}
+	return arpeggioNotes, arpeggioDivisions
 }
 
 // sendOSCInstrumentMessage is the low-level function that sends a single OSC message
