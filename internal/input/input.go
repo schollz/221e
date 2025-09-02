@@ -1242,7 +1242,7 @@ func handleBackspace(m *model.Model) tea.Cmd {
 		// Clear the current cell in arpeggio view
 		settings := &m.ArpeggioSettings[m.ArpeggioEditingIndex]
 		currentRow := &settings.Rows[m.CurrentRow]
-		
+
 		switch m.CurrentCol {
 		case 0: // Direction column
 			currentRow.Direction = 0 // Clear to "--"

@@ -1549,14 +1549,14 @@ func CutRowToClipboard(m *model.Model) {
 		if m.CurrentRow < 0 || m.CurrentRow >= 16 {
 			return
 		}
-		
+
 		// Copy current arpeggio row data (3 columns: Direction, Count, Divisor)
 		currentRow := m.ArpeggioSettings[m.ArpeggioEditingIndex].Rows[m.CurrentRow]
 		arpeggioRowData := make([]int, 3)
 		arpeggioRowData[0] = currentRow.Direction
 		arpeggioRowData[1] = currentRow.Count
 		arpeggioRowData[2] = currentRow.Divisor
-		
+
 		clipboard := types.ClipboardData{
 			RowData:         arpeggioRowData,
 			SourceView:      types.ArpeggioView,
@@ -1568,13 +1568,13 @@ func CutRowToClipboard(m *model.Model) {
 			HighlightView:   types.ArpeggioView,
 		}
 		m.Clipboard = clipboard
-		
+
 		// Clear the row - reset to defaults
 		currentRowRef := &m.ArpeggioSettings[m.ArpeggioEditingIndex].Rows[m.CurrentRow]
-		currentRowRef.Direction = 0  // Clear to "--"
-		currentRowRef.Count = -1     // Clear to "--"
-		currentRowRef.Divisor = -1   // Clear to "--"
-		
+		currentRowRef.Direction = 0 // Clear to "--"
+		currentRowRef.Count = -1    // Clear to "--"
+		currentRowRef.Divisor = -1  // Clear to "--"
+
 		log.Printf("Cut arpeggio %02X row %02X", m.ArpeggioEditingIndex, m.CurrentRow)
 	}
 }
@@ -1731,17 +1731,17 @@ func ClearArpeggioCell(m *model.Model) {
 	if m.ViewMode != types.ArpeggioView {
 		return
 	}
-	
+
 	if m.ArpeggioEditingIndex < 0 || m.ArpeggioEditingIndex >= 255 {
 		return
 	}
 	if m.CurrentRow < 0 || m.CurrentRow >= 16 {
 		return
 	}
-	
+
 	// Get current row
 	currentRow := &m.ArpeggioSettings[m.ArpeggioEditingIndex].Rows[m.CurrentRow]
-	
+
 	switch m.CurrentCol {
 	case 0: // DI (Direction) column
 		currentRow.Direction = 0 // Clear to "--"

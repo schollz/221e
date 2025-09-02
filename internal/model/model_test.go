@@ -358,8 +358,8 @@ func TestProcessArpeggio(t *testing.T) {
 			arpeggioSettings: types.ArpeggioSettings{
 				Rows: [16]types.ArpeggioRow{
 					{Direction: 0, Count: -1, Divisor: -1}, // empty row
-					{Direction: 1, Count: 1, Divisor: 4},    // up 1
-					{Direction: 0, Count: 2, Divisor: -1},   // invalid row
+					{Direction: 1, Count: 1, Divisor: 4},   // up 1
+					{Direction: 0, Count: 2, Divisor: -1},  // invalid row
 				},
 			},
 			params: InstrumentOSCParams{
@@ -498,28 +498,28 @@ func TestGetNextChordNote(t *testing.T) {
 	}{
 		{
 			name:        "Major chord - up from root",
-			currentNote: 60, // C4
+			currentNote: 60,                    // C4
 			baseChord:   []float32{60, 64, 67}, // C Major
 			isUp:        true,
 			expected:    64, // E4
 		},
 		{
 			name:        "Major chord - up from 3rd (wrap to next octave)",
-			currentNote: 67, // G4
+			currentNote: 67,                    // G4
 			baseChord:   []float32{60, 64, 67}, // C Major
 			isUp:        true,
 			expected:    72, // C5
 		},
 		{
 			name:        "Major chord - down from root (wrap to previous octave)",
-			currentNote: 60, // C4
+			currentNote: 60,                    // C4
 			baseChord:   []float32{60, 64, 67}, // C Major
 			isUp:        false,
 			expected:    55, // G3
 		},
 		{
 			name:        "Major chord - down from 3rd",
-			currentNote: 67, // G4
+			currentNote: 67,                    // G4
 			baseChord:   []float32{60, 64, 67}, // C Major
 			isUp:        false,
 			expected:    64, // E4
@@ -540,35 +540,35 @@ func TestSendOSCInstrumentMessageWithArpeggioInitialNote(t *testing.T) {
 	// This test verifies that when an arpeggio is active, only the root note is sent initially
 	// We can't easily test the actual OSC sending without mocking, but we can test the logic
 	model := NewModel(0, "")
-	
+
 	// Set up arpeggio settings for index 1
 	model.ArpeggioSettings[1] = types.ArpeggioSettings{
 		Rows: [16]types.ArpeggioRow{
 			{Direction: 1, Count: 2, Divisor: 1}, // up 2
 		},
 	}
-	
+
 	// Test case 1: Chord with arpeggio should only send root note initially
 	chordParams := InstrumentOSCParams{
 		TrackId:       0,
-		ArpeggioIndex: 1, // Valid arpeggio
+		ArpeggioIndex: 1,                     // Valid arpeggio
 		Notes:         []float32{60, 64, 67}, // C Major chord
 		ChordType:     int(types.ChordMajor),
 	}
-	
+
 	// This should process the arpeggio and send only the root note (60) initially
 	// The actual testing of OSC message content would require mocking the OSC client
 	// For now, we just verify that the function doesn't panic and processes correctly
 	model.SendOSCInstrumentMessageWithArpeggio(chordParams)
-	
+
 	// Test case 2: No arpeggio should send full chord
 	noArpeggioParams := InstrumentOSCParams{
 		TrackId:       0,
-		ArpeggioIndex: -1, // No arpeggio
+		ArpeggioIndex: -1,                    // No arpeggio
 		Notes:         []float32{60, 64, 67}, // C Major chord
 		ChordType:     int(types.ChordMajor),
 	}
-	
+
 	// This should send the full chord since no arpeggio is active
 	model.SendOSCInstrumentMessageWithArpeggio(noArpeggioParams)
 }
