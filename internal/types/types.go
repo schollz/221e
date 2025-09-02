@@ -334,6 +334,12 @@ type ClipboardData struct {
 	RowData     []int
 	RowFilename string
 	SourceView  ViewMode
+	// Arpeggio row data
+	ArpeggioRowData struct {
+		Direction []int
+		Count     []int
+		Divisor   []int
+	}
 	// Highlighting
 	HighlightRow    int
 	HighlightCol    int

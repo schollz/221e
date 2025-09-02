@@ -167,6 +167,10 @@ func HandleKeyInput(m *model.Model, msg tea.KeyMsg) tea.Cmd {
 
 	case "esc":
 		ClearClipboardHighlight(m)
+		// Clear current cell in Arpeggio Settings
+		if m.ViewMode == types.ArpeggioView {
+			ClearArpeggioCell(m)
+		}
 
 	case "shift+right":
 		return handleShiftRight(m)
@@ -1133,6 +1137,9 @@ func handleC(m *model.Model) tea.Cmd {
 		return nil
 	} else if m.ViewMode == types.RetriggerView {
 		EmitLastSelectedPhraseRowData(m)
+	} else if m.ViewMode == types.ArpeggioView {
+		// Play the last edited phrase row from Instrument view
+		EmitLastSelectedPhraseRowData(m)
 	}
 	return nil
 }
@@ -1231,6 +1238,23 @@ func handleBackspace(m *model.Model) tea.Cmd {
 			log.Printf("Cleared phrase %d row %d col %d", m.CurrentPhrase, m.CurrentRow, colIndex)
 			storage.AutoSave(m)
 		}
+	} else if m.ViewMode == types.ArpeggioView {
+		// Clear the current cell in arpeggio view
+		settings := &m.ArpeggioSettings[m.ArpeggioEditingIndex]
+		currentRow := &settings.Rows[m.CurrentRow]
+		
+		switch m.CurrentCol {
+		case 0: // Direction column
+			currentRow.Direction = 0 // Clear to "--"
+			log.Printf("Cleared arpeggio %02X row %02X Direction", m.ArpeggioEditingIndex, m.CurrentRow)
+		case 1: // Count column
+			currentRow.Count = -1 // Clear to "--"
+			log.Printf("Cleared arpeggio %02X row %02X Count", m.ArpeggioEditingIndex, m.CurrentRow)
+		case 2: // Divisor column
+			currentRow.Divisor = -1 // Clear to "--"
+			log.Printf("Cleared arpeggio %02X row %02X Divisor", m.ArpeggioEditingIndex, m.CurrentRow)
+		}
+		storage.AutoSave(m)
 	}
 	return nil
 }

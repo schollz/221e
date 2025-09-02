@@ -1541,6 +1541,41 @@ func CutRowToClipboard(m *model.Model) {
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColSoundMaker)] = -1                                // Clear SoundMaker
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColChordTransposition)] = int(types.ChordTransNone) // Clear chord transposition
 		log.Printf("Cut phrase row %d", m.CurrentRow)
+	} else if m.ViewMode == types.ArpeggioView {
+		// Cut row from arpeggio view
+		if m.ArpeggioEditingIndex < 0 || m.ArpeggioEditingIndex >= 255 {
+			return
+		}
+		if m.CurrentRow < 0 || m.CurrentRow >= 16 {
+			return
+		}
+		
+		// Copy current arpeggio row data (3 columns: Direction, Count, Divisor)
+		currentRow := m.ArpeggioSettings[m.ArpeggioEditingIndex].Rows[m.CurrentRow]
+		arpeggioRowData := make([]int, 3)
+		arpeggioRowData[0] = currentRow.Direction
+		arpeggioRowData[1] = currentRow.Count
+		arpeggioRowData[2] = currentRow.Divisor
+		
+		clipboard := types.ClipboardData{
+			RowData:         arpeggioRowData,
+			SourceView:      types.ArpeggioView,
+			Mode:            types.RowMode,
+			HasData:         true,
+			HighlightRow:    m.CurrentRow,
+			HighlightCol:    -1, // Highlight entire row
+			HighlightPhrase: -1, // Not applicable for arpeggio view
+			HighlightView:   types.ArpeggioView,
+		}
+		m.Clipboard = clipboard
+		
+		// Clear the row - reset to defaults
+		currentRowRef := &m.ArpeggioSettings[m.ArpeggioEditingIndex].Rows[m.CurrentRow]
+		currentRowRef.Direction = 0  // Clear to "--"
+		currentRowRef.Count = -1     // Clear to "--"
+		currentRowRef.Divisor = -1   // Clear to "--"
+		
+		log.Printf("Cut arpeggio %02X row %02X", m.ArpeggioEditingIndex, m.CurrentRow)
 	}
 }
 
@@ -1631,6 +1666,17 @@ func PasteRowFromClipboard(m *model.Model) {
 		log.Printf("Pasted phrase row to row %d", m.CurrentRow)
 		// Track this row as the last edited row
 		m.LastEditRow = m.CurrentRow
+	} else if m.ViewMode == types.ArpeggioView && m.Clipboard.SourceView == types.ArpeggioView {
+		// Paste arpeggio row to arpeggio row
+		settings := &m.ArpeggioSettings[m.ArpeggioEditingIndex]
+		if len(m.Clipboard.RowData) == 3 {
+			settings.Rows[m.CurrentRow].Direction = m.Clipboard.RowData[0]
+			settings.Rows[m.CurrentRow].Count = m.Clipboard.RowData[1]
+			settings.Rows[m.CurrentRow].Divisor = m.Clipboard.RowData[2]
+			log.Printf("Pasted arpeggio row to row %d", m.CurrentRow)
+		} else {
+			log.Printf("Cannot paste: invalid arpeggio clipboard data")
+		}
 	} else {
 		log.Printf("Cannot paste: incompatible row types")
 	}
@@ -1678,6 +1724,36 @@ func ClearClipboardHighlight(m *model.Model) {
 	clipboard.HasData = false
 	m.Clipboard = clipboard
 	log.Printf("Cleared clipboard highlight")
+}
+
+// ClearArpeggioCell clears the current cell in Arpeggio Settings view
+func ClearArpeggioCell(m *model.Model) {
+	if m.ViewMode != types.ArpeggioView {
+		return
+	}
+	
+	if m.ArpeggioEditingIndex < 0 || m.ArpeggioEditingIndex >= 255 {
+		return
+	}
+	if m.CurrentRow < 0 || m.CurrentRow >= 16 {
+		return
+	}
+	
+	// Get current row
+	currentRow := &m.ArpeggioSettings[m.ArpeggioEditingIndex].Rows[m.CurrentRow]
+	
+	switch m.CurrentCol {
+	case 0: // DI (Direction) column
+		currentRow.Direction = 0 // Clear to "--"
+		log.Printf("Cleared arpeggio %02X row %02X Direction", m.ArpeggioEditingIndex, m.CurrentRow)
+	case 1: // CO (Count) column
+		currentRow.Count = -1 // Clear to "--"
+		log.Printf("Cleared arpeggio %02X row %02X Count", m.ArpeggioEditingIndex, m.CurrentRow)
+	case 2: // Divisor (/) column
+		currentRow.Divisor = -1 // Clear to "--"
+		log.Printf("Cleared arpeggio %02X row %02X Divisor", m.ArpeggioEditingIndex, m.CurrentRow)
+	}
+	storage.AutoSave(m)
 }
 
 // IsRowEmpty checks if the current row in phrase view is empty
