@@ -798,7 +798,7 @@ type SamplerOSCParams struct {
 }
 
 type InstrumentOSCParams struct {
-	TrackId            int32   // Track ID
+	TrackId            int32 // Track ID
 	NoteOn             int32
 	Notes              []float32 // Note number (MIDI values, but can be fractional)
 	Velocity           float32   // Note velocity (0.0-1.0)
@@ -1000,6 +1000,8 @@ func (m *Model) SendOSCInstrumentMessage(params InstrumentOSCParams) {
 		// log message
 		log.Printf("%s", msg)
 	}
+
+	// TODO: add arpeggio code
 }
 
 func (m *Model) SendOSCSamplerMessage(params SamplerOSCParams) {
