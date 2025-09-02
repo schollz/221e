@@ -1080,92 +1080,96 @@ func (m *Model) sendOSCInstrumentMessage(params InstrumentOSCParams) {
 		return // OSC not configured
 	}
 
-	msg := osc.NewMessage("/instrument")
-	msg.Append(int32(params.TrackId)) // Track ID
-	msg.Append(int32(params.NoteOn))  // Note on (1) or off (0)
-	// add all notes as float32
-	for _, note := range params.Notes {
-		msg.Append(float32(note))
-	}
-	msg.Append("trackVolume")
-	msg.Append(float32(m.TrackSetLevels[params.TrackId]))
-	msg.Append("attack")
-	msg.Append(float32(params.Attack))
-	msg.Append("decay")
-	msg.Append(float32(params.Decay))
-	msg.Append("sustain")
-	msg.Append(float32(params.Sustain))
-	msg.Append("release")
-	msg.Append(float32(params.Release))
-	msg.Append("duration")
-	msg.Append(float32(params.DeltaTime) * float32(params.Gate) / 128.0) // Effective duration in seconds
-	msg.Append("pan")
-	msg.Append(float32(params.Pan))
-	msg.Append("lowPassFilter")
-	msg.Append(float32(params.LowPassFilter))
-	msg.Append("highPassFilter")
-	msg.Append(float32(params.HighPassFilter))
-	msg.Append("effectComb")
-	msg.Append(float32(params.EffectComb))
-	msg.Append("effectReverb")
-	msg.Append(float32(params.EffectReverb))
+	// Check if SoundMaker is configured (SoundMakerIndex != -1 means a SoundMaker is selected)
+	if params.SoundMakerIndex > -1 {
 
-	// Add SoundMaker information
-	var soundMakerName string
-	var valueA, valueB, valueC, valueD float32
+		msg := osc.NewMessage("/instrument")
+		msg.Append(int32(params.TrackId)) // Track ID
+		msg.Append(int32(params.NoteOn))  // Note on (1) or off (0)
+		// add all notes as float32
+		for _, note := range params.Notes {
+			msg.Append(float32(note))
+		}
+		msg.Append("trackVolume")
+		msg.Append(float32(m.TrackSetLevels[params.TrackId]))
+		msg.Append("attack")
+		msg.Append(float32(params.Attack))
+		msg.Append("decay")
+		msg.Append(float32(params.Decay))
+		msg.Append("sustain")
+		msg.Append(float32(params.Sustain))
+		msg.Append("release")
+		msg.Append(float32(params.Release))
+		msg.Append("duration")
+		msg.Append(float32(params.DeltaTime) * float32(params.Gate) / 128.0) // Effective duration in seconds
+		msg.Append("pan")
+		msg.Append(float32(params.Pan))
+		msg.Append("lowPassFilter")
+		msg.Append(float32(params.LowPassFilter))
+		msg.Append("highPassFilter")
+		msg.Append(float32(params.HighPassFilter))
+		msg.Append("effectComb")
+		msg.Append(float32(params.EffectComb))
+		msg.Append("effectReverb")
+		msg.Append(float32(params.EffectReverb))
 
-	if params.SoundMakerIndex == -1 {
-		// No SoundMaker selected
-		soundMakerName = "none"
-		valueA, valueB, valueC, valueD = 0.0, 0.0, 0.0, 0.0
-	} else {
-		// SoundMaker selected, get name and normalize values
-		soundMakerSettings := m.SoundMakerSettings[params.SoundMakerIndex]
-		soundMakerName = soundMakerSettings.Name
+		// Add SoundMaker information
+		var soundMakerName string
+		var valueA, valueB, valueC, valueD float32
 
-		// Normalize A, B, C, D values to 1.0 (values are 0-254, -1 means unset)
-		if soundMakerSettings.A == -1 {
-			valueA = 0.0
+		if params.SoundMakerIndex == -1 {
+			// No SoundMaker selected
+			soundMakerName = "none"
+			valueA, valueB, valueC, valueD = 0.0, 0.0, 0.0, 0.0
 		} else {
-			valueA = float32(soundMakerSettings.A) / 254.0
+			// SoundMaker selected, get name and normalize values
+			soundMakerSettings := m.SoundMakerSettings[params.SoundMakerIndex]
+			soundMakerName = soundMakerSettings.Name
+
+			// Normalize A, B, C, D values to 1.0 (values are 0-254, -1 means unset)
+			if soundMakerSettings.A == -1 {
+				valueA = 0.0
+			} else {
+				valueA = float32(soundMakerSettings.A) / 254.0
+			}
+
+			if soundMakerSettings.B == -1 {
+				valueB = 0.0
+			} else {
+				valueB = float32(soundMakerSettings.B) / 254.0
+			}
+
+			if soundMakerSettings.C == -1 {
+				valueC = 0.0
+			} else {
+				valueC = float32(soundMakerSettings.C) / 254.0
+			}
+
+			if soundMakerSettings.D == -1 {
+				valueD = 0.0
+			} else {
+				valueD = float32(soundMakerSettings.D) / 254.0
+			}
 		}
 
-		if soundMakerSettings.B == -1 {
-			valueB = 0.0
+		msg.Append("soundMakerName")
+		msg.Append(soundMakerName)
+		msg.Append("valueA")
+		msg.Append(valueA)
+		msg.Append("valueB")
+		msg.Append(valueB)
+		msg.Append("valueC")
+		msg.Append(valueC)
+		msg.Append("valueD")
+		msg.Append(valueD)
+
+		err := m.oscClient.Send(msg)
+		if err != nil {
+			log.Printf("Error sending OSC instrument message: %v", err)
 		} else {
-			valueB = float32(soundMakerSettings.B) / 254.0
+			log.Printf("DEBUG: OSC instrument message sent successfully for track %d with notes %v", params.TrackId, params.Notes)
+			log.Printf("%s", msg)
 		}
-
-		if soundMakerSettings.C == -1 {
-			valueC = 0.0
-		} else {
-			valueC = float32(soundMakerSettings.C) / 254.0
-		}
-
-		if soundMakerSettings.D == -1 {
-			valueD = 0.0
-		} else {
-			valueD = float32(soundMakerSettings.D) / 254.0
-		}
-	}
-
-	msg.Append("soundMakerName")
-	msg.Append(soundMakerName)
-	msg.Append("valueA")
-	msg.Append(valueA)
-	msg.Append("valueB")
-	msg.Append(valueB)
-	msg.Append("valueC")
-	msg.Append(valueC)
-	msg.Append("valueD")
-	msg.Append(valueD)
-
-	err := m.oscClient.Send(msg)
-	if err != nil {
-		log.Printf("Error sending OSC instrument message: %v", err)
-	} else {
-		log.Printf("DEBUG: OSC instrument message sent successfully for track %d with notes %v", params.TrackId, params.Notes)
-		log.Printf("%s", msg)
 	}
 
 	// Also send MIDI message if configured
