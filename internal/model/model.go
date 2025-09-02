@@ -943,6 +943,56 @@ func (m *Model) SendOSCInstrumentMessage(params InstrumentOSCParams) {
 	msg.Append("effectReverb")
 	msg.Append(float32(params.EffectReverb))
 
+	// Add SoundMaker information
+	var soundMakerName string
+	var valueA, valueB, valueC, valueD float32
+
+	if params.SoundMakerIndex == -1 {
+		// No SoundMaker selected
+		soundMakerName = "none"
+		valueA, valueB, valueC, valueD = 0.0, 0.0, 0.0, 0.0
+	} else {
+		// SoundMaker selected, get name and normalize values
+		soundMakerSettings := m.SoundMakerSettings[params.SoundMakerIndex]
+		soundMakerName = soundMakerSettings.Name
+
+		// Normalize A, B, C, D values to 1.0 (values are 0-254, -1 means unset)
+		if soundMakerSettings.A == -1 {
+			valueA = 0.0
+		} else {
+			valueA = float32(soundMakerSettings.A) / 254.0
+		}
+
+		if soundMakerSettings.B == -1 {
+			valueB = 0.0
+		} else {
+			valueB = float32(soundMakerSettings.B) / 254.0
+		}
+
+		if soundMakerSettings.C == -1 {
+			valueC = 0.0
+		} else {
+			valueC = float32(soundMakerSettings.C) / 254.0
+		}
+
+		if soundMakerSettings.D == -1 {
+			valueD = 0.0
+		} else {
+			valueD = float32(soundMakerSettings.D) / 254.0
+		}
+	}
+
+	msg.Append("soundMakerName")
+	msg.Append(soundMakerName)
+	msg.Append("valueA")
+	msg.Append(valueA)
+	msg.Append("valueB")
+	msg.Append(valueB)
+	msg.Append("valueC")
+	msg.Append(valueC)
+	msg.Append("valueD")
+	msg.Append(valueD)
+
 	err := m.oscClient.Send(msg)
 	if err != nil {
 		log.Printf("Error sending OSC instrument message: %v", err)
