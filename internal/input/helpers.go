@@ -2165,7 +2165,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 			// TODO: future add detuning things to this?
 			instrumentParams.Notes[i] = float32(note)
 		}
-		m.SendOSCInstrumentMessage(instrumentParams)
+		m.SendOSCInstrumentMessageWithArpeggio(instrumentParams)
 	} else {
 		// For sampler tracks, emit full sampler message
 		m.SendOSCSamplerMessage(oscParams)

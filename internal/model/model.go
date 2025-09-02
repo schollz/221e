@@ -1,9 +1,11 @@
 package model
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/hypebeast/go-osc/osc"
@@ -119,6 +121,9 @@ type Model struct {
 	CurrentMixerRow   int        // Current row in mixer: 0 = level (track type now in Song view)
 	// MIDI functionality
 	AvailableMidiDevices []string
+	// Arpeggio cancellation tracking
+	arpeggioContexts map[int32]context.CancelFunc // Per-track cancellation functions
+	arpeggioMutex    sync.Mutex                   // Mutex for safe access to arpeggioContexts
 }
 
 // Methods for modifying data structures
@@ -533,6 +538,8 @@ func NewModel(oscPort int, saveFile string) *Model {
 		// Initialize file metadata
 		FileMetadata:        make(map[string]types.FileMetadata),
 		MetadataEditingFile: "",
+		// Initialize arpeggio contexts
+		arpeggioContexts: make(map[int32]context.CancelFunc),
 		// Initialize retrigger settings
 		RetriggerEditingIndex: 0,
 		// Initialize timestretch settings
@@ -908,8 +915,27 @@ func NewInstrumentOSCParams(trackId int32, velocity float32, chordType, chordAdd
 	}
 }
 
-func (m *Model) SendOSCInstrumentMessage(params InstrumentOSCParams) {
+// SendOSCInstrumentMessageWithArpeggio is the high-level function that handles arpeggio logic
+func (m *Model) SendOSCInstrumentMessageWithArpeggio(params InstrumentOSCParams) {
+	log.Printf("DEBUG: SendOSCInstrumentMessageWithArpeggio called for track %d", params.TrackId)
+
+	// Send the initial note
+	log.Printf("DEBUG: Sending initial note for track %d: %v", params.TrackId, params.Notes)
+	m.sendOSCInstrumentMessage(params)
+
+	// Arpeggio example with notes [60,67] and divisions [2,1]
+	arpeggioNotes := []float32{60, 61, 62, 63, 67}
+	arpeggioDivisions := []float32{2, 2, 2, 1, 1}
+	log.Printf("DEBUG: Starting arpeggio with notes %v and divisions %v", arpeggioNotes, arpeggioDivisions)
+	m.PlayArpeggio(params, arpeggioNotes, arpeggioDivisions)
+}
+
+// sendOSCInstrumentMessage is the low-level function that sends a single OSC message
+func (m *Model) sendOSCInstrumentMessage(params InstrumentOSCParams) {
+	log.Printf("DEBUG: sendOSCInstrumentMessage called for track %d with notes %v", params.TrackId, params.Notes)
+
 	if m.oscClient == nil {
+		log.Printf("DEBUG: sendOSCInstrumentMessage - OSC client is nil, not sending")
 		return // OSC not configured
 	}
 
@@ -997,11 +1023,105 @@ func (m *Model) SendOSCInstrumentMessage(params InstrumentOSCParams) {
 	if err != nil {
 		log.Printf("Error sending OSC instrument message: %v", err)
 	} else {
-		// log message
+		log.Printf("DEBUG: OSC instrument message sent successfully for track %d with notes %v", params.TrackId, params.Notes)
 		log.Printf("%s", msg)
 	}
+}
 
-	// TODO: add arpeggio code
+// PlayArpeggio plays an arpeggio sequence for the given track with cancellation support
+func (m *Model) PlayArpeggio(params InstrumentOSCParams, notes []float32, divisions []float32) {
+	log.Printf("DEBUG: PlayArpeggio called with trackId=%d, notes=%v, divisions=%v, deltaTime=%f",
+		params.TrackId, notes, divisions, params.DeltaTime)
+
+	if len(notes) == 0 {
+		log.Printf("DEBUG: PlayArpeggio - no notes provided, returning")
+		return
+	}
+
+	if len(divisions) == 0 {
+		log.Printf("DEBUG: PlayArpeggio - no divisions provided, returning")
+		return
+	}
+
+	m.arpeggioMutex.Lock()
+
+	// Cancel any existing arpeggio for this track
+	if cancelFunc, exists := m.arpeggioContexts[params.TrackId]; exists {
+		log.Printf("DEBUG: PlayArpeggio - cancelling existing arpeggio for track %d", params.TrackId)
+		cancelFunc()
+	}
+
+	// Create new cancellable context
+	ctx, cancel := context.WithCancel(context.Background())
+	m.arpeggioContexts[params.TrackId] = cancel
+	m.arpeggioMutex.Unlock()
+
+	log.Printf("DEBUG: PlayArpeggio - starting goroutine for track %d", params.TrackId)
+
+	// Start arpeggio in goroutine
+	go func() {
+		defer func() {
+			// Clean up context when done
+			log.Printf("DEBUG: PlayArpeggio - cleaning up context for track %d", params.TrackId)
+			m.arpeggioMutex.Lock()
+			delete(m.arpeggioContexts, params.TrackId)
+			m.arpeggioMutex.Unlock()
+		}()
+
+		log.Printf("DEBUG: PlayArpeggio - calculating wait time for first note. DeltaTime=%f, divisions[0]=%f",
+			params.DeltaTime, divisions[0])
+
+		if len(notes) > 0 && len(divisions) > 0 {
+			waitTime := time.Duration(float64(params.DeltaTime) / float64(divisions[0]) * float64(time.Second))
+			log.Printf("DEBUG: PlayArpeggio - waiting %v before first arpeggio note", waitTime)
+			select {
+			case <-time.After(waitTime):
+				log.Printf("DEBUG: PlayArpeggio - wait completed for first note")
+			case <-ctx.Done():
+				log.Printf("DEBUG: PlayArpeggio - cancelled during first wait")
+				return
+			}
+		}
+
+		// Play remaining notes in the arpeggio
+		log.Printf("DEBUG: PlayArpeggio - starting loop for notes 1 to %d (total notes: %d, total divisions: %d)",
+			len(notes)-1, len(notes), len(divisions))
+
+		for i := 1; i < len(notes) && i < len(divisions); i++ {
+			select {
+			case <-ctx.Done():
+				log.Printf("DEBUG: PlayArpeggio - cancelled during note %d", i)
+				return
+			default:
+			}
+
+			log.Printf("DEBUG: PlayArpeggio - playing note %d: %f", i, notes[i])
+
+			// Create new params with the arpeggio note
+			arpeggioParams := params
+			arpeggioParams.Notes = []float32{notes[i]}
+
+			// Send OSC message for this arpeggio note
+			m.sendOSCInstrumentMessage(arpeggioParams)
+
+			// Wait for next note based on division
+			if i < len(divisions)-1 {
+				waitTime := time.Duration(float64(params.DeltaTime) / float64(divisions[i]) * float64(time.Second))
+				log.Printf("DEBUG: PlayArpeggio - waiting %v before note %d (division=%f)", waitTime, i+1, divisions[i])
+				select {
+				case <-time.After(waitTime):
+					log.Printf("DEBUG: PlayArpeggio - wait completed for note %d", i+1)
+				case <-ctx.Done():
+					log.Printf("DEBUG: PlayArpeggio - cancelled during wait for note %d", i+1)
+					return
+				}
+			} else {
+				log.Printf("DEBUG: PlayArpeggio - no more divisions, finishing after note %d", i)
+			}
+		}
+
+		log.Printf("DEBUG: PlayArpeggio - arpeggio sequence completed for track %d", params.TrackId)
+	}()
 }
 
 func (m *Model) SendOSCSamplerMessage(params SamplerOSCParams) {
