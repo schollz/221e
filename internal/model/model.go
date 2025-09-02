@@ -919,20 +919,154 @@ func NewInstrumentOSCParams(trackId int32, velocity float32, chordType, chordAdd
 func (m *Model) SendOSCInstrumentMessageWithArpeggio(params InstrumentOSCParams) {
 	log.Printf("DEBUG: SendOSCInstrumentMessageWithArpeggio called for track %d", params.TrackId)
 
-	// Send the initial note
-	log.Printf("DEBUG: Sending initial note for track %d: %v", params.TrackId, params.Notes)
-	m.sendOSCInstrumentMessage(params)
-
+	// Check if we have an arpeggio
 	arpeggioNotes, arpeggioDivisions := m.ProcessArpeggio(params)
+	
 	if len(arpeggioNotes) > 0 {
+		// Arpeggio is active - send only the root note initially
+		log.Printf("DEBUG: Arpeggio active - sending only root note for track %d: %v", params.TrackId, params.Notes[0:1])
+		rootOnlyParams := params
+		rootOnlyParams.Notes = []float32{params.Notes[0]} // Only send the root note
+		m.sendOSCInstrumentMessage(rootOnlyParams)
+		
+		// Start the arpeggio
 		m.PlayArpeggio(params, arpeggioNotes, arpeggioDivisions)
+	} else {
+		// No arpeggio - send the full chord/note as normal
+		log.Printf("DEBUG: No arpeggio - sending full chord/note for track %d: %v", params.TrackId, params.Notes)
+		m.sendOSCInstrumentMessage(params)
 	}
 }
 
 func (m *Model) ProcessArpeggio(params InstrumentOSCParams) (arpeggioNotes []float32, arpeggioDivisions []float32) {
-	// arpeggioNotes = []float32{60, 61, 62, 63, 67}
-	// arpeggioDivisions = []float32{2, 2, 2, 1, 1}
-	return arpeggioNotes, arpeggioDivisions
+	log.Printf("DEBUG: ProcessArpeggio called with ArpeggioIndex=%d", params.ArpeggioIndex)
+	
+	// Check if we have a valid arpeggio index
+	if params.ArpeggioIndex < 0 || params.ArpeggioIndex >= 255 {
+		log.Printf("DEBUG: ProcessArpeggio - invalid arpeggio index, returning empty")
+		return nil, nil
+	}
+
+	arpeggioSettings := m.ArpeggioSettings[params.ArpeggioIndex]
+	log.Printf("DEBUG: ProcessArpeggio - got arpeggio settings")
+	
+	// Get base chord notes
+	baseNote := int(params.Notes[0]) // Assume first note is root
+	chordNotes := types.GetChordNotes(baseNote, 
+		types.ChordType(params.ChordType),
+		types.ChordAddition(params.ChordAddition),
+		types.ChordTransposition(params.ChordTransposition))
+	
+	log.Printf("DEBUG: ProcessArpeggio - base note: %d, chord notes: %v", baseNote, chordNotes)
+	
+	// Convert to float32 for easier processing
+	baseChord := make([]float32, len(chordNotes))
+	for i, note := range chordNotes {
+		baseChord[i] = float32(note)
+	}
+	
+	var resultNotes []float32
+	var resultDivisors []float32
+	
+	// Start with the root note as current position
+	currentNote := baseChord[0]
+	isChord := len(baseChord) > 1
+	
+	log.Printf("DEBUG: ProcessArpeggio - isChord: %v, baseChord: %v", isChord, baseChord)
+	
+	// Process each arpeggio row
+	for rowIdx, row := range arpeggioSettings.Rows {
+		if row.Direction == 0 || row.Count < 0 || row.Divisor < 0 {
+			continue // Skip empty rows ("--" values)
+		}
+		
+		log.Printf("DEBUG: ProcessArpeggio - processing row %d: direction=%d, count=%d, divisor=%d", 
+			rowIdx, row.Direction, row.Count, row.Divisor)
+		
+		isUp := row.Direction == 1 // 1="u-", 2="d-"
+		
+		// Generate notes for this row
+		for i := 0; i < row.Count; i++ {
+			if isChord {
+				// For chords: find current position in chord and move up/down through chord tones
+				currentNote = m.getNextChordNote(currentNote, baseChord, isUp)
+			} else {
+				// For single notes: move up/down by octaves (12 semitones)
+				if isUp {
+					currentNote += 12
+				} else {
+					currentNote -= 12
+				}
+			}
+			
+			resultNotes = append(resultNotes, currentNote)
+			resultDivisors = append(resultDivisors, float32(row.Divisor))
+			
+			log.Printf("DEBUG: ProcessArpeggio - added note: %f, divisor: %d", currentNote, row.Divisor)
+		}
+	}
+	
+	log.Printf("DEBUG: ProcessArpeggio - final result: notes=%v, divisors=%v", 
+		resultNotes, resultDivisors)
+	
+	return resultNotes, resultDivisors
+}
+
+// getNextChordNote finds the next note in the chord sequence when going up or down
+func (m *Model) getNextChordNote(currentNote float32, baseChord []float32, isUp bool) float32 {
+	// Find current position in the chord (considering octaves)
+	baseNote := float32(int(currentNote) % 12)
+	currentOctave := int(currentNote) / 12
+	
+	// Find which chord tone we're currently on
+	currentChordIndex := -1
+	for i, chordNote := range baseChord {
+		if float32(int(chordNote)%12) == baseNote {
+			currentChordIndex = i
+			break
+		}
+	}
+	
+	// If current note is not in chord, find closest
+	if currentChordIndex == -1 {
+		// Find closest chord tone
+		minDist := 12
+		for i, chordNote := range baseChord {
+			dist := int(currentNote) - int(chordNote)
+			if dist < 0 {
+				dist = -dist
+			}
+			dist = dist % 12
+			if dist < minDist {
+				minDist = dist
+				currentChordIndex = i
+			}
+		}
+	}
+	
+	// Move to next chord tone
+	var nextChordIndex int
+	var octaveOffset int
+	
+	if isUp {
+		nextChordIndex = currentChordIndex + 1
+		if nextChordIndex >= len(baseChord) {
+			nextChordIndex = 0
+			octaveOffset = 12
+		}
+	} else {
+		nextChordIndex = currentChordIndex - 1
+		if nextChordIndex < 0 {
+			nextChordIndex = len(baseChord) - 1
+			octaveOffset = -12
+		}
+	}
+	
+	// Calculate the next note
+	nextBaseNote := baseChord[nextChordIndex]
+	nextNote := float32(currentOctave*12) + float32(int(nextBaseNote)%12) + float32(octaveOffset)
+	
+	return nextNote
 }
 
 // sendOSCInstrumentMessage is the low-level function that sends a single OSC message

@@ -225,3 +225,350 @@ func BenchmarkWaveformBufferPush(b *testing.B) {
 		m.PushWaveformSample(0.5, maxCols)
 	}
 }
+
+func TestProcessArpeggio(t *testing.T) {
+	// Create a model with test data
+	model := NewModel(0, "")
+
+	tests := []struct {
+		name                string
+		arpeggioIndex       int
+		arpeggioSettings    types.ArpeggioSettings
+		params              InstrumentOSCParams
+		expectedNotes       []float32
+		expectedDivisors    []float32
+		expectedEmptyResult bool
+	}{
+		{
+			name:          "No arpeggio (invalid index)",
+			arpeggioIndex: -1,
+			params: InstrumentOSCParams{
+				ArpeggioIndex: -1,
+				Notes:         []float32{60}, // C4
+			},
+			expectedEmptyResult: true,
+		},
+		{
+			name:          "Single note - up 2",
+			arpeggioIndex: 1,
+			arpeggioSettings: types.ArpeggioSettings{
+				Rows: [16]types.ArpeggioRow{
+					{Direction: 1, Count: 2, Divisor: 4}, // up, count 2, divisor 4
+				},
+			},
+			params: InstrumentOSCParams{
+				ArpeggioIndex: 1,
+				Notes:         []float32{60}, // C4
+				ChordType:     int(types.ChordNone),
+			},
+			// Up 2: 72, 84 (no removal)
+			expectedNotes:    []float32{72, 84},
+			expectedDivisors: []float32{4, 4},
+		},
+		{
+			name:          "Single note - down 2",
+			arpeggioIndex: 2,
+			arpeggioSettings: types.ArpeggioSettings{
+				Rows: [16]types.ArpeggioRow{
+					{Direction: 2, Count: 2, Divisor: 2}, // down, count 2, divisor 2
+				},
+			},
+			params: InstrumentOSCParams{
+				ArpeggioIndex: 2,
+				Notes:         []float32{60}, // C4
+				ChordType:     int(types.ChordNone),
+			},
+			// Down 2: 48, 36 (no removal)
+			expectedNotes:    []float32{48, 36},
+			expectedDivisors: []float32{2, 2},
+		},
+		{
+			name:          "Major chord - up 3",
+			arpeggioIndex: 3,
+			arpeggioSettings: types.ArpeggioSettings{
+				Rows: [16]types.ArpeggioRow{
+					{Direction: 1, Count: 3, Divisor: 1}, // up, count 3, divisor 1
+				},
+			},
+			params: InstrumentOSCParams{
+				ArpeggioIndex: 3,
+				Notes:         []float32{60}, // C4
+				ChordType:     int(types.ChordMajor),
+			},
+			// C Major = [60, 64, 67]. Up 3: 64, 67, 72 (no removal)
+			expectedNotes:    []float32{64, 67, 72},
+			expectedDivisors: []float32{1, 1, 1},
+		},
+		{
+			name:          "Major chord - up 6 (cross octave)",
+			arpeggioIndex: 4,
+			arpeggioSettings: types.ArpeggioSettings{
+				Rows: [16]types.ArpeggioRow{
+					{Direction: 1, Count: 6, Divisor: 2}, // up, count 6, divisor 2
+				},
+			},
+			params: InstrumentOSCParams{
+				ArpeggioIndex: 4,
+				Notes:         []float32{60}, // C4
+				ChordType:     int(types.ChordMajor),
+			},
+			// C Major = [60, 64, 67]. Up 6: 64, 67, 72(C5), 76(E5), 79(G5), 84(C6) (no removal)
+			expectedNotes:    []float32{64, 67, 72, 76, 79, 84},
+			expectedDivisors: []float32{2, 2, 2, 2, 2, 2},
+		},
+		{
+			name:          "Major chord - down 3",
+			arpeggioIndex: 5,
+			arpeggioSettings: types.ArpeggioSettings{
+				Rows: [16]types.ArpeggioRow{
+					{Direction: 2, Count: 3, Divisor: 3}, // down, count 3, divisor 3
+				},
+			},
+			params: InstrumentOSCParams{
+				ArpeggioIndex: 5,
+				Notes:         []float32{60}, // C4
+				ChordType:     int(types.ChordMajor),
+			},
+			// C Major = [60, 64, 67]. Down 3: 67(prev octave), 64(prev octave), 60(prev octave)
+			// Which is: 55, 52, 48 (no removal)
+			expectedNotes:    []float32{55, 52, 48},
+			expectedDivisors: []float32{3, 3, 3},
+		},
+		{
+			name:          "Multiple rows - up then down",
+			arpeggioIndex: 6,
+			arpeggioSettings: types.ArpeggioSettings{
+				Rows: [16]types.ArpeggioRow{
+					{Direction: 1, Count: 2, Divisor: 1}, // up 2
+					{Direction: 2, Count: 2, Divisor: 2}, // down 2
+				},
+			},
+			params: InstrumentOSCParams{
+				ArpeggioIndex: 6,
+				Notes:         []float32{60}, // C4
+				ChordType:     int(types.ChordMajor),
+			},
+			// C Major = [60, 64, 67]. Up 2: 64, 67. Then down 2 from 67: 64, 60 (no removal)
+			expectedNotes:    []float32{64, 67, 64, 60},
+			expectedDivisors: []float32{1, 1, 2, 2},
+		},
+		{
+			name:          "Skip empty rows",
+			arpeggioIndex: 7,
+			arpeggioSettings: types.ArpeggioSettings{
+				Rows: [16]types.ArpeggioRow{
+					{Direction: 0, Count: -1, Divisor: -1}, // empty row
+					{Direction: 1, Count: 1, Divisor: 4},    // up 1
+					{Direction: 0, Count: 2, Divisor: -1},   // invalid row
+				},
+			},
+			params: InstrumentOSCParams{
+				ArpeggioIndex: 7,
+				Notes:         []float32{60}, // C4
+				ChordType:     int(types.ChordNone),
+			},
+			// Only middle row executes: single note up 1 = 72 (no removal)
+			expectedNotes:    []float32{72},
+			expectedDivisors: []float32{4},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Set up the arpeggio settings
+			if tt.arpeggioIndex >= 0 {
+				model.ArpeggioSettings[tt.arpeggioIndex] = tt.arpeggioSettings
+			}
+
+			// Call the function
+			notes, divisors := model.ProcessArpeggio(tt.params)
+
+			// Check results
+			if tt.expectedEmptyResult {
+				if len(notes) != 0 || len(divisors) != 0 {
+					t.Errorf("Expected empty result, got notes: %v, divisors: %v", notes, divisors)
+				}
+				return
+			}
+
+			if len(notes) != len(tt.expectedNotes) {
+				t.Errorf("Expected %d notes, got %d: %v", len(tt.expectedNotes), len(notes), notes)
+				return
+			}
+
+			if len(divisors) != len(tt.expectedDivisors) {
+				t.Errorf("Expected %d divisors, got %d: %v", len(tt.expectedDivisors), len(divisors), divisors)
+				return
+			}
+
+			for i, expectedNote := range tt.expectedNotes {
+				if notes[i] != expectedNote {
+					t.Errorf("Note %d: expected %f, got %f", i, expectedNote, notes[i])
+				}
+			}
+
+			for i, expectedDivisor := range tt.expectedDivisors {
+				if divisors[i] != expectedDivisor {
+					t.Errorf("Divisor %d: expected %f, got %f", i, expectedDivisor, divisors[i])
+				}
+			}
+		})
+	}
+}
+
+func TestProcessArpeggioWithChordAdditions(t *testing.T) {
+	model := NewModel(0, "")
+
+	tests := []struct {
+		name             string
+		arpeggioIndex    int
+		arpeggioSettings types.ArpeggioSettings
+		baseNote         float32
+		chordType        types.ChordType
+		chordAddition    types.ChordAddition
+		expectedNotes    []float32
+	}{
+		{
+			name:          "Major 7 chord - up 4",
+			arpeggioIndex: 10,
+			arpeggioSettings: types.ArpeggioSettings{
+				Rows: [16]types.ArpeggioRow{
+					{Direction: 1, Count: 4, Divisor: 1},
+				},
+			},
+			baseNote:      60, // C4
+			chordType:     types.ChordMajor,
+			chordAddition: types.ChordAdd7,
+			// C Major 7 = [60, 64, 67, 71]. Up 4: 64, 67, 71, 72 (no removal)
+			expectedNotes: []float32{64, 67, 71, 72},
+		},
+		{
+			name:          "Minor chord - up 3",
+			arpeggioIndex: 11,
+			arpeggioSettings: types.ArpeggioSettings{
+				Rows: [16]types.ArpeggioRow{
+					{Direction: 1, Count: 3, Divisor: 1},
+				},
+			},
+			baseNote:      60, // C4
+			chordType:     types.ChordMinor,
+			chordAddition: types.ChordAddNone,
+			// C Minor = [60, 63, 67]. Up 3: 63, 67, 72 (no removal)
+			expectedNotes: []float32{63, 67, 72},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			model.ArpeggioSettings[tt.arpeggioIndex] = tt.arpeggioSettings
+
+			params := InstrumentOSCParams{
+				ArpeggioIndex:      tt.arpeggioIndex,
+				Notes:              []float32{tt.baseNote},
+				ChordType:          int(tt.chordType),
+				ChordAddition:      int(tt.chordAddition),
+				ChordTransposition: int(types.ChordTransNone),
+			}
+
+			notes, _ := model.ProcessArpeggio(params)
+
+			if len(notes) != len(tt.expectedNotes) {
+				t.Errorf("Expected %d notes, got %d: %v", len(tt.expectedNotes), len(notes), notes)
+				return
+			}
+
+			for i, expectedNote := range tt.expectedNotes {
+				if notes[i] != expectedNote {
+					t.Errorf("Note %d: expected %f, got %f", i, expectedNote, notes[i])
+				}
+			}
+		})
+	}
+}
+
+func TestGetNextChordNote(t *testing.T) {
+	model := NewModel(0, "")
+
+	tests := []struct {
+		name        string
+		currentNote float32
+		baseChord   []float32
+		isUp        bool
+		expected    float32
+	}{
+		{
+			name:        "Major chord - up from root",
+			currentNote: 60, // C4
+			baseChord:   []float32{60, 64, 67}, // C Major
+			isUp:        true,
+			expected:    64, // E4
+		},
+		{
+			name:        "Major chord - up from 3rd (wrap to next octave)",
+			currentNote: 67, // G4
+			baseChord:   []float32{60, 64, 67}, // C Major
+			isUp:        true,
+			expected:    72, // C5
+		},
+		{
+			name:        "Major chord - down from root (wrap to previous octave)",
+			currentNote: 60, // C4
+			baseChord:   []float32{60, 64, 67}, // C Major
+			isUp:        false,
+			expected:    55, // G3
+		},
+		{
+			name:        "Major chord - down from 3rd",
+			currentNote: 67, // G4
+			baseChord:   []float32{60, 64, 67}, // C Major
+			isUp:        false,
+			expected:    64, // E4
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := model.getNextChordNote(tt.currentNote, tt.baseChord, tt.isUp)
+			if result != tt.expected {
+				t.Errorf("Expected %f, got %f", tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestSendOSCInstrumentMessageWithArpeggioInitialNote(t *testing.T) {
+	// This test verifies that when an arpeggio is active, only the root note is sent initially
+	// We can't easily test the actual OSC sending without mocking, but we can test the logic
+	model := NewModel(0, "")
+	
+	// Set up arpeggio settings for index 1
+	model.ArpeggioSettings[1] = types.ArpeggioSettings{
+		Rows: [16]types.ArpeggioRow{
+			{Direction: 1, Count: 2, Divisor: 1}, // up 2
+		},
+	}
+	
+	// Test case 1: Chord with arpeggio should only send root note initially
+	chordParams := InstrumentOSCParams{
+		TrackId:       0,
+		ArpeggioIndex: 1, // Valid arpeggio
+		Notes:         []float32{60, 64, 67}, // C Major chord
+		ChordType:     int(types.ChordMajor),
+	}
+	
+	// This should process the arpeggio and send only the root note (60) initially
+	// The actual testing of OSC message content would require mocking the OSC client
+	// For now, we just verify that the function doesn't panic and processes correctly
+	model.SendOSCInstrumentMessageWithArpeggio(chordParams)
+	
+	// Test case 2: No arpeggio should send full chord
+	noArpeggioParams := InstrumentOSCParams{
+		TrackId:       0,
+		ArpeggioIndex: -1, // No arpeggio
+		Notes:         []float32{60, 64, 67}, // C Major chord
+		ChordType:     int(types.ChordMajor),
+	}
+	
+	// This should send the full chord since no arpeggio is active
+	model.SendOSCInstrumentMessageWithArpeggio(noArpeggioParams)
+}
