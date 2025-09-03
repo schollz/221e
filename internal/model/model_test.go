@@ -380,8 +380,26 @@ func TestProcessArpeggio(t *testing.T) {
 				model.ArpeggioSettings[tt.arpeggioIndex] = tt.arpeggioSettings
 			}
 
+			// Update params to have the full chord notes, just like in real usage
+			// The test params currently have single notes but expect chord behavior
+			// We need to populate Notes with the actual chord notes
+			testParams := tt.params
+			if len(testParams.Notes) == 1 && testParams.ChordType != int(types.ChordNone) {
+				// Generate the chord notes that would be set by helpers.go
+				baseNote := int(testParams.Notes[0])
+				chordNotes := types.GetChordNotes(baseNote,
+					types.ChordType(testParams.ChordType),
+					types.ChordAddition(testParams.ChordAddition),
+					types.ChordTransposition(testParams.ChordTransposition))
+				
+				testParams.Notes = make([]float32, len(chordNotes))
+				for i, note := range chordNotes {
+					testParams.Notes[i] = float32(note)
+				}
+			}
+
 			// Call the function
-			notes, divisors := model.ProcessArpeggio(tt.params)
+			notes, divisors := model.ProcessArpeggio(testParams)
 
 			// Check results
 			if tt.expectedEmptyResult {
@@ -462,12 +480,20 @@ func TestProcessArpeggioWithChordAdditions(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			model.ArpeggioSettings[tt.arpeggioIndex] = tt.arpeggioSettings
 
+			// Generate the full chord notes that would be set by helpers.go
+			chordNotes := types.GetChordNotes(int(tt.baseNote), tt.chordType, tt.chordAddition, types.ChordTransNone)
+			
 			params := InstrumentOSCParams{
 				ArpeggioIndex:      tt.arpeggioIndex,
-				Notes:              []float32{tt.baseNote},
+				Notes:              make([]float32, len(chordNotes)),
 				ChordType:          int(tt.chordType),
 				ChordAddition:      int(tt.chordAddition),
 				ChordTransposition: int(types.ChordTransNone),
+			}
+			
+			// Populate with the actual chord notes
+			for i, note := range chordNotes {
+				params.Notes[i] = float32(note)
 			}
 
 			notes, _ := model.ProcessArpeggio(params)

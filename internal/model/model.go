@@ -952,25 +952,17 @@ func (m *Model) ProcessArpeggio(params InstrumentOSCParams) (arpeggioNotes []flo
 	arpeggioSettings := m.ArpeggioSettings[params.ArpeggioIndex]
 	log.Printf("DEBUG: ProcessArpeggio - got arpeggio settings")
 
-	// Get base chord notes
-	baseNote := int(params.Notes[0]) // Assume first note is root
-	chordNotes := types.GetChordNotes(baseNote,
-		types.ChordType(params.ChordType),
-		types.ChordAddition(params.ChordAddition),
-		types.ChordTransposition(params.ChordTransposition))
+	// Use the chord notes that are already calculated and transposed in params.Notes
+	// This avoids double-transposition since helpers.go already called GetChordNotes with transposition
+	baseChord := make([]float32, len(params.Notes))
+	copy(baseChord, params.Notes)
 
-	log.Printf("DEBUG: ProcessArpeggio - base note: %d, chord notes: %v", baseNote, chordNotes)
-
-	// Convert to float32 for easier processing
-	baseChord := make([]float32, len(chordNotes))
-	for i, note := range chordNotes {
-		baseChord[i] = float32(note)
-	}
+	log.Printf("DEBUG: ProcessArpeggio - using pre-calculated transposed chord notes: %v", baseChord)
 
 	var resultNotes []float32
 	var resultDivisors []float32
 
-	// Start with the root note as current position
+	// Start with the root note as current position (this is already transposed by GetChordNotes)
 	currentNote := baseChord[0]
 	isChord := len(baseChord) > 1
 
