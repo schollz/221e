@@ -192,6 +192,11 @@ func (gms *GlobalMidiState) getOrCreateInstrument(midiinstrument string, channel
 
 // NoteOn is the main function that handles MIDI note-on with duration management
 func NoteOn(midiinstrument string, note float64, velocity float64, duration float64, channel int) error {
+	// Early return for disabled MIDI to avoid initializing RtMidi
+	if midiinstrument == "None" || midiinstrument == "" {
+		return nil
+	}
+
 	gms := getGlobalState()
 
 	noteInt := int(note)
