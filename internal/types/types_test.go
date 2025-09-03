@@ -3,6 +3,8 @@ package types
 import (
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetChordNotes(t *testing.T) {
@@ -103,6 +105,206 @@ func TestGetChordNotes(t *testing.T) {
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Fatalf("GetChordNotes(%d, %v, %v) = %v, want %v",
 					tt.root, tt.ctype, tt.add, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestChordTypeToString(t *testing.T) {
+	tests := []struct {
+		chordType ChordType
+		expected  string
+	}{
+		{ChordNone, "-"},
+		{ChordMajor, "M"},
+		{ChordMinor, "m"},
+		{ChordDominant, "d"},
+		{ChordType(999), "-"}, // Invalid value should default to "-"
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.expected, func(t *testing.T) {
+			result := ChordTypeToString(tt.chordType)
+			if result != tt.expected {
+				t.Errorf("ChordTypeToString(%v) = %q, expected %q", tt.chordType, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestChordAdditionToString(t *testing.T) {
+	tests := []struct {
+		chordAdd ChordAddition
+		expected string
+	}{
+		{ChordAddNone, "-"},
+		{ChordAdd7, "7"},
+		{ChordAdd9, "9"},
+		{ChordAdd4, "4"},
+		{ChordAddition(999), "-"}, // Invalid value should default to "-"
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.expected, func(t *testing.T) {
+			result := ChordAdditionToString(tt.chordAdd)
+			if result != tt.expected {
+				t.Errorf("ChordAdditionToString(%v) = %q, expected %q", tt.chordAdd, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestChordTranspositionToString(t *testing.T) {
+	tests := []struct {
+		chordTrans ChordTransposition
+		expected   string
+	}{
+		{ChordTransNone, "-"},
+		{ChordTrans0, "0"},
+		{ChordTrans1, "1"},
+		{ChordTrans2, "2"},
+		{ChordTrans3, "3"},
+		{ChordTrans4, "4"},
+		{ChordTrans5, "5"},
+		{ChordTrans6, "6"},
+		{ChordTrans7, "7"},
+		{ChordTrans8, "8"},
+		{ChordTrans9, "9"},
+		{ChordTransA, "A"},
+		{ChordTransB, "B"},
+		{ChordTransC, "C"},
+		{ChordTransD, "D"},
+		{ChordTransE, "E"},
+		{ChordTransF, "F"},
+		{ChordTransposition(999), "-"}, // Invalid value should default to "-"
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.expected, func(t *testing.T) {
+			result := ChordTranspositionToString(tt.chordTrans)
+			if result != tt.expected {
+				t.Errorf("ChordTranspositionToString(%v) = %q, expected %q", tt.chordTrans, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestAttackToSeconds(t *testing.T) {
+	tests := []struct {
+		name     string
+		hexValue int
+		expected float32
+	}{
+		{"minimum value", 0, 0.02},
+		{"maximum value", 254, 30.0},
+		{"mid value", 127, 0.77459663}, // Actual exponential midpoint
+		{"below range", -1, 0.02},
+		{"above range", 255, 0.02},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := AttackToSeconds(tt.hexValue)
+			if tt.name == "mid value" {
+				// For exponential functions, check within tolerance
+				assert.InDelta(t, tt.expected, result, 0.1)
+			} else {
+				assert.Equal(t, tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestDecayToSeconds(t *testing.T) {
+	tests := []struct {
+		name     string
+		hexValue int
+		expected float32
+	}{
+		{"minimum value", 0, 0.0},
+		{"maximum value", 254, 30.0},
+		{"mid value", 127, 15.0},
+		{"below range", -1, 0.0},
+		{"above range", 255, 0.0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := DecayToSeconds(tt.hexValue)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestSustainToLevel(t *testing.T) {
+	tests := []struct {
+		name     string
+		hexValue int
+		expected float32
+	}{
+		{"minimum value", 0, 0.0},
+		{"maximum value", 254, 1.0},
+		{"mid value", 127, 0.5},
+		{"below range", -1, 0.0},
+		{"above range", 255, 0.0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := SustainToLevel(tt.hexValue)
+			assert.InDelta(t, tt.expected, result, 0.01)
+		})
+	}
+}
+
+func TestReleaseToSeconds(t *testing.T) {
+	tests := []struct {
+		name     string
+		hexValue int
+		expected float32
+	}{
+		{"minimum value", 0, 0.02},
+		{"maximum value", 254, 30.0},
+		{"mid value", 127, 0.77459663}, // Actual exponential midpoint
+		{"below range", -1, 0.02},
+		{"above range", 255, 0.02},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := ReleaseToSeconds(tt.hexValue)
+			if tt.name == "mid value" {
+				// For exponential functions, check within tolerance
+				assert.InDelta(t, tt.expected, result, 0.1)
+			} else {
+				assert.Equal(t, tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestGetVirtualDefault(t *testing.T) {
+	tests := []struct {
+		name     string
+		col      PhraseColumn
+		expected *VirtualDefaultConfig
+	}{
+		{"ColPitch", ColPitch, &VirtualDefaultConfig{DefaultValue: 0x80}},
+		{"ColGate", ColGate, &VirtualDefaultConfig{DefaultValue: 0x80}},
+		{"ColPan", ColPan, &VirtualDefaultConfig{DefaultValue: 0x80}},
+		{"ColLowPassFilter", ColLowPassFilter, &VirtualDefaultConfig{DefaultValue: 0xFE}},
+		{"ColNote (no default)", ColNote, nil},
+		{"ColFilename (no default)", ColFilename, nil},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := GetVirtualDefault(tt.col)
+			if tt.expected == nil {
+				assert.Nil(t, result)
+			} else {
+				assert.NotNil(t, result)
+				assert.Equal(t, tt.expected.DefaultValue, result.DefaultValue)
 			}
 		})
 	}
