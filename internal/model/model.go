@@ -124,8 +124,9 @@ type Model struct {
 	// MIDI functionality
 	AvailableMidiDevices []string
 	// Arpeggio cancellation tracking
-	arpeggioContexts map[int32]context.CancelFunc // Per-track cancellation functions
-	arpeggioMutex    sync.Mutex                   // Mutex for safe access to arpeggioContexts
+	arpeggioContexts     map[int32]context.CancelFunc // Per-track cancellation functions
+	arpeggioCurrentNotes map[int32][]float32          // Currently playing arpeggio notes for each track
+	arpeggioMutex        sync.Mutex                   // Mutex for safe access to arpeggio tracking
 }
 
 // Methods for modifying data structures
@@ -541,7 +542,8 @@ func NewModel(oscPort int, saveFile string) *Model {
 		FileMetadata:        make(map[string]types.FileMetadata),
 		MetadataEditingFile: "",
 		// Initialize arpeggio contexts
-		arpeggioContexts: make(map[int32]context.CancelFunc),
+		arpeggioContexts:     make(map[int32]context.CancelFunc),
+		arpeggioCurrentNotes: make(map[int32][]float32),
 		// Initialize retrigger settings
 		RetriggerEditingIndex: 0,
 		// Initialize timestretch settings
@@ -917,9 +919,43 @@ func NewInstrumentOSCParams(trackId int32, velocity float32, chordType, chordAdd
 	}
 }
 
+// cancelArpeggioForTrack cancels any existing arpeggio on the given track and sends note-off for currently playing notes
+func (m *Model) cancelArpeggioForTrack(trackId int32) {
+	m.arpeggioMutex.Lock()
+	defer m.arpeggioMutex.Unlock()
+
+	// Cancel any existing arpeggio context
+	if cancelFunc, exists := m.arpeggioContexts[trackId]; exists {
+		log.Printf("DEBUG: cancelArpeggioForTrack - cancelling existing arpeggio for track %d", trackId)
+		cancelFunc()
+		delete(m.arpeggioContexts, trackId)
+	}
+
+	// Send note-off for any currently playing arpeggio notes
+	if currentNotes, exists := m.arpeggioCurrentNotes[trackId]; exists && len(currentNotes) > 0 {
+		log.Printf("DEBUG: cancelArpeggioForTrack - sending note-off for %d notes on track %d", len(currentNotes), trackId)
+
+		// Create note-off parameters based on the current notes
+		noteOffParams := InstrumentOSCParams{
+			TrackId: trackId,
+			NoteOn:  0, // 0 = note-off
+			Notes:   currentNotes,
+		}
+
+		// Send note-off message
+		m.sendOSCInstrumentMessage(noteOffParams)
+
+		// Clear the current notes
+		delete(m.arpeggioCurrentNotes, trackId)
+	}
+}
+
 // SendOSCInstrumentMessageWithArpeggio is the high-level function that handles arpeggio logic
 func (m *Model) SendOSCInstrumentMessageWithArpeggio(params InstrumentOSCParams) {
 	log.Printf("DEBUG: SendOSCInstrumentMessageWithArpeggio called for track %d", params.TrackId)
+
+	// ALWAYS cancel any existing arpeggio on this track (whether new note has arpeggio or not)
+	m.cancelArpeggioForTrack(params.TrackId)
 
 	// Check if we have an arpeggio
 	arpeggioNotes, arpeggioDivisions := m.ProcessArpeggio(params)
@@ -1008,59 +1044,69 @@ func (m *Model) ProcessArpeggio(params InstrumentOSCParams) (arpeggioNotes []flo
 
 // getNextChordNote finds the next note in the chord sequence when going up or down
 func (m *Model) getNextChordNote(currentNote float32, baseChord []float32, isUp bool) float32 {
-	// Find current position in the chord (considering octaves)
-	baseNote := float32(int(currentNote) % 12)
-	currentOctave := int(currentNote) / 12
-
-	// Find which chord tone we're currently on
+	// Find the current position in the chord - try exact match first
 	currentChordIndex := -1
+	octaveOffset := 0
+
 	for i, chordNote := range baseChord {
-		if float32(int(chordNote)%12) == baseNote {
+		if chordNote == currentNote {
 			currentChordIndex = i
 			break
 		}
 	}
 
-	// If current note is not in chord, find closest
+	// If no exact match, find by note class (mod 12) and calculate octave offset
 	if currentChordIndex == -1 {
-		// Find closest chord tone
-		minDist := 12
+		baseNote := int(currentNote) % 12
+		minDist := 1000
 		for i, chordNote := range baseChord {
-			dist := int(currentNote) - int(chordNote)
+			if int(chordNote)%12 == baseNote {
+				dist := int(currentNote - chordNote)
+				if dist < 0 {
+					dist = -dist
+				}
+				if dist < minDist {
+					minDist = dist
+					currentChordIndex = i
+					// Calculate how many octaves above the base chord we are
+					octaveOffset = int(currentNote-chordNote) / 12 * 12
+				}
+			}
+		}
+	}
+
+	// If still not found, find the closest note overall
+	if currentChordIndex == -1 {
+		minDist := float32(1000)
+		for i, chordNote := range baseChord {
+			dist := currentNote - chordNote
 			if dist < 0 {
 				dist = -dist
 			}
-			dist = dist % 12
 			if dist < minDist {
 				minDist = dist
 				currentChordIndex = i
+				octaveOffset = int(currentNote-chordNote) / 12 * 12
 			}
 		}
 	}
 
-	// Move to next chord tone
-	var nextChordIndex int
-	var octaveOffset int
-
+	// Move to next chord tone - preserve octave relationships
 	if isUp {
-		nextChordIndex = currentChordIndex + 1
-		if nextChordIndex >= len(baseChord) {
-			nextChordIndex = 0
-			octaveOffset = 12
+		nextIndex := currentChordIndex + 1
+		if nextIndex >= len(baseChord) {
+			// Wrap around to beginning and add octave
+			return baseChord[0] + float32(octaveOffset) + 12
 		}
+		return baseChord[nextIndex] + float32(octaveOffset)
 	} else {
-		nextChordIndex = currentChordIndex - 1
-		if nextChordIndex < 0 {
-			nextChordIndex = len(baseChord) - 1
-			octaveOffset = -12
+		nextIndex := currentChordIndex - 1
+		if nextIndex < 0 {
+			// Wrap around to end and subtract octave
+			return baseChord[len(baseChord)-1] + float32(octaveOffset) - 12
 		}
+		return baseChord[nextIndex] + float32(octaveOffset)
 	}
-
-	// Calculate the next note
-	nextBaseNote := baseChord[nextChordIndex]
-	nextNote := float32(currentOctave*12) + float32(int(nextBaseNote)%12) + float32(octaveOffset)
-
-	return nextNote
 }
 
 // sendOSCInstrumentMessage is the low-level function that sends a single OSC message
@@ -1233,17 +1279,12 @@ func (m *Model) PlayArpeggio(params InstrumentOSCParams, notes []float32, divisi
 		return
 	}
 
-	m.arpeggioMutex.Lock()
-
-	// Cancel any existing arpeggio for this track
-	if cancelFunc, exists := m.arpeggioContexts[params.TrackId]; exists {
-		log.Printf("DEBUG: PlayArpeggio - cancelling existing arpeggio for track %d", params.TrackId)
-		cancelFunc()
-	}
-
-	// Create new cancellable context
+	// Create new cancellable context and store it
 	ctx, cancel := context.WithCancel(context.Background())
+	m.arpeggioMutex.Lock()
 	m.arpeggioContexts[params.TrackId] = cancel
+	// Initialize tracking with the root note (already sent)
+	m.arpeggioCurrentNotes[params.TrackId] = []float32{params.Notes[0]}
 	m.arpeggioMutex.Unlock()
 
 	log.Printf("DEBUG: PlayArpeggio - starting goroutine for track %d", params.TrackId)
@@ -1293,6 +1334,11 @@ func (m *Model) PlayArpeggio(params InstrumentOSCParams, notes []float32, divisi
 
 			// Send OSC message for this arpeggio note
 			m.sendOSCInstrumentMessage(arpeggioParams)
+
+			// Update currently playing note tracking
+			m.arpeggioMutex.Lock()
+			m.arpeggioCurrentNotes[params.TrackId] = []float32{notes[i]}
+			m.arpeggioMutex.Unlock()
 
 			// Wait for next note based on division
 			if i < len(divisions)-1 {

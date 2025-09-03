@@ -26,6 +26,19 @@ import (
 type scReadyMsg struct{}
 
 func main() {
+	// Redirect stderr to discard to suppress C library error messages like "MidiOutAlsa::sendMessage: incomplete message!"
+	// This prevents MIDI library errors from interrupting the TUI display
+	devNull, err := os.OpenFile(os.DevNull, os.O_WRONLY, 0)
+	if err == nil {
+		// Save original stderr for potential restoration
+		originalStderr := os.Stderr
+		os.Stderr = devNull
+		defer func() {
+			devNull.Close()
+			os.Stderr = originalStderr
+		}()
+	}
+
 	log.SetOutput(io.Discard)
 
 	// Start CPU profiling for the first 30 seconds

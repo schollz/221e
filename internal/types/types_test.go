@@ -79,12 +79,20 @@ func TestGetChordNotes(t *testing.T) {
 			want:      []int{60, 63, 67, 65}, // 60 + 5 appended after triad
 		},
 		{
-			name:      "Minor + 2 transpose",
-			root:      60,
+			name:      "Minor + 2 transpose (chord rotation)",
+			root:      60, // C minor = C, Eb, G = [60, 63, 67]
 			ctype:     ChordMinor,
 			add:       ChordAddNone,
-			transpose: ChordTrans2,
+			transpose: ChordTrans2, // t=2: G, C+oct, Eb+oct = [67, 72, 75]
 			want:      []int{67, 72, 75},
+		},
+		{
+			name:      "Major + 2 transpose (chord rotation)",
+			root:      60, // C major = C, E, G = [60, 64, 67]
+			ctype:     ChordMajor,
+			add:       ChordAddNone,
+			transpose: ChordTrans2, // t=2: G, C+oct, E+oct = [67, 72, 76]
+			want:      []int{67, 72, 76},
 		},
 	}
 

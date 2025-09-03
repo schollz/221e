@@ -391,7 +391,7 @@ func TestProcessArpeggio(t *testing.T) {
 					types.ChordType(testParams.ChordType),
 					types.ChordAddition(testParams.ChordAddition),
 					types.ChordTransposition(testParams.ChordTransposition))
-				
+
 				testParams.Notes = make([]float32, len(chordNotes))
 				for i, note := range chordNotes {
 					testParams.Notes[i] = float32(note)
@@ -482,7 +482,7 @@ func TestProcessArpeggioWithChordAdditions(t *testing.T) {
 
 			// Generate the full chord notes that would be set by helpers.go
 			chordNotes := types.GetChordNotes(int(tt.baseNote), tt.chordType, tt.chordAddition, types.ChordTransNone)
-			
+
 			params := InstrumentOSCParams{
 				ArpeggioIndex:      tt.arpeggioIndex,
 				Notes:              make([]float32, len(chordNotes)),
@@ -490,7 +490,7 @@ func TestProcessArpeggioWithChordAdditions(t *testing.T) {
 				ChordAddition:      int(tt.chordAddition),
 				ChordTransposition: int(types.ChordTransNone),
 			}
-			
+
 			// Populate with the actual chord notes
 			for i, note := range chordNotes {
 				params.Notes[i] = float32(note)
@@ -557,6 +557,135 @@ func TestGetNextChordNote(t *testing.T) {
 			result := model.getNextChordNote(tt.currentNote, tt.baseChord, tt.isUp)
 			if result != tt.expected {
 				t.Errorf("Expected %f, got %f", tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestGetNextChordNoteWithRotatedChord(t *testing.T) {
+	model := NewModel(0, "")
+
+	tests := []struct {
+		name        string
+		currentNote float32
+		baseChord   []float32
+		isUp        bool
+		expected    float32
+	}{
+		{
+			name:        "Rotated chord (t=2) - up from G (should go to C+octave)",
+			currentNote: 67,                    // G4 (first note in rotated chord)
+			baseChord:   []float32{67, 72, 76}, // G, C+oct, E+oct (C major t=2)
+			isUp:        true,
+			expected:    72, // C5
+		},
+		{
+			name:        "Rotated chord (t=2) - up from C+octave (should go to E+octave)",
+			currentNote: 72,                    // C5 (second note in rotated chord)
+			baseChord:   []float32{67, 72, 76}, // G, C+oct, E+oct (C major t=2)
+			isUp:        true,
+			expected:    76, // E5
+		},
+		{
+			name:        "Rotated chord (t=2) - up from E+octave (should wrap to G+octave)",
+			currentNote: 76,                    // E5 (third note in rotated chord)
+			baseChord:   []float32{67, 72, 76}, // G, C+oct, E+oct (C major t=2)
+			isUp:        true,
+			expected:    79, // G5 (67+12)
+		},
+		{
+			name:        "Rotated chord (t=2) - down from G (should wrap to E+octave-octave)",
+			currentNote: 67,                    // G4 (first note in rotated chord)
+			baseChord:   []float32{67, 72, 76}, // G, C+oct, E+oct (C major t=2)
+			isUp:        false,
+			expected:    64, // E4 (76-12)
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := model.getNextChordNote(tt.currentNote, tt.baseChord, tt.isUp)
+			if result != tt.expected {
+				t.Errorf("Expected %f, got %f", tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestProcessArpeggioWithRotatedChord(t *testing.T) {
+	model := NewModel(0, "")
+
+	tests := []struct {
+		name             string
+		arpeggioIndex    int
+		arpeggioSettings types.ArpeggioSettings
+		baseNote         int
+		chordType        types.ChordType
+		transpose        types.ChordTransposition
+		expectedNotes    []float32
+	}{
+		{
+			name:          "C Major chord with t=2 - up 3 (should go G->C+oct->E+oct)",
+			arpeggioIndex: 20,
+			arpeggioSettings: types.ArpeggioSettings{
+				Rows: [16]types.ArpeggioRow{
+					{Direction: 1, Count: 3, Divisor: 1}, // up 3
+				},
+			},
+			baseNote:  60, // C4
+			chordType: types.ChordMajor,
+			transpose: types.ChordTrans2, // t=2 gives us [G, C+oct, E+oct] = [67, 72, 76]
+			// Starting from G(67), up 3 should give us: C+oct(72), E+oct(76), G+oct(79)
+			expectedNotes: []float32{72, 76, 79},
+		},
+		{
+			name:          "C Minor chord with t=1 - up 4",
+			arpeggioIndex: 21,
+			arpeggioSettings: types.ArpeggioSettings{
+				Rows: [16]types.ArpeggioRow{
+					{Direction: 1, Count: 4, Divisor: 1}, // up 4
+				},
+			},
+			baseNote:  60, // C4
+			chordType: types.ChordMinor,
+			transpose: types.ChordTrans1, // t=1 gives us [Eb, G, C+oct] = [63, 67, 72]
+			// Starting from Eb(63), up 4 should give us: G(67), C+oct(72), Eb+oct(75), G+oct(79)
+			expectedNotes: []float32{67, 72, 75, 79},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			model.ArpeggioSettings[tt.arpeggioIndex] = tt.arpeggioSettings
+
+			// Generate the rotated chord notes
+			chordNotes := types.GetChordNotes(tt.baseNote, tt.chordType, types.ChordAddNone, tt.transpose)
+
+			params := InstrumentOSCParams{
+				ArpeggioIndex:      tt.arpeggioIndex,
+				Notes:              make([]float32, len(chordNotes)),
+				ChordType:          int(tt.chordType),
+				ChordTransposition: int(tt.transpose),
+			}
+
+			// Convert to float32
+			for i, note := range chordNotes {
+				params.Notes[i] = float32(note)
+			}
+
+			notes, _ := model.ProcessArpeggio(params)
+
+			if len(notes) != len(tt.expectedNotes) {
+				t.Errorf("Expected %d notes, got %d: %v (from chord %v)",
+					len(tt.expectedNotes), len(notes), notes, params.Notes)
+				return
+			}
+
+			for i, expectedNote := range tt.expectedNotes {
+				if notes[i] != expectedNote {
+					t.Errorf("Note %d: expected %f, got %f (from chord %v)",
+						i, expectedNote, notes[i], params.Notes)
+				}
 			}
 		})
 	}

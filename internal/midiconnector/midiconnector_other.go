@@ -4,6 +4,7 @@ package midiconnector
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"sync"
 
@@ -94,6 +95,8 @@ func (d *Device) NoteOn(channel, note, velocity uint8) (err error) {
 	if out, ok := devicesOpen[d.name]; ok {
 		err = out.Send([]byte{0x90 | channel, note, velocity})
 		if err != nil {
+			// Log MIDI errors instead of letting them print to stderr
+			log.Printf("MIDI NoteOn error for device %s: %v", d.name, err)
 		} else {
 			d.notesOn[note] = channel
 		}
@@ -107,6 +110,8 @@ func (d *Device) NoteOff(channel, note uint8) (err error) {
 	if out, ok := devicesOpen[d.name]; ok {
 		err = out.Send([]byte{0x80 | channel, note, 0})
 		if err != nil {
+			// Log MIDI errors instead of letting them print to stderr
+			log.Printf("MIDI NoteOff error for device %s: %v", d.name, err)
 		} else {
 			delete(d.notesOn, note)
 		}
