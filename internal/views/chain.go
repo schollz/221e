@@ -31,14 +31,9 @@ func RenderChainView(m *model.Model) string {
 				if m.PlaybackMode == types.SongView {
 					// In song playback, check if this track's chain row is playing
 					if m.SongPlaybackActive[m.CurrentTrack] &&
-						m.SongPlaybackChain[m.CurrentTrack] == chainIndex {
-						// Find which chain row contains the current phrase
-						currentPhrase := m.SongPlaybackPhrase[m.CurrentTrack]
-						// Use track-specific chain data
-						chainsData := m.GetChainsDataForTrack(m.CurrentTrack)
-						if (*chainsData)[chainIndex][row] == currentPhrase {
-							playingOnThisRow = true
-						}
+						m.SongPlaybackChain[m.CurrentTrack] == chainIndex &&
+						m.SongPlaybackChainRow[m.CurrentTrack] == row {
+						playingOnThisRow = true
 					}
 				} else if m.PlaybackMode == types.ChainView {
 					// In chain playback, check if this is the current chain row
