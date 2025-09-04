@@ -26,6 +26,8 @@ jobs:
         run: go test -v ./...
       - name: Build Go project
         run: go build -v
+      - name: Verify binary 
+        run: ./2n --help
 
   linux:
     runs-on: ubuntu-latest
@@ -40,6 +42,8 @@ jobs:
         run: go test -v ./...
       - name: Build Go project
         run: go build -v
+      - name: Verify binary 
+        run: ./2n --help
 
   alpine:
     runs-on: ubuntu-latest
@@ -77,17 +81,13 @@ jobs:
           export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
           export CGO_CFLAGS="-I/usr/local/include"
           export CGO_LDFLAGS="-L/usr/local/lib"
-          CGO_ENABLED=1 go build -buildvcs=false -ldflags '-linkmode external -extldflags "-static -L/usr/local/lib"' -o 2n-static
+          CGO_ENABLED=1 go build -buildvcs=false -ldflags '-linkmode external -extldflags "-static -L/usr/local/lib"'
       - name: Verify static binary
         run: |
-          file 2n-static
-          (ldd 2n-static 2>/dev/null || echo "✓ Static binary!")
-          ls -lh 2n-static
-      - name: Upload Alpine static binary
-        uses: actions/upload-artifact@v4
-        with:
-          name: alpine-static-binary
-          path: 2n-static
+          file 2n
+          (ldd 2n 2>/dev/null || echo "✓ Static binary!")
+          ls -lh 2n
+          ./2n --help
 
   windows:
     runs-on: windows-latest
@@ -117,3 +117,6 @@ jobs:
       - name: Build Go project
         run: |
           go build -v
+      - name: Verify binary
+        run: |
+          ./2n.exe --help
