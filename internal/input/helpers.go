@@ -2657,6 +2657,8 @@ func DeepCopyToClipboard(m *model.Model) {
 		DeepCopyChainToClipboard(m)
 	} else if m.ViewMode == types.ChainView {
 		DeepCopyPhraseToClipboard(m)
+	} else if m.ViewMode == types.PhraseView {
+		DeepCopyCurrentPhraseToClipboard(m)
 	} else {
 		log.Printf("Deep copy not supported in this view")
 	}
@@ -2704,10 +2706,11 @@ func DeepCopyPhraseToClipboard(m *model.Model) {
 		return
 	}
 
-	// In Chain view, always use the phrase from the current row, regardless of column
-	sourcePhraseID := m.ChainsData[m.CurrentRow][1]
+	// In Chain view, get the phrase from the current row
+	chainsData := m.GetCurrentChainsData()
+	sourcePhraseID := (*chainsData)[m.CurrentChain][m.CurrentRow]
 	if sourcePhraseID == -1 {
-		log.Printf("Cannot deep copy: no phrase at chain %d row %d (cell is empty)", m.CurrentChain, m.CurrentRow)
+		log.Printf("Cannot deep copy: no phrase at chain %02X row %02X (cell is empty)", m.CurrentChain, m.CurrentRow)
 		return
 	}
 
@@ -2717,7 +2720,7 @@ func DeepCopyPhraseToClipboard(m *model.Model) {
 		return
 	}
 
-	// Find next unused phrase
+	// Find next unused phrase in the same pool (Sampler/Instrument)
 	destPhraseID := FindNextUnusedPhrase(m, sourcePhraseID)
 	if destPhraseID == -1 {
 		log.Printf("Cannot deep copy: no unused phrases available")
@@ -2730,10 +2733,31 @@ func DeepCopyPhraseToClipboard(m *model.Model) {
 		return
 	}
 
+	// Get the appropriate phrases data for the current pool
+	phrasesData := m.GetCurrentPhrasesData()
+
 	// Copy all 255 rows of phrase data from source to destination
 	for row := 0; row < 255; row++ {
 		for col := 0; col < int(types.ColCount); col++ {
-			m.PhrasesData[destPhraseID][row][col] = m.PhrasesData[sourcePhraseID][row][col]
+			(*phrasesData)[destPhraseID][row][col] = (*phrasesData)[sourcePhraseID][row][col]
+		}
+	}
+
+	// For sampler phrases, also copy any associated file references
+	if m.GetPhraseViewType() == types.SamplerPhraseView {
+		phrasesFiles := m.GetCurrentPhrasesFiles()
+		if phrasesFiles != nil {
+			// Copy file references by duplicating entries in the files array
+			for row := 0; row < 255; row++ {
+				fileIndex := (*phrasesData)[sourcePhraseID][row][types.ColFilename]
+				if fileIndex >= 0 && fileIndex < len(*phrasesFiles) && (*phrasesFiles)[fileIndex] != "" {
+					// Add the same file to the files array and update the destination phrase
+					filename := (*phrasesFiles)[fileIndex]
+					newFileIndex := len(*phrasesFiles)
+					*phrasesFiles = append(*phrasesFiles, filename)
+					(*phrasesData)[destPhraseID][row][types.ColFilename] = newFileIndex
+				}
+			}
 		}
 	}
 
@@ -2747,6 +2771,64 @@ func DeepCopyPhraseToClipboard(m *model.Model) {
 		HighlightCol:    m.CurrentCol,
 		HighlightPhrase: -1,
 		HighlightView:   types.ChainView,
+	}
+	m.Clipboard = clipboard
+
+	log.Printf("Deep copied phrase %02X to phrase %02X", sourcePhraseID, destPhraseID)
+}
+
+func DeepCopyCurrentPhraseToClipboard(m *model.Model) {
+	sourcePhraseID := m.CurrentPhrase
+	if sourcePhraseID < 0 || sourcePhraseID >= 255 {
+		log.Printf("Cannot deep copy: invalid current phrase ID %d", sourcePhraseID)
+		return
+	}
+
+	// Find next unused phrase in the same pool (Sampler/Instrument)
+	destPhraseID := FindNextUnusedPhrase(m, sourcePhraseID)
+	if destPhraseID == -1 {
+		log.Printf("Cannot deep copy: no unused phrases available")
+		return
+	}
+
+	// Get the appropriate phrases data for the current pool
+	phrasesData := m.GetCurrentPhrasesData()
+	
+	// Copy all 255 rows of phrase data from source to destination
+	for row := 0; row < 255; row++ {
+		for col := 0; col < int(types.ColCount); col++ {
+			(*phrasesData)[destPhraseID][row][col] = (*phrasesData)[sourcePhraseID][row][col]
+		}
+	}
+
+	// For sampler phrases, also copy any associated file references
+	if m.GetPhraseViewType() == types.SamplerPhraseView {
+		phrasesFiles := m.GetCurrentPhrasesFiles()
+		if phrasesFiles != nil {
+			// Copy file references by duplicating entries in the files array
+			for row := 0; row < 255; row++ {
+				fileIndex := (*phrasesData)[sourcePhraseID][row][types.ColFilename]
+				if fileIndex >= 0 && fileIndex < len(*phrasesFiles) && (*phrasesFiles)[fileIndex] != "" {
+					// Add the same file to the files array and update the destination phrase
+					filename := (*phrasesFiles)[fileIndex]
+					newFileIndex := len(*phrasesFiles)
+					*phrasesFiles = append(*phrasesFiles, filename)
+					(*phrasesData)[destPhraseID][row][types.ColFilename] = newFileIndex
+				}
+			}
+		}
+	}
+
+	// Put the new phrase ID in clipboard for pasting
+	clipboard := types.ClipboardData{
+		Value:           destPhraseID,
+		CellType:        types.HexCell,
+		Mode:            types.CellMode,
+		HasData:         true,
+		HighlightRow:    m.CurrentRow,
+		HighlightCol:    m.CurrentCol,
+		HighlightPhrase: destPhraseID,
+		HighlightView:   types.PhraseView,
 	}
 	m.Clipboard = clipboard
 
