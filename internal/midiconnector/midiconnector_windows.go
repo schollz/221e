@@ -20,6 +20,7 @@ type Device struct {
 
 func filterName(name string) (foundName string, foundNum int, err error) {
 	names := Devices()
+	foundNum = -1
 	for i, n := range names {
 		if strings.Contains(strings.ToLower(n), strings.ToLower(name)) {
 			foundName = n
@@ -37,6 +38,7 @@ func New(name string) (*Device, error) {
 	var d Device
 	var err error
 	d.name, d.num, err = filterName(name)
+	d.notesOn = make(map[uint8]bool)
 	return &d, err
 }
 
@@ -79,10 +81,8 @@ func (d *Device) NoteOn(channel, note, velocity uint8) (err error) {
 	if hmo, ok := devicesOpen[d.name]; ok {
 		if sendNoteOn(hmo, channel, note, velocity) != 0 {
 			err = fmt.Errorf("failed to send Note On message")
-			if err != nil {
-			} else {
-				d.notesOn[note] = true
-			}
+		} else {
+			d.notesOn[note] = true
 		}
 	}
 	return
@@ -97,10 +97,8 @@ func (d *Device) NoteOff(channel, note uint8) (err error) {
 		noteOff |= uint32(0) << 16 // Set velocity to 0 for Note Off
 		if midiOutShortMsg(hmo, noteOff) != 0 {
 			err = fmt.Errorf("failed to send Note Off message")
-			if err != nil {
-			} else {
-				delete(d.notesOn, note)
-			}
+		} else {
+			delete(d.notesOn, note)
 		}
 	}
 	return
