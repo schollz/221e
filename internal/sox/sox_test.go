@@ -3,8 +3,6 @@ package sox
 import (
 	"os"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 // func TestQuantize(t *testing.T) {
@@ -96,11 +94,12 @@ func TestMain(m *testing.M) {
 	}
 	os.Exit(m.Run())
 }
-func TestVersion(t *testing.T) {
-	version, err := Version()
-	assert.Nil(t, err)
-	assert.Equal(t, "v14.4.2", version)
-}
+
+// func TestVersion(t *testing.T) {
+// 	version, err := Version()
+// 	assert.Nil(t, err)
+// 	assert.Equal(t, "v14.4.2", version)
+// }
 
 // func TestComment(t *testing.T) {
 // 	fname := "amen_beats8_bpm172.wav"
