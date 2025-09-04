@@ -16,7 +16,7 @@ func TestParse(t *testing.T) {
 		// Check if parsing logic worked before hardware error
 		if err != nil {
 			// Expected error due to no MIDI hardware
-			assert.Contains(t, err.Error(), "MIDI")
+			assert.Contains(t, err.Error(), "can't find MIDI")
 		} else {
 			// If no error (somehow), verify the parsing worked
 			assert.Equal(t, "midi-testdevice-4", p.Name) // Channel 5 -> 4 (0-indexed)
@@ -45,7 +45,7 @@ func TestParse(t *testing.T) {
 		// Should default to channel 0 when parse fails, then try to create device
 		if err != nil {
 			// Expected error due to no MIDI hardware
-			assert.Contains(t, err.Error(), "MIDI")
+			assert.Contains(t, err.Error(), "can't find MIDI")
 		}
 	})
 
