@@ -2761,6 +2761,33 @@ func DeepCopyPhraseToClipboard(m *model.Model) {
 		}
 	}
 
+	// Copy and remap arpeggio settings referenced in the phrase
+	arpeggioMapping := make(map[int]int) // Map from source arpeggio index to destination arpeggio index
+	for row := 0; row < 255; row++ {
+		arpeggioIndex := (*phrasesData)[destPhraseID][row][types.ColArpeggio]
+		if arpeggioIndex >= 0 && arpeggioIndex < 255 {
+			// Check if we already have a mapping for this arpeggio index
+			if newArpeggioIndex, exists := arpeggioMapping[arpeggioIndex]; exists {
+				// Use existing mapping
+				(*phrasesData)[destPhraseID][row][types.ColArpeggio] = newArpeggioIndex
+			} else {
+				// Find next unused arpeggio slot and copy the settings
+				newArpeggioIndex := FindNextUnusedArpeggio(m, arpeggioIndex)
+				if newArpeggioIndex != -1 {
+					// Copy the arpeggio settings
+					m.ArpeggioSettings[newArpeggioIndex] = m.ArpeggioSettings[arpeggioIndex]
+					// Store mapping and update the phrase data
+					arpeggioMapping[arpeggioIndex] = newArpeggioIndex
+					(*phrasesData)[destPhraseID][row][types.ColArpeggio] = newArpeggioIndex
+					log.Printf("Deep copied arpeggio settings %02X to %02X", arpeggioIndex, newArpeggioIndex)
+				} else {
+					// No unused arpeggio slots available, keep original reference
+					log.Printf("Warning: No unused arpeggio slots available for copying arpeggio %02X", arpeggioIndex)
+				}
+			}
+		}
+	}
+
 	// Put the new phrase ID in clipboard
 	clipboard := types.ClipboardData{
 		Value:           destPhraseID,
@@ -2793,7 +2820,7 @@ func DeepCopyCurrentPhraseToClipboard(m *model.Model) {
 
 	// Get the appropriate phrases data for the current pool
 	phrasesData := m.GetCurrentPhrasesData()
-	
+
 	// Copy all 255 rows of phrase data from source to destination
 	for row := 0; row < 255; row++ {
 		for col := 0; col < int(types.ColCount); col++ {
@@ -2814,6 +2841,33 @@ func DeepCopyCurrentPhraseToClipboard(m *model.Model) {
 					newFileIndex := len(*phrasesFiles)
 					*phrasesFiles = append(*phrasesFiles, filename)
 					(*phrasesData)[destPhraseID][row][types.ColFilename] = newFileIndex
+				}
+			}
+		}
+	}
+
+	// Copy and remap arpeggio settings referenced in the phrase
+	arpeggioMapping := make(map[int]int) // Map from source arpeggio index to destination arpeggio index
+	for row := 0; row < 255; row++ {
+		arpeggioIndex := (*phrasesData)[destPhraseID][row][types.ColArpeggio]
+		if arpeggioIndex >= 0 && arpeggioIndex < 255 {
+			// Check if we already have a mapping for this arpeggio index
+			if newArpeggioIndex, exists := arpeggioMapping[arpeggioIndex]; exists {
+				// Use existing mapping
+				(*phrasesData)[destPhraseID][row][types.ColArpeggio] = newArpeggioIndex
+			} else {
+				// Find next unused arpeggio slot and copy the settings
+				newArpeggioIndex := FindNextUnusedArpeggio(m, arpeggioIndex)
+				if newArpeggioIndex != -1 {
+					// Copy the arpeggio settings
+					m.ArpeggioSettings[newArpeggioIndex] = m.ArpeggioSettings[arpeggioIndex]
+					// Store mapping and update the phrase data
+					arpeggioMapping[arpeggioIndex] = newArpeggioIndex
+					(*phrasesData)[destPhraseID][row][types.ColArpeggio] = newArpeggioIndex
+					log.Printf("Deep copied arpeggio settings %02X to %02X", arpeggioIndex, newArpeggioIndex)
+				} else {
+					// No unused arpeggio slots available, keep original reference
+					log.Printf("Warning: No unused arpeggio slots available for copying arpeggio %02X", arpeggioIndex)
 				}
 			}
 		}
@@ -2914,6 +2968,50 @@ func IsPhraseUnused(m *model.Model, phraseID int) bool {
 		// Unified DT-based playback: DT > 0 means playable for both instruments and samplers
 		dtValue := (*phrasesData)[phraseID][row][types.ColDeltaTime]
 		if IsRowPlayable(dtValue) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func FindNextUnusedArpeggio(m *model.Model, startingFrom int) int {
+	// Bounds check input
+	if startingFrom < 0 || startingFrom >= 255 {
+		return -1
+	}
+
+	// Search from startingFrom+1 to 254, then wrap to 0 to startingFrom-1
+	for offset := 1; offset < 255; offset++ {
+		arpeggioID := (startingFrom + offset) % 255
+		if arpeggioID >= 0 && arpeggioID < 255 && IsArpeggioUnused(m, arpeggioID) {
+			return arpeggioID
+		}
+	}
+	return -1 // No unused arpeggio found
+}
+
+func IsArpeggioUnused(m *model.Model, arpeggioID int) bool {
+	// Bounds check first
+	if arpeggioID < 0 || arpeggioID >= 255 {
+		return false
+	}
+
+	// Check if arpeggio is referenced in any phrase data
+	for phrase := 0; phrase < 255; phrase++ {
+		for row := 0; row < 255; row++ {
+			// Check both sampler and instrument phrases
+			if m.SamplerPhrasesData[phrase][row][types.ColArpeggio] == arpeggioID ||
+				m.InstrumentPhrasesData[phrase][row][types.ColArpeggio] == arpeggioID {
+				return false
+			}
+		}
+	}
+
+	// Check if arpeggio has any non-default settings
+	settings := m.ArpeggioSettings[arpeggioID]
+	for _, row := range settings.Rows {
+		if row.Direction != 0 || row.Count != -1 || row.Divisor != -1 {
 			return false
 		}
 	}

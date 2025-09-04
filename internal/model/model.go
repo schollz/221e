@@ -1211,7 +1211,9 @@ func (m *Model) sendOSCInstrumentMessage(params InstrumentOSCParams) {
 	}
 
 	// Also send MIDI message if configured
-	m.sendMIDIInstrumentMessage(params)
+	// TODO: remove this after debugging
+	// m.sendMIDIInstrumentMessage(params)
+
 }
 
 // sendMIDIInstrumentMessage sends MIDI messages for the given instrument parameters if MIDI is configured

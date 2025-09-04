@@ -349,3 +349,56 @@ func BenchmarkAdvancePlayback(b *testing.B) {
 		AdvancePlayback(m)
 	}
 }
+
+func TestDeepCopyWithArpeggio(t *testing.T) {
+	m := createTestModel()
+
+	// Set up source phrase with arpeggio data
+	sourcePhraseID := 1
+	m.CurrentPhrase = sourcePhraseID
+	m.ViewMode = types.PhraseView
+
+	// Set up an arpeggio with some settings
+	arpeggioID := 5
+	m.ArpeggioSettings[arpeggioID] = types.ArpeggioSettings{
+		Rows: [16]types.ArpeggioRow{
+			{Direction: 1, Count: 4, Divisor: 2},
+			{Direction: 2, Count: 8, Divisor: 3},
+			{Direction: 0, Count: -1, Divisor: -1}, // Default row
+		},
+	}
+
+	// Set up phrase data with arpeggio reference
+	phrasesData := m.GetCurrentPhrasesData()
+	(*phrasesData)[sourcePhraseID][0][types.ColArpeggio] = arpeggioID
+	(*phrasesData)[sourcePhraseID][1][types.ColArpeggio] = arpeggioID // Same arpeggio used twice
+	(*phrasesData)[sourcePhraseID][0][types.ColDeltaTime] = 1         // Make row playable
+
+	// Perform deep copy
+	DeepCopyToClipboard(m)
+
+	// Verify clipboard has new phrase ID
+	assert.True(t, m.Clipboard.HasData)
+	destPhraseID := m.Clipboard.Value
+	assert.NotEqual(t, sourcePhraseID, destPhraseID)
+
+	// Verify arpeggio was copied to a new slot
+	newArpeggioID1 := (*phrasesData)[destPhraseID][0][types.ColArpeggio]
+	newArpeggioID2 := (*phrasesData)[destPhraseID][1][types.ColArpeggio]
+
+	assert.NotEqual(t, arpeggioID, newArpeggioID1)
+	assert.Equal(t, newArpeggioID1, newArpeggioID2) // Both should map to same new arpeggio
+	assert.GreaterOrEqual(t, newArpeggioID1, 0)
+	assert.LessOrEqual(t, newArpeggioID1, 254)
+
+	// Verify arpeggio settings were copied
+	originalSettings := m.ArpeggioSettings[arpeggioID]
+	newSettings := m.ArpeggioSettings[newArpeggioID1]
+
+	assert.Equal(t, originalSettings.Rows[0].Direction, newSettings.Rows[0].Direction)
+	assert.Equal(t, originalSettings.Rows[0].Count, newSettings.Rows[0].Count)
+	assert.Equal(t, originalSettings.Rows[0].Divisor, newSettings.Rows[0].Divisor)
+	assert.Equal(t, originalSettings.Rows[1].Direction, newSettings.Rows[1].Direction)
+	assert.Equal(t, originalSettings.Rows[1].Count, newSettings.Rows[1].Count)
+	assert.Equal(t, originalSettings.Rows[1].Divisor, newSettings.Rows[1].Divisor)
+}
