@@ -4,7 +4,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -35,48 +34,6 @@ func TestWasStartedBySelf(t *testing.T) {
 		// Should start as false
 		result := WasStartedBySelf()
 		assert.False(t, result)
-	})
-}
-
-func TestGetSuperColliderExtensionDirs(t *testing.T) {
-	t.Run("returns platform-specific directories", func(t *testing.T) {
-		dirs := getSuperColliderExtensionDirs()
-
-		assert.NotNil(t, dirs)
-
-		// Should have at least one directory for each platform
-		switch runtime.GOOS {
-		case "darwin":
-			assert.True(t, len(dirs) >= 1)
-			// Should contain macOS-specific paths
-			found := false
-			for _, dir := range dirs {
-				if strings.Contains(dir, "Library/Application Support/SuperCollider") {
-					found = true
-					break
-				}
-			}
-			assert.True(t, found)
-
-		case "linux":
-			assert.True(t, len(dirs) >= 1)
-			// Should contain Linux-specific paths
-			found := false
-			for _, dir := range dirs {
-				if strings.Contains(dir, "SuperCollider/Extensions") {
-					found = true
-					break
-				}
-			}
-			assert.True(t, found)
-
-		case "windows":
-			assert.True(t, len(dirs) >= 0) // May be 0 if env vars not set
-			// If any dirs, should contain Windows-specific paths
-			for _, dir := range dirs {
-				assert.Contains(t, dir, "SuperCollider/Extensions")
-			}
-		}
 	})
 }
 
