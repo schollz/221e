@@ -102,7 +102,7 @@ jobs:
       - name: Install required packages
         shell: msys2 {0}
         run: |
-          pacman -S --noconfirm mingw-w64-x86_64-rtmidi mingw-w64-x86_64-toolchain sox
+          pacman -S --noconfirm mingw-w64-x86_64-rtmidi mingw-w64-x86_64-toolchain
       - name: Set up environment variables for Go
         run: |
           $env:Path += ";C:\\msys64\\mingw64\\bin"
