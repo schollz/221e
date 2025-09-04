@@ -1,5 +1,4 @@
 name: Build
-
 on:
   push:
     branches: [main]
@@ -26,30 +25,73 @@ jobs:
         run: go test -v ./...
       - name: Build Go project
         run: go build -v
+
   linux:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - name: Install ALSA development libraries
         run: sudo apt-get update && sudo apt-get install -y libasound2-dev
-
       - uses: actions/setup-go@v5
         with:
           go-version: "stable"
-
       - name: Test
         run: go test -v ./...
-
       - name: Build Go project
         run: go build -v
+
+  alpine:
+    runs-on: ubuntu-latest
+    container:
+      image: golang:1.25-alpine
+    steps:
+      - name: Install build dependencies
+        run: |
+          apk add --no-cache \
+            git \
+            build-base \
+            autoconf \
+            automake \
+            libtool \
+            linux-headers \
+            alsa-lib-dev
+      - uses: actions/checkout@v4
+      - name: Build ALSA library statically
+        run: |
+          cd /tmp
+          git clone https://github.com/alsa-project/alsa-lib.git
+          cd alsa-lib
+          git checkout v1.2.10
+          libtoolize --force --copy --automake
+          aclocal
+          autoheader
+          automake --foreign --copy --add-missing
+          autoconf
+          ./configure --prefix=/usr/local --enable-shared=no --enable-static=yes --disable-ucm
+          make -j$(nproc)
+          make install
+      - name: Build Go project
+        run: |
+          export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
+          export CGO_CFLAGS="-I/usr/local/include"
+          export CGO_LDFLAGS="-L/usr/local/lib"
+          CGO_ENABLED=1 go build -ldflags '-linkmode external -extldflags "-static -L/usr/local/lib"' -o 2n-static
+      - name: Verify static binary
+        run: |
+          file 2n-static
+          (ldd 2n-static 2>/dev/null || echo "✓ Static binary!")
+          ls -lh 2n-static
+      - name: Upload Alpine static binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: alpine-static-binary
+          path: 2n-static
+
   windows:
     runs-on: windows-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-
       - name: Set up MSYS2
         uses: msys2/setup-msys2@v2
         with:
