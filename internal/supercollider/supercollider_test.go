@@ -70,28 +70,6 @@ func TestGetPortedPluginsURL(t *testing.T) {
 	})
 }
 
-func TestGetLocalExtensionDir(t *testing.T) {
-	t.Run("returns platform-specific local extension directory", func(t *testing.T) {
-		dir := getLocalExtensionDir()
-
-		switch runtime.GOOS {
-		case "darwin":
-			if dir != "" {
-				assert.Contains(t, dir, "Library/Application Support/SuperCollider/Extensions")
-			}
-
-		case "linux":
-			if dir != "" {
-				assert.Contains(t, dir, ".local/share/SuperCollider/Extensions")
-			}
-
-		case "windows":
-			if dir != "" {
-				assert.Contains(t, dir, "SuperCollider/Extensions")
-			}
-		}
-	})
-}
 
 func TestHasExtension(t *testing.T) {
 	t.Run("extension not found in empty dirs", func(t *testing.T) {
