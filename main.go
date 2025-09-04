@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -26,20 +25,15 @@ import (
 type scReadyMsg struct{}
 
 func main() {
-	// Redirect stderr to discard to suppress C library error messages like "MidiOutAlsa::sendMessage: incomplete message!"
-	// This prevents MIDI library errors from interrupting the TUI display
-	devNull, err := os.OpenFile(os.DevNull, os.O_WRONLY, 0)
-	if err == nil {
-		// Save original stderr for potential restoration
-		originalStderr := os.Stderr
-		os.Stderr = devNull
-		defer func() {
-			devNull.Close()
-			os.Stderr = originalStderr
-		}()
-	}
-
-	log.SetOutput(io.Discard)
+	// Parse command line arguments (no no-splash anymore)
+	var oscPort int
+	var skipJackCheck bool
+	var saveFile string
+	var debugLog string
+	flag.IntVar(&oscPort, "osc-port", 57120, "OSC port for sending playback messages")
+	flag.StringVar(&saveFile, "save-file", "tracker-save.json", "Save file to load from or create")
+	flag.BoolVar(&skipJackCheck, "skip-jack-check", false, "Skip checking for JACK server (for testing only)")
+	flag.StringVar(&debugLog, "debug", "", "If set, write debug logs to this file; empty disables logging")
 
 	// Start CPU profiling for the first 30 seconds
 	cpuFile, err := os.Create("cpu.prof")
@@ -61,15 +55,6 @@ func main() {
 	// Set up cleanup on exit
 	setupCleanupOnExit()
 
-	// Parse command line arguments (no no-splash anymore)
-	var oscPort int
-	var skipJackCheck bool
-	var saveFile string
-	var debugLog string
-	flag.IntVar(&oscPort, "osc-port", 57120, "OSC port for sending playback messages")
-	flag.StringVar(&saveFile, "save-file", "tracker-save.json", "Save file to load from or create")
-	flag.BoolVar(&skipJackCheck, "skip-jack-check", false, "Skip checking for JACK server (for testing only)")
-	flag.StringVar(&debugLog, "debug", "", "If set, write debug logs to this file; empty disables logging")
 	flag.Parse()
 
 	if !supercollider.IsJackEnabled() && !skipJackCheck {
