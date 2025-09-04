@@ -15,6 +15,7 @@ jobs:
           brew update
           brew install pkg-config
           brew install rtmidi
+          brew install sox
       - uses: actions/setup-go@v5
         with:
           go-version: "stable"
@@ -31,7 +32,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install ALSA development libraries
-        run: sudo apt-get update && sudo apt-get install -y libasound2-dev
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev sox
       - uses: actions/setup-go@v5
         with:
           go-version: "stable"
@@ -54,7 +55,8 @@ jobs:
             automake \
             libtool \
             linux-headers \
-            alsa-lib-dev
+            alsa-lib-dev \
+            sox
       - uses: actions/checkout@v4
       - name: Build ALSA library statically
         run: |
@@ -100,7 +102,7 @@ jobs:
       - name: Install required packages
         shell: msys2 {0}
         run: |
-          pacman -S --noconfirm mingw-w64-x86_64-rtmidi mingw-w64-x86_64-toolchain
+          pacman -S --noconfirm mingw-w64-x86_64-rtmidi mingw-w64-x86_64-toolchain sox
       - name: Set up environment variables for Go
         run: |
           $env:Path += ";C:\\msys64\\mingw64\\bin"
