@@ -238,6 +238,9 @@ func HandleKeyInput(m *model.Model, msg tea.KeyMsg) tea.Cmd {
 	case "backspace":
 		return handleBackspace(m)
 
+	case "x":
+		return handleBackspace(m)
+
 	case "ctrl+h":
 		return handleCtrlH(m)
 
