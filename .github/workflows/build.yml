@@ -77,7 +77,7 @@ jobs:
           export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
           export CGO_CFLAGS="-I/usr/local/include"
           export CGO_LDFLAGS="-L/usr/local/lib"
-          CGO_ENABLED=1 go build -ldflags '-linkmode external -extldflags "-static -L/usr/local/lib"' -o 2n-static
+          CGO_ENABLED=1 go build -buildvcs=false -ldflags '-linkmode external -extldflags "-static -L/usr/local/lib"' -o 2n-static
       - name: Verify static binary
         run: |
           file 2n-static
