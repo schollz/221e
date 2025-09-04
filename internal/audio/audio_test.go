@@ -38,7 +38,7 @@ func TestPlayFile(t *testing.T) {
 		m := model.NewModel(0, "test-save.json")
 		m.Files = []string{"subdir/"}
 		m.CurrentRow = 0
-		m.CurrentDir = "/test"
+		m.CurrentDir = "test"
 
 		PlayFile(m)
 
@@ -51,7 +51,7 @@ func TestPlayFile(t *testing.T) {
 		m := model.NewModel(0, "test-save.json")
 		m.Files = []string{".."}
 		m.CurrentRow = 0
-		m.CurrentDir = "/test"
+		m.CurrentDir = "test"
 
 		PlayFile(m)
 
@@ -64,11 +64,11 @@ func TestPlayFile(t *testing.T) {
 		m := model.NewModel(0, "test-save.json")
 		m.Files = []string{"test.wav"}
 		m.CurrentRow = 0
-		m.CurrentDir = "/test"
+		m.CurrentDir = "test"
 
 		PlayFile(m)
 
-		expectedPath := filepath.Join("/test", "test.wav")
+		expectedPath := filepath.Join("test", "test.wav")
 		assert.Equal(t, expectedPath, m.CurrentlyPlayingFile)
 		assert.True(t, m.IsPlaying)
 	})
@@ -77,8 +77,8 @@ func TestPlayFile(t *testing.T) {
 		m := model.NewModel(0, "test-save.json")
 		m.Files = []string{"test.wav"}
 		m.CurrentRow = 0
-		m.CurrentDir = "/test"
-		expectedPath := filepath.Join("/test", "test.wav")
+		m.CurrentDir = "test"
+		expectedPath := filepath.Join("test", "test.wav")
 		m.CurrentlyPlayingFile = expectedPath
 		m.IsPlaying = true
 
@@ -93,13 +93,13 @@ func TestPlayFile(t *testing.T) {
 		m := model.NewModel(0, "test-save.json")
 		m.Files = []string{"test1.wav", "test2.wav"}
 		m.CurrentRow = 1
-		m.CurrentDir = "/test"
-		m.CurrentlyPlayingFile = filepath.Join("/test", "other.wav")
+		m.CurrentDir = "test"
+		m.CurrentlyPlayingFile = filepath.Join("test", "other.wav")
 		m.IsPlaying = true
 
 		PlayFile(m)
 
-		expectedPath := filepath.Join("/test", "test2.wav")
+		expectedPath := filepath.Join("test", "test2.wav")
 		assert.Equal(t, expectedPath, m.CurrentlyPlayingFile)
 		assert.True(t, m.IsPlaying)
 	})
@@ -129,12 +129,12 @@ func TestSelectFile(t *testing.T) {
 		m := model.NewModel(0, "test-save.json")
 		m.Files = []string{".."}
 		m.CurrentRow = 0
-		m.CurrentDir = "/test/subdir"
+		m.CurrentDir = filepath.Join("test", "subdir")
 
 		SelectFile(m)
 
 		// Should navigate to parent directory
-		assert.Equal(t, "/test", m.CurrentDir)
+		assert.Equal(t, "test", m.CurrentDir)
 		assert.Equal(t, 0, m.CurrentRow)
 		assert.Equal(t, 0, m.ScrollOffset)
 	})
@@ -143,12 +143,12 @@ func TestSelectFile(t *testing.T) {
 		m := model.NewModel(0, "test-save.json")
 		m.Files = []string{"subdir/"}
 		m.CurrentRow = 0
-		m.CurrentDir = "/test"
+		m.CurrentDir = "test"
 
 		SelectFile(m)
 
 		// Should navigate to subdirectory
-		assert.Equal(t, "/test/subdir", m.CurrentDir)
+		assert.Equal(t, filepath.Join("test", "subdir"), m.CurrentDir)
 		assert.Equal(t, 0, m.CurrentRow)
 		assert.Equal(t, 0, m.ScrollOffset)
 	})
@@ -157,7 +157,7 @@ func TestSelectFile(t *testing.T) {
 		m := model.NewModel(0, "test-save.json")
 		m.Files = []string{"test.wav"}
 		m.CurrentRow = 0
-		m.CurrentDir = "/test"
+		m.CurrentDir = "test"
 		m.FileSelectRow = 2
 		m.CurrentPhrase = 1
 		m.CurrentTrack = 5 // Set to sampler track so files can be appended
@@ -175,7 +175,7 @@ func TestSelectFile(t *testing.T) {
 		assert.NotEqual(t, -1, fileIndex)
 
 		// The full path should be stored in SamplerPhrasesFiles
-		fullPath := filepath.Join("/test", "test.wav")
+		fullPath := filepath.Join("test", "test.wav")
 		assert.Contains(t, m.SamplerPhrasesFiles, fullPath)
 	})
 }
