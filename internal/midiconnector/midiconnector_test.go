@@ -74,7 +74,7 @@ func TestDevice(t *testing.T) {
 		d := &Device{
 			name:    "test",
 			num:     0,
-			notesOn: make(map[uint8]uint8),
+			notesOn: make(map[uint8]bool),
 		}
 
 		assert.Equal(t, "test", d.name)
@@ -86,7 +86,7 @@ func TestDevice(t *testing.T) {
 		d := &Device{
 			name:    "test",
 			num:     0,
-			notesOn: make(map[uint8]uint8),
+			notesOn: make(map[uint8]bool),
 		}
 
 		// Simulate note tracking (without actual MIDI)
@@ -94,8 +94,8 @@ func TestDevice(t *testing.T) {
 		channel := uint8(0)
 
 		// Manually add note to tracking (simulating successful NoteOn)
-		d.notesOn[note] = channel
-		assert.Equal(t, channel, d.notesOn[note])
+		d.notesOn[note] = true
+		assert.Equal(t, true, d.notesOn[note])
 
 		// Manually remove note (simulating NoteOff)
 		delete(d.notesOn, note)
