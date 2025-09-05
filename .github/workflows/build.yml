@@ -1,49 +1,85 @@
 name: Build
+
 on:
   push:
-    branches: [main]
+    branches: [ main ]
+    tags:
+      - "v*"
+      - "*.*.*"
   pull_request:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
   macos:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Install rtmidi dependencies
         run: |
           brew update
           brew install pkg-config
           brew install rtmidi
           brew install sox
+
       - uses: actions/setup-go@v5
         with:
           go-version: "stable"
+
       - name: Set up environment variables
-        run: |
-          echo "CGO_ENABLED=1" >> $GITHUB_ENV
+        run: echo "CGO_ENABLED=1" >> $GITHUB_ENV
+
       - name: Test
         run: go test -v ./...
+
       - name: Build Go project
-        run: go build -v
-      - name: Verify binary 
+        run: go build -v -o 2n
+
+      - name: Verify binary
         run: ./2n --help
+
+      - name: Zip binary (macOS)
+        run: zip -9 2n_macos.zip 2n
+
+      - name: Upload artifact (macOS)
+        uses: actions/upload-artifact@v4
+        with:
+          name: 2n_macos.zip
+          path: 2n_macos.zip
+          if-no-files-found: error
 
   linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install ALSA development libraries
-        run: sudo apt-get update && sudo apt-get install -y libasound2-dev sox
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev sox zip
+
       - uses: actions/setup-go@v5
         with:
           go-version: "stable"
+
       - name: Test
         run: go test -v ./...
+
       - name: Build Go project
-        run: go build -v
-      - name: Verify binary 
+        run: go build -v -o 2n
+
+      - name: Verify binary
         run: ./2n --help
+
+      - name: Zip binary (Linux)
+        run: zip -9 2n_linux.zip 2n
+
+      - name: Upload artifact (Linux)
+        uses: actions/upload-artifact@v4
+        with:
+          name: 2n_linux.zip
+          path: 2n_linux.zip
+          if-no-files-found: error
 
   alpine:
     runs-on: ubuntu-latest
@@ -60,8 +96,11 @@ jobs:
             libtool \
             linux-headers \
             alsa-lib-dev \
-            sox
+            sox \
+            zip
+
       - uses: actions/checkout@v4
+
       - name: Build ALSA library statically
         run: |
           cd /tmp
@@ -76,12 +115,14 @@ jobs:
           ./configure --prefix=/usr/local --enable-shared=no --enable-static=yes --disable-ucm
           make -j$(nproc)
           make install
-      - name: Build Go project
+
+      - name: Build static Go binary
         run: |
           export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
           export CGO_CFLAGS="-I/usr/local/include"
           export CGO_LDFLAGS="-L/usr/local/lib"
-          CGO_ENABLED=1 go build -buildvcs=false -ldflags '-linkmode external -extldflags "-static -L/usr/local/lib"'
+          CGO_ENABLED=1 go build -buildvcs=false -ldflags '-linkmode external -extldflags "-static -L/usr/local/lib"' -o 2n
+
       - name: Verify static binary
         run: |
           file 2n
@@ -89,34 +130,89 @@ jobs:
           ls -lh 2n
           ./2n --help
 
+      - name: Zip binary (Linux static)
+        run: zip -9 2n_linux_static.zip 2n
+
+      - name: Upload artifact (Linux static)
+        uses: actions/upload-artifact@v4
+        with:
+          name: 2n_linux_static.zip
+          path: 2n_linux_static.zip
+          if-no-files-found: error
+
   windows:
     runs-on: windows-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+
       - name: Set up MSYS2
         uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
           update: true
+
       - name: Install required packages
         shell: msys2 {0}
         run: |
           pacman -S --noconfirm mingw-w64-x86_64-rtmidi mingw-w64-x86_64-toolchain
+
       - name: Set up environment variables for Go
+        shell: pwsh
         run: |
-          $env:Path += ";C:\\msys64\\mingw64\\bin"
-          $env:CGO_ENABLED = "1"
-          $env:CC = "x86_64-w64-mingw32-gcc"
-          $env:CGO_LDFLAGS = "-static"
+          $env:Path += ";C:\msys64\mingw64\bin"
+          echo "CGO_ENABLED=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "CC=x86_64-w64-mingw32-gcc" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "CGO_LDFLAGS=-static" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
       - uses: actions/setup-go@v5
         with:
           go-version: "stable"
+
       - name: Test
         run: go test -v ./...
+
       - name: Build Go project
-        run: |
-          go build -v
+        run: go build -v -o 2n.exe
+
       - name: Verify binary
-        run: |
-          ./2n.exe --help
+        run: .\2n.exe --help
+
+      - name: Zip binary (Windows)
+        shell: pwsh
+        run: Compress-Archive -Path 2n.exe -DestinationPath 2n_windows.zip -Force
+
+      - name: Upload artifact (Windows)
+        uses: actions/upload-artifact@v4
+        with:
+          name: 2n_windows.zip
+          path: 2n_windows.zip
+          if-no-files-found: error
+
+  release:
+    name: Create GitHub Release (on tags)
+    runs-on: ubuntu-latest
+    needs: [macos, linux, alpine, windows]
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./dist
+          merge-multiple: true
+
+      - name: List artifacts
+        run: ls -l ./dist
+
+      - name: Create Release and upload assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/2n_macos.zip
+            dist/2n_linux.zip
+            dist/2n_linux_static.zip
+            dist/2n_windows.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
