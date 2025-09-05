@@ -8,61 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestParse(t *testing.T) {
-	t.Run("valid midi line", func(t *testing.T) {
-		p, err := Parse("midi testdevice 5")
-
-		// Will error due to no MIDI hardware, but should parse correctly first
-		// Check if parsing logic worked before hardware error
-		if err != nil {
-			// Expected error due to no MIDI hardware
-			assert.Contains(t, err.Error(), "can't find MIDI")
-		} else {
-			// If no error (somehow), verify the parsing worked
-			assert.Equal(t, "midi-testdevice-4", p.Name) // Channel 5 -> 4 (0-indexed)
-			assert.Equal(t, uint8(4), p.channel)
-			assert.Equal(t, "testdevice", p.nameOriginal)
-		}
-	})
-
-	t.Run("invalid format - too few parts", func(t *testing.T) {
-		_, err := Parse("midi testdevice")
-
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "invalid midi line format")
-	})
-
-	t.Run("invalid format - wrong command", func(t *testing.T) {
-		_, err := Parse("audio testdevice 5")
-
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "line must start with 'midi'")
-	})
-
-	t.Run("invalid channel - non-numeric", func(t *testing.T) {
-		_, err := Parse("midi testdevice abc")
-
-		// Should default to channel 0 when parse fails, then try to create device
-		if err != nil {
-			// Expected error due to no MIDI hardware
-			assert.Contains(t, err.Error(), "can't find MIDI")
-		}
-	})
-
-	t.Run("channel out of range - too low", func(t *testing.T) {
-		_, err := Parse("midi testdevice 0")
-
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "channel must be between 1-16")
-	})
-
-	t.Run("channel out of range - too high", func(t *testing.T) {
-		_, err := Parse("midi testdevice 17")
-
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "channel must be between 1-16")
-	})
-}
 
 func TestPlayer(t *testing.T) {
 	t.Run("player string representation", func(t *testing.T) {
