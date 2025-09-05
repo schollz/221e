@@ -27,7 +27,16 @@ var (
 )
 
 func IsJackEnabled() bool {
-	return isProcessRunning("jackd")
+	// Check for common JACK daemon process names
+	jackProcessNames := []string{"jackd", "jackdbus", "jackdmp"}
+
+	for _, processName := range jackProcessNames {
+		if isProcessRunning(processName) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func IsSuperColliderEnabled() bool {
