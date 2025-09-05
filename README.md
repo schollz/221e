@@ -38,7 +38,7 @@ Defaults: OSC **57120**, save file **tracker-save.json**.
 
 ## Keyboard — Quick Reference
 
-### Navigation (views)
+### Navigation Between Views
 - **Shift+Right** – Navigate deeper into structure
   - Song → Chain (selected track/row)
   - Chain → Phrase (selected row)
@@ -46,54 +46,66 @@ Defaults: OSC **57120**, save file **tracker-save.json**.
 - **Shift+Left** – Navigate back to parent view
 - **Shift+Up** – Go to Settings (from Song/Chain/Phrase) or File Metadata (from File Browser)
 - **Shift+Down** – Go to Mixer (from Song/Chain/Phrase) or back from Mixer
-- **Arrow keys** – Move cursor/navigate within views
+- **p** – Toggle Preferences (Settings) view
+- **m** – Toggle Mixer view
+
+### Navigation Within Views
+- **Arrow keys** – Move cursor/navigate within current view
 - **Left/Right** – Navigate tracks (Song), chains (Chain), or columns (Phrase)
 
-### Editing
+### Playback and Recording
+- **Space** – Play/stop from current position
+- **Ctrl+@** – Play/stop from top (global)
+- **C** – Smart trigger/fill function:
+  - **Non-empty values**: Triggers `EmitRowDataFor` (plays row with full parameters)
+  - **Empty values**: Fills with next available content or copies last row
+  - Works in Song, Chain, and Phrase views
+- **Ctrl+R** – Toggle recording mode
+
+### Value Editing
 - **Ctrl+Up/Down** – Coarse adjust values (+/-16, coarse increments)
 - **Ctrl+Left/Right** – Fine adjust values (+/-1, fine increments)
 - **Backspace** – Clear cell/value
 - **Ctrl+H** – Delete entire row
 - **S** – Paste last edited row
-- **C** – Smart trigger/fill function:
-  - **Non-empty values**: Triggers `EmitRowDataFor` (plays row with full parameters)
-  - **Empty values**: Fills with next available content or copies last row
-  - Works in Song, Chain, and Phrase views
 
-### Copy & Paste
+### Copy and Paste
 - **Ctrl+C** – Copy cell
 - **Ctrl+X** – Cut row  
 - **Ctrl+V** – Paste
 - **Ctrl+D** – Deep copy
 
-### Playback & Recording
-- **Space** – Play/stop from current position
-- **Ctrl+@** – Play/stop from top (global)
-- **Ctrl+R** – Toggle recording mode
-
-### Advanced Functions
-- **Ctrl+F** – Smart fill/clear for DT column (Delta Time)
+### File Operations and System
 - **Ctrl+S** – Manual save
-
-### Misc
+- **Ctrl+F** – Smart fill/clear for DT column (Delta Time)
 - **Esc** – Clear selection highlight
 - **Ctrl+Q** – Quit
 
 
 ## Views
 
-- **Song** – 8 tracks × 16 rows (chains per track), supports Instrument/Sampler track types
-- **Chain** – 16 rows mapping to phrases  
+### Main Structure Views
+- **Song** – Top-level arrangement: 8 tracks × 16 rows (chains per track)
+  - Each track can be either Instrument or Sampler type
+- **Chain** – Pattern sequences: 16 rows mapping to phrases
 - **Phrase** – Main tracker grid with two modes:
   - **Sampler** – Full sample manipulation (pitch, effects, files)
   - **Instrument** – Note-based with chords, ADSR, arpeggio
+
+### Support Views
+- **Settings** – Global configuration (BPM, PPQ, audio gains, etc.)
+  - Access with **p** key or **Shift+Up**
+- **Mixer** – Per-track volume levels and mixing
+  - Access with **m** key or **Shift+Down**
+
+### File Management Views
 - **File Browser** – Select audio files for sampler tracks
 - **File Metadata** – Configure BPM and slice count per file
+
+### Effect Configuration Views
 - **Retrigger** – Envelope settings for retrigger effects
 - **Timestretch** – Time-stretching parameters
 - **Arpeggio** – Arpeggio pattern editor (Instrument tracks only)
-- **Mixer** – Per-track volume levels
-- **Settings** – Global settings (BPM, PPQ, audio gains, etc.)
 
 ## Smart 'C' Key Functionality
 
