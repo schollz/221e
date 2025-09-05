@@ -1212,7 +1212,7 @@ func (m *Model) sendOSCInstrumentMessage(params InstrumentOSCParams) {
 
 	// Also send MIDI message if configured
 	// TODO: remove this after debugging
-	// m.sendMIDIInstrumentMessage(params)
+	m.sendMIDIInstrumentMessage(params)
 
 }
 
