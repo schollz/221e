@@ -214,19 +214,30 @@ func LoadFiles(m *model.Model) {
 		files = append(files, "..")
 	}
 
-	// Add directories first
+	// Add directories first (including symlinked directories)
 	for _, entry := range entries {
 		if entry.IsDir() {
 			files = append(files, entry.Name()+"/")
+		} else {
+			// Check if this is a symlink to a directory
+			fullPath := filepath.Join(m.CurrentDir, entry.Name())
+			if stat, err := os.Stat(fullPath); err == nil && stat.IsDir() {
+				files = append(files, entry.Name()+"/")
+			}
 		}
 	}
 
-	// Add audio files
+	// Add audio files (including symlinked audio files)
 	for _, entry := range entries {
 		if !entry.IsDir() {
-			ext := strings.ToLower(filepath.Ext(entry.Name()))
-			if ext == ".wav" || ext == ".flac" {
-				files = append(files, entry.Name())
+			fullPath := filepath.Join(m.CurrentDir, entry.Name())
+			
+			// Check if it's a regular file or a symlink to a file
+			if stat, err := os.Stat(fullPath); err == nil && !stat.IsDir() {
+				ext := strings.ToLower(filepath.Ext(entry.Name()))
+				if ext == ".wav" || ext == ".flac" {
+					files = append(files, entry.Name())
+				}
 			}
 		}
 	}
