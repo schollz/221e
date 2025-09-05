@@ -252,6 +252,9 @@ func HandleKeyInput(m *model.Model, msg tea.KeyMsg) tea.Cmd {
 
 	case "p":
 		return handleP(m)
+
+	case "m":
+		return handleM(m)
 	}
 
 	return nil
@@ -1378,5 +1381,17 @@ func handleP(m *model.Model) tea.Cmd {
 		return handleShiftUp(m)
 	}
 	// For other views (FileView, MixerView, etc.), do nothing
+	return nil
+}
+
+func handleM(m *model.Model) tea.Cmd {
+	if m.ViewMode == types.MixerView {
+		// If we're in mixer view, act like Shift+Up (go back to previous view)
+		return handleShiftUp(m)
+	} else if m.ViewMode == types.SongView || m.ViewMode == types.ChainView || m.ViewMode == types.PhraseView {
+		// If we're in Song, Chain, or Phrase view, act like Shift+Down (go to mixer)
+		return handleShiftDown(m)
+	}
+	// For other views (FileView, SettingsView, etc.), do nothing
 	return nil
 }
