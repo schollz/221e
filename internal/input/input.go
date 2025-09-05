@@ -249,6 +249,9 @@ func HandleKeyInput(m *model.Model, msg tea.KeyMsg) tea.Cmd {
 
 	case "ctrl+f":
 		return handleCtrlF(m)
+
+	case "p":
+		return handleP(m)
 	}
 
 	return nil
@@ -1363,5 +1366,17 @@ func stopRecording(m *model.Model) {
 func handleCtrlF(m *model.Model) tea.Cmd {
 	FillSequential(m)
 	storage.AutoSave(m)
+	return nil
+}
+
+func handleP(m *model.Model) tea.Cmd {
+	if m.ViewMode == types.SettingsView {
+		// If we're in settings, act like Shift+Down (go back to previous view)
+		return handleShiftDown(m)
+	} else if m.ViewMode == types.SongView || m.ViewMode == types.ChainView || m.ViewMode == types.PhraseView {
+		// If we're in Song, Chain, or Phrase view, act like Shift+Up (go to settings)
+		return handleShiftUp(m)
+	}
+	// For other views (FileView, MixerView, etc.), do nothing
 	return nil
 }
