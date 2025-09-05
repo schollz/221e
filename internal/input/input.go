@@ -709,6 +709,13 @@ func handleUp(m *model.Model) tea.Cmd {
 		if m.CurrentMixerRow > 0 {
 			m.CurrentMixerRow = m.CurrentMixerRow - 1
 		}
+	} else if m.ViewMode == types.FileView {
+		if m.CurrentRow > 0 {
+			m.CurrentRow = m.CurrentRow - 1
+			if m.CurrentRow < m.ScrollOffset {
+				m.ScrollOffset = m.CurrentRow
+			}
+		}
 	} else if m.CurrentRow > 0 {
 		m.CurrentRow = m.CurrentRow - 1
 		if m.CurrentRow < m.ScrollOffset {
@@ -784,6 +791,15 @@ func handleDown(m *model.Model) tea.Cmd {
 	} else if m.ViewMode == types.MixerView {
 		// Only row 0 (set level) exists now, no navigation needed
 		// Keep CurrentMixerRow at 0
+	} else if m.ViewMode == types.FileView {
+		// Ensure we don't go beyond the last file
+		if len(m.Files) > 0 && m.CurrentRow < len(m.Files)-1 {
+			m.CurrentRow = m.CurrentRow + 1
+			visibleRows := m.GetVisibleRows()
+			if m.CurrentRow >= m.ScrollOffset+visibleRows {
+				m.ScrollOffset = m.CurrentRow - visibleRows + 1
+			}
+		}
 	} else if m.CurrentRow < 254 { // 0-254 (FE in hex)
 		m.CurrentRow = m.CurrentRow + 1
 		visibleRows := m.GetVisibleRows()
