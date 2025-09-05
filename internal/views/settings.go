@@ -8,7 +8,7 @@ import (
 )
 
 func RenderSettingsView(m *model.Model) string {
-	return renderViewWithCommonPattern(m, "Settings", "", func(styles *ViewStyles) string {
+	return renderViewWithCommonPattern(m, "Preferences ", "", func(styles *ViewStyles) string {
 		var content strings.Builder
 		content.WriteString("\n")
 
