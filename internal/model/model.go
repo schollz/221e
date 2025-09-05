@@ -921,16 +921,21 @@ func NewInstrumentOSCParams(trackId int32, velocity float32, chordType, chordAdd
 
 // CancelArpeggioForTrack cancels any existing arpeggio on the given track and sends note-off for currently playing notes
 func (m *Model) CancelArpeggioForTrack(trackId int32) {
+	log.Printf("DEBUG: CancelArpeggioForTrack called for track %d", trackId)
 	m.arpeggioMutex.Lock()
 	defer m.arpeggioMutex.Unlock()
 
 	// Cancel any existing arpeggio context
 	if cancelFunc, exists := m.arpeggioContexts[trackId]; exists {
-		log.Printf("DEBUG: cancelArpeggioForTrack - cancelling existing arpeggio for track %d", trackId)
+		log.Printf("DEBUG: cancelArpeggioForTrack - FOUND existing arpeggio context for track %d, cancelling", trackId)
 		delete(m.arpeggioContexts, trackId) // Remove before calling cancel
 		m.arpeggioMutex.Unlock() // Unlock before calling cancel to prevent deadlock
 		cancelFunc() // Now safe to call
+		// Give goroutine a moment to terminate gracefully
+		time.Sleep(2 * time.Millisecond)
 		m.arpeggioMutex.Lock() // Re-lock for the rest of the function
+	} else {
+		log.Printf("DEBUG: cancelArpeggioForTrack - NO existing arpeggio context for track %d", trackId)
 	}
 
 	// Send note-off for any currently playing arpeggio notes
@@ -954,7 +959,7 @@ func (m *Model) CancelArpeggioForTrack(trackId int32) {
 
 // SendOSCInstrumentMessageWithArpeggio is the high-level function that handles arpeggio logic
 func (m *Model) SendOSCInstrumentMessageWithArpeggio(params InstrumentOSCParams) {
-	log.Printf("DEBUG: SendOSCInstrumentMessageWithArpeggio called for track %d", params.TrackId)
+	log.Printf("DEBUG: SendOSCInstrumentMessageWithArpeggio called for track %d with notes %v, ArpeggioIndex=%d", params.TrackId, params.Notes, params.ArpeggioIndex)
 
 	// ALWAYS cancel any existing arpeggio on this track (whether new note has arpeggio or not)
 	m.CancelArpeggioForTrack(params.TrackId)
@@ -979,16 +984,16 @@ func (m *Model) SendOSCInstrumentMessageWithArpeggio(params InstrumentOSCParams)
 }
 
 func (m *Model) ProcessArpeggio(params InstrumentOSCParams) (arpeggioNotes []float32, arpeggioDivisions []float32) {
-	log.Printf("DEBUG: ProcessArpeggio called with ArpeggioIndex=%d", params.ArpeggioIndex)
+	log.Printf("DEBUG: ProcessArpeggio called with ArpeggioIndex=%d, input notes=%v", params.ArpeggioIndex, params.Notes)
 
 	// Check if we have a valid arpeggio index
 	if params.ArpeggioIndex < 0 || params.ArpeggioIndex >= 255 {
-		log.Printf("DEBUG: ProcessArpeggio - invalid arpeggio index, returning empty")
+		log.Printf("DEBUG: ProcessArpeggio - invalid arpeggio index %d, returning empty", params.ArpeggioIndex)
 		return nil, nil
 	}
 
 	arpeggioSettings := m.ArpeggioSettings[params.ArpeggioIndex]
-	log.Printf("DEBUG: ProcessArpeggio - got arpeggio settings")
+	log.Printf("DEBUG: ProcessArpeggio - got arpeggio settings for index %d", params.ArpeggioIndex)
 
 	// Use the chord notes that are already calculated and transposed in params.Notes
 	// This avoids double-transposition since helpers.go already called GetChordNotes with transposition
@@ -1286,6 +1291,11 @@ func (m *Model) PlayArpeggio(params InstrumentOSCParams, notes []float32, divisi
 	// Create new cancellable context and store it
 	ctx, cancel := context.WithCancel(context.Background())
 	m.arpeggioMutex.Lock()
+	// Ensure no old context exists before storing new one
+	if oldCancel, exists := m.arpeggioContexts[params.TrackId]; exists {
+		log.Printf("DEBUG: PlayArpeggio - WARNING: Found existing context for track %d, this shouldn't happen after cancellation!", params.TrackId)
+		oldCancel() // Cancel the old one just in case
+	}
 	m.arpeggioContexts[params.TrackId] = cancel
 	// Initialize tracking with the root note (already sent)
 	m.arpeggioCurrentNotes[params.TrackId] = []float32{params.Notes[0]}

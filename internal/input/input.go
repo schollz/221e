@@ -719,6 +719,9 @@ func handleUp(m *model.Model) tea.Cmd {
 			m.LastChainRow = m.CurrentRow
 		} else if m.ViewMode == types.PhraseView {
 			m.LastPhraseRow = m.CurrentRow
+			// Cancel any running arpeggios when navigating to a different row
+			log.Printf("DEBUG: Navigation UP in PhraseView - cancelling arpeggios for track %d", m.CurrentTrack)
+			m.CancelArpeggioForTrack(int32(m.CurrentTrack))
 		}
 	}
 	storage.AutoSave(m)
@@ -792,6 +795,9 @@ func handleDown(m *model.Model) tea.Cmd {
 			m.LastChainRow = m.CurrentRow
 		} else if m.ViewMode == types.PhraseView {
 			m.LastPhraseRow = m.CurrentRow
+			// Cancel any running arpeggios when navigating to a different row
+			log.Printf("DEBUG: Navigation DOWN in PhraseView - cancelling arpeggios for track %d", m.CurrentTrack)
+			m.CancelArpeggioForTrack(int32(m.CurrentTrack))
 		}
 	}
 	storage.AutoSave(m)

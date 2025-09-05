@@ -1848,13 +1848,6 @@ func EmitLastSelectedPhraseRowData(m *model.Model) {
 func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 	log.Printf("DEBUG_EMIT: EmitRowDataFor called with phrase=%d, row=%d, trackId=%d", phrase, row, trackId)
 
-	// ALWAYS cancel any existing arpeggio on this track when a new note starts
-	// This ensures arpeggios are cancelled whether it's an instrument or sampler track
-	if trackId >= 0 && trackId < 8 {
-		m.CancelArpeggioForTrack(int32(trackId))
-		log.Printf("DEBUG_EMIT: Cancelled any existing arpeggio for track %d", trackId)
-	}
-
 	// Use track-aware data access for correct playback
 	phrasesData := GetPhrasesDataForTrack(m, trackId)
 	rowData := (*phrasesData)[phrase][row]
@@ -2019,6 +2012,14 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 	if shouldEmitRowForTrackAtPosition(m, phrase, row, trackId) == false {
 		log.Printf("ROW_EMIT: skipped by shouldEmitRow()")
 		return
+	}
+
+	// ONLY cancel any existing arpeggio on this track when a new note is actually going to start
+	// This ensures arpeggios are cancelled only when a real note is triggered, not just during row processing
+	if trackId >= 0 && trackId < 8 {
+		log.Printf("DEBUG_EMIT: About to cancel any existing arpeggio for track %d (new note starting)", trackId)
+		m.CancelArpeggioForTrack(int32(trackId))
+		log.Printf("DEBUG_EMIT: Cancelled any existing arpeggio for track %d (new note starting)", trackId)
 	}
 
 	// Build slice/OSC params
