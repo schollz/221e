@@ -919,8 +919,8 @@ func NewInstrumentOSCParams(trackId int32, velocity float32, chordType, chordAdd
 	}
 }
 
-// cancelArpeggioForTrack cancels any existing arpeggio on the given track and sends note-off for currently playing notes
-func (m *Model) cancelArpeggioForTrack(trackId int32) {
+// CancelArpeggioForTrack cancels any existing arpeggio on the given track and sends note-off for currently playing notes
+func (m *Model) CancelArpeggioForTrack(trackId int32) {
 	m.arpeggioMutex.Lock()
 	defer m.arpeggioMutex.Unlock()
 
@@ -955,7 +955,7 @@ func (m *Model) SendOSCInstrumentMessageWithArpeggio(params InstrumentOSCParams)
 	log.Printf("DEBUG: SendOSCInstrumentMessageWithArpeggio called for track %d", params.TrackId)
 
 	// ALWAYS cancel any existing arpeggio on this track (whether new note has arpeggio or not)
-	m.cancelArpeggioForTrack(params.TrackId)
+	m.CancelArpeggioForTrack(params.TrackId)
 
 	// Check if we have an arpeggio
 	arpeggioNotes, arpeggioDivisions := m.ProcessArpeggio(params)
