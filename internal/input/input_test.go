@@ -402,3 +402,64 @@ func TestDeepCopyWithArpeggio(t *testing.T) {
 	assert.Equal(t, originalSettings.Rows[1].Count, newSettings.Rows[1].Count)
 	assert.Equal(t, originalSettings.Rows[1].Divisor, newSettings.Rows[1].Divisor)
 }
+
+func TestArpeggioCellCopyPaste(t *testing.T) {
+	m := createTestModel()
+
+	// Set up arpeggio view
+	m.ViewMode = types.ArpeggioView
+	m.ArpeggioEditingIndex = 0
+	m.CurrentRow = 5
+	m.CurrentCol = int(types.ArpeggioColCO) // Count column
+
+	// Set up test data
+	m.ArpeggioSettings[0].Rows[5].Direction = 1 // "u-"
+	m.ArpeggioSettings[0].Rows[5].Count = 15    // "0F"
+	m.ArpeggioSettings[0].Rows[5].Divisor = 8   // "08"
+
+	// Test copying from Count column
+	CopyCellToClipboard(m)
+
+	// Verify clipboard has correct data
+	assert.True(t, m.Clipboard.HasData)
+	assert.Equal(t, 15, m.Clipboard.Value)
+	assert.Equal(t, types.HexCell, m.Clipboard.CellType)
+	assert.Equal(t, types.CellMode, m.Clipboard.Mode)
+	assert.Equal(t, types.ArpeggioView, m.Clipboard.HighlightView)
+	assert.Equal(t, 5, m.Clipboard.HighlightRow)
+	assert.Equal(t, int(types.ArpeggioColCO), m.Clipboard.HighlightCol)
+
+	// Move to different row, same column and paste
+	m.CurrentRow = 10
+	originalCountValue := m.ArpeggioSettings[0].Rows[10].Count
+	PasteCellFromClipboard(m)
+
+	// Verify paste worked
+	assert.Equal(t, 15, m.ArpeggioSettings[0].Rows[10].Count)
+	assert.NotEqual(t, originalCountValue, m.ArpeggioSettings[0].Rows[10].Count)
+
+	// Test that pasting to different column fails
+	m.CurrentCol = int(types.ArpeggioColDI) // Direction column
+	m.CurrentRow = 12
+	originalDirectionValue := m.ArpeggioSettings[0].Rows[12].Direction
+	PasteCellFromClipboard(m) // Should not paste due to column mismatch
+
+	// Verify paste failed (value unchanged)
+	assert.Equal(t, originalDirectionValue, m.ArpeggioSettings[0].Rows[12].Direction)
+
+	// Test copying from Direction column
+	m.CurrentRow = 5
+	m.CurrentCol = int(types.ArpeggioColDI) // Direction column
+	CopyCellToClipboard(m)
+
+	// Verify new clipboard data
+	assert.Equal(t, 1, m.Clipboard.Value) // Direction value
+	assert.Equal(t, int(types.ArpeggioColDI), m.Clipboard.HighlightCol)
+
+	// Paste to same column, different row
+	m.CurrentRow = 7
+	PasteCellFromClipboard(m)
+
+	// Verify paste worked
+	assert.Equal(t, 1, m.ArpeggioSettings[0].Rows[7].Direction)
+}

@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-
 func TestPlayer(t *testing.T) {
 	t.Run("player string representation", func(t *testing.T) {
 		p := Player{

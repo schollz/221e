@@ -1468,6 +1468,35 @@ func CopyCellToClipboard(m *model.Model) {
 			m.Clipboard = clipboard
 			log.Printf("Copied phrase cell value: %d, type: %v", value, cellType)
 		}
+	} else if m.ViewMode == types.ArpeggioView {
+		// Copy from arpeggio view
+		settings := m.ArpeggioSettings[m.ArpeggioEditingIndex]
+		currentRow := &settings.Rows[m.CurrentRow]
+
+		var value int
+		switch m.CurrentCol {
+		case int(types.ArpeggioColDI): // Direction column
+			value = currentRow.Direction
+		case int(types.ArpeggioColCO): // Count column
+			value = currentRow.Count
+		case int(types.ArpeggioColDIV): // Divisor column
+			value = currentRow.Divisor
+		default:
+			return // Invalid column
+		}
+
+		clipboard := types.ClipboardData{
+			Value:           value,
+			CellType:        types.HexCell,
+			Mode:            types.CellMode,
+			HasData:         true,
+			HighlightRow:    m.CurrentRow,
+			HighlightCol:    m.CurrentCol,
+			HighlightPhrase: -1, // Not applicable for arpeggio view
+			HighlightView:   types.ArpeggioView,
+		}
+		m.Clipboard = clipboard
+		log.Printf("Copied arpeggio cell value: %d from row %02X col %d", value, m.CurrentRow, m.CurrentCol)
 	}
 }
 
@@ -1639,6 +1668,28 @@ func PasteCellFromClipboard(m *model.Model) {
 			} else {
 				log.Printf("Cannot paste: incompatible cell type")
 			}
+		}
+	} else if m.ViewMode == types.ArpeggioView {
+		// Paste to arpeggio view - only paste within same column
+		if m.Clipboard.CellType == types.HexCell && m.Clipboard.HighlightView == types.ArpeggioView && m.Clipboard.HighlightCol == m.CurrentCol {
+			settings := &m.ArpeggioSettings[m.ArpeggioEditingIndex]
+			currentRow := &settings.Rows[m.CurrentRow]
+
+			switch m.CurrentCol {
+			case int(types.ArpeggioColDI): // Direction column
+				currentRow.Direction = m.Clipboard.Value
+				log.Printf("Pasted to arpeggio %02X row %02X Direction: %d", m.ArpeggioEditingIndex, m.CurrentRow, m.Clipboard.Value)
+			case int(types.ArpeggioColCO): // Count column
+				currentRow.Count = m.Clipboard.Value
+				log.Printf("Pasted to arpeggio %02X row %02X Count: %d", m.ArpeggioEditingIndex, m.CurrentRow, m.Clipboard.Value)
+			case int(types.ArpeggioColDIV): // Divisor column
+				currentRow.Divisor = m.Clipboard.Value
+				log.Printf("Pasted to arpeggio %02X row %02X Divisor: %d", m.ArpeggioEditingIndex, m.CurrentRow, m.Clipboard.Value)
+			default:
+				log.Printf("Cannot paste: invalid arpeggio column %d", m.CurrentCol)
+			}
+		} else {
+			log.Printf("Cannot paste: incompatible cell type or different column (source col: %d, target col: %d)", m.Clipboard.HighlightCol, m.CurrentCol)
 		}
 	}
 }

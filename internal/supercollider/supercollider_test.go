@@ -70,7 +70,6 @@ func TestGetPortedPluginsURL(t *testing.T) {
 	})
 }
 
-
 func TestHasExtension(t *testing.T) {
 	t.Run("extension not found in empty dirs", func(t *testing.T) {
 		// This will check real system dirs, but since we're looking for specific

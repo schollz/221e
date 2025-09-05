@@ -929,8 +929,8 @@ func (m *Model) CancelArpeggioForTrack(trackId int32) {
 	if cancelFunc, exists := m.arpeggioContexts[trackId]; exists {
 		log.Printf("DEBUG: cancelArpeggioForTrack - FOUND existing arpeggio context for track %d, cancelling", trackId)
 		delete(m.arpeggioContexts, trackId) // Remove before calling cancel
-		m.arpeggioMutex.Unlock() // Unlock before calling cancel to prevent deadlock
-		cancelFunc() // Now safe to call
+		m.arpeggioMutex.Unlock()            // Unlock before calling cancel to prevent deadlock
+		cancelFunc()                        // Now safe to call
 		// Give goroutine a moment to terminate gracefully
 		time.Sleep(2 * time.Millisecond)
 		m.arpeggioMutex.Lock() // Re-lock for the rest of the function
