@@ -927,8 +927,10 @@ func (m *Model) CancelArpeggioForTrack(trackId int32) {
 	// Cancel any existing arpeggio context
 	if cancelFunc, exists := m.arpeggioContexts[trackId]; exists {
 		log.Printf("DEBUG: cancelArpeggioForTrack - cancelling existing arpeggio for track %d", trackId)
-		cancelFunc()
-		delete(m.arpeggioContexts, trackId)
+		delete(m.arpeggioContexts, trackId) // Remove before calling cancel
+		m.arpeggioMutex.Unlock() // Unlock before calling cancel to prevent deadlock
+		cancelFunc() // Now safe to call
+		m.arpeggioMutex.Lock() // Re-lock for the rest of the function
 	}
 
 	// Send note-off for any currently playing arpeggio notes
