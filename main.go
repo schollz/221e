@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -100,6 +101,9 @@ func main() {
 		log.SetOutput(f)
 		// Set log flags to include file and line number for VS Code clickable links
 		log.SetFlags(log.LstdFlags | log.Lshortfile)
+	} else {
+		// send log to io.Discard
+		log.SetOutput(io.Discard)
 	}
 
 	log.Println("Debug logging enabled")
