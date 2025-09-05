@@ -221,15 +221,17 @@ func initialModel(oscPort int, saveFile string, dispatcher *osc.StandardDispatch
 		log.Printf("MIDI device found: %+v", device)
 	}
 
-	// Set default MIDI device to first available device
+	// Set default MIDI device to first available device (only for unset devices)
 	if len(m.AvailableMidiDevices) > 0 {
 		firstDevice := m.AvailableMidiDevices[0]
-		// Update all MIDI settings to use the first device by default
+		// Only update MIDI settings that are still set to "None" (preserve user selections)
 		for i := 0; i < 255; i++ {
-			m.MidiSettings[i].Device = firstDevice
-			// Channel is already set to "1" by default in initializeDefaultData()
+			if m.MidiSettings[i].Device == "None" {
+				m.MidiSettings[i].Device = firstDevice
+				// Channel is already set to "1" by default in initializeDefaultData()
+			}
 		}
-		log.Printf("Default MIDI device set to: %s", firstDevice)
+		log.Printf("Default MIDI device set to: %s (for unset devices only)", firstDevice)
 	}
 
 	return &TrackerModel{
