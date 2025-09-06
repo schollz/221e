@@ -25,6 +25,8 @@ func RenderSettingsView(m *model.Model) string {
 			{"Bias:", fmt.Sprintf("%.1f dB", m.BiasDB), 4},
 			{"Sat:", fmt.Sprintf("%.1f dB", m.SaturationDB), 5},
 			{"Drive:", fmt.Sprintf("%.1f dB", m.DriveDB), 6},
+			{"Input:", fmt.Sprintf("%.1f dB", m.InputLevelDB), 7},
+			{"Reverb:", fmt.Sprintf("%.1f%%", m.ReverbSendPercent), 8},
 		}
 
 		for _, setting := range settings {
