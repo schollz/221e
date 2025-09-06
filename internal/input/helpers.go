@@ -1992,7 +1992,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 		effDecay := GetEffectiveValueForTrack(m, phrase, row, int(types.ColDecay), trackId)
 		effSustain := GetEffectiveValueForTrack(m, phrase, row, int(types.ColSustain), trackId)
 		effRelease := GetEffectiveValueForTrack(m, phrase, row, int(types.ColRelease), trackId)
-		effArpeggio := GetEffectiveValueForTrack(m, phrase, row, int(types.ColArpeggio), trackId)
+		effArpeggio := rowData[types.ColArpeggio] // Arpeggio should NOT be sticky - use current row only
 		effMidi := GetEffectiveValueForTrack(m, phrase, row, int(types.ColMidi), trackId)
 		effSoundMaker := GetEffectiveValueForTrack(m, phrase, row, int(types.ColSoundMaker), trackId)
 
@@ -2204,7 +2204,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 		rawEffectReverb := GetEffectiveValueForTrack(m, phrase, row, int(types.ColEffectReverb), trackId)
 
 		// Extract other parameters with effective values (sticky)
-		rawArpeggio := GetEffectiveValueForTrack(m, phrase, row, int(types.ColArpeggio), trackId)
+		rawArpeggio := rowData[types.ColArpeggio] // Arpeggio should NOT be sticky - use current row only
 		rawMidi := GetEffectiveValueForTrack(m, phrase, row, int(types.ColMidi), trackId)
 		rawSoundMaker := GetEffectiveValueForTrack(m, phrase, row, int(types.ColSoundMaker), trackId)
 
