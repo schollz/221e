@@ -74,7 +74,7 @@ s.waitForBoot({
 			effectComb = 0.0, effectCombOut
 			;
 			var snd;
-			snd = In.ar(inbus,2).poll * EnvGen.ar(Env.adsr(1.0,0.0,1.0,1.0),1);
+			snd = SoundIn.ar([0,1]).poll * EnvGen.ar(Env.adsr(1.0,0.0,1.0,1.0),1);
 			snd = Balance2.ar(snd[0], snd[1], pan);
 			snd = snd * -10.dbamp * trackVolume.dbamp;
 			Out.ar(effectDryOut, snd);
