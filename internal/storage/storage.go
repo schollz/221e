@@ -231,7 +231,7 @@ func LoadFiles(m *model.Model) {
 	for _, entry := range entries {
 		if !entry.IsDir() {
 			fullPath := filepath.Join(m.CurrentDir, entry.Name())
-			
+
 			// Check if it's a regular file or a symlink to a file
 			if stat, err := os.Stat(fullPath); err == nil && !stat.IsDir() {
 				ext := strings.ToLower(filepath.Ext(entry.Name()))
