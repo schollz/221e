@@ -56,7 +56,25 @@ s.waitForBoot({
 			snd = SawDPW.ar(freq * ((-3..2) * 0.05).midiratio * [1, 2, 1, 4, 1, 2]);
 			snd = Splay.ar(snd);
 			snd = MoogFF.ar(snd, XLine.kr(100,rrand(6000,\lpf.kr(18000)),attack*(1/\swell.kr(1))), 0);
-			snd = snd * EnvGen.ar(Env.asr(attack, 1.0, \release.kr(0.5)),\gate.kr(1) * ToggleFF.kr(1-TDelay.kr(DC.kr(1),\duration.kr(1))),doneAction:2);
+			snd = snd * EnvGen.ar(Env.adsr(attack, 0.0, 1.0, \release.kr(0.5)),\gate.kr(1) * ToggleFF.kr(1-TDelay.kr(DC.kr(1),\duration.kr(1))),doneAction:2);
+			snd = Balance2.ar(snd[0], snd[1], pan);
+			snd = snd * -10.dbamp * trackVolume.dbamp;
+			Out.ar(effectDryOut, snd);
+			Out.ar(effectCombOut, snd*effectComb);
+			Out.ar(effectReverbOut, snd*effectReverb);
+		}).add;
+
+		SynthDef("externalInput", {
+			arg trackId,
+			trackVolume = 0,
+			pan=0,
+			inbus=0,
+			effectDryOut,
+			effectReverb = 0.0, effectReverbOut,
+			effectComb = 0.0, effectCombOut
+			;
+			var snd;
+			snd = In.ar(inbus,2).poll * EnvGen.ar(Env.adsr(1.0,0.0,1.0,1.0),1);
 			snd = Balance2.ar(snd[0], snd[1], pan);
 			snd = snd * -10.dbamp * trackVolume.dbamp;
 			Out.ar(effectDryOut, snd);
@@ -323,6 +341,16 @@ s.waitForBoot({
 			volumeDB: -24,
 		]);
 		s.sync;
+		~synthsPlaying.put(9, Synth.head(Server.default,"externalInput",[
+			inbus: 0,
+			effectDryOut: ~busDry,
+			effectReverbOut: ~busReverb,
+			effectCombOut: ~busComb,
+			trackId: 9,
+			trackVolume: 0,
+			pan: 0,
+		]));
+		s.sync;
 		~sampleCache = Dictionary.new();
 
 
@@ -423,7 +451,7 @@ s.waitForBoot({
 
 
 			~samplesPlaying.at(track).put(synName,
-				Synth.head(s,"sampler"++(b.numChannels),args).onFree({
+				Synth.head(Server.default,"sampler"++(b.numChannels),args).onFree({
 					[b,"freed"].postln;
 					~samplesPlaying.at(track).removeAt(synName);
 				});
@@ -519,7 +547,7 @@ s.waitForBoot({
 			});
 			if (gate>0,{
 				Buffer.read(s,filename,action:{ |b|
-					~synthPlayback = Synth.head(s,"playback"++(b.numChannels),[
+					~synthPlayback = Synth.head(Server.default,"playback"++(b.numChannels),[
 						\buf,b,
 						\out,~busDry,
 						\gate,1,
@@ -535,6 +563,18 @@ s.waitForBoot({
 			["setting",msg[1],msg[2]].postln;
 			~synOut.set(msg[1],msg[2]);
 		},'/set');
+		OSCFunc({ |msg|
+			["setting",msg[1],msg[2],msg[3]].postln;
+			if (~synthsPlaying.at(msg[1].asInteger).notNil,{
+				~synthsPlaying.at(msg[1].asInteger).values.do({ arg syn;
+					if (syn.isPlaying,{
+						if (syn.notNil,{
+							syn.set(msg[2],msg[3]);
+						});
+					});
+				});
+			});
+		},'/set_track');
 
 		["loaded",NetAddr.langPort, NetAddr.localAddr].postln;
 
