@@ -62,7 +62,7 @@ func settingsViewConfig() ViewSwitchConfig {
 	return ViewSwitchConfig{
 		ViewMode:     types.SettingsView,
 		Row:          0,
-		Col:          0,
+		Col:          0, // Start in Global column
 		ScrollOffset: 0,
 	}
 }
@@ -751,7 +751,14 @@ func handleDown(m *model.Model) tea.Cmd {
 			m.CurrentRow = m.CurrentRow + 1
 		}
 	} else if m.ViewMode == types.SettingsView {
-		if m.CurrentRow < 8 { // 0=BPM, 1=PPQ, 2=PregainDB, 3=PostgainDB, 4=BiasDB, 5=SaturationDB, 6=DriveDB, 7=InputLevelDB, 8=ReverbSendPercent
+		// Column 0 (Global): 0-6 (BPM to Drive), Column 1 (Input): 0-1 (Input, Reverb)
+		var maxRow int
+		if m.CurrentCol == 0 {
+			maxRow = 6 // Global column: BPM(0) to Drive(6)
+		} else {
+			maxRow = 1 // Input column: Input(0) to Reverb(1)
+		}
+		if m.CurrentRow < maxRow {
 			m.CurrentRow = m.CurrentRow + 1
 		}
 	} else if m.ViewMode == types.FileMetadataView {
@@ -855,6 +862,15 @@ func handleLeft(m *model.Model) tea.Cmd {
 		// No horizontal navigation in MIDI view - use up/down for settings
 	} else if m.ViewMode == types.SoundMakerView {
 		// No horizontal navigation in SoundMaker view - use up/down for settings
+	} else if m.ViewMode == types.SettingsView {
+		if m.CurrentCol > 0 { // Switch between Global (0) and Input (1) columns
+			m.CurrentCol = m.CurrentCol - 1
+			// Adjust row if it's beyond the bounds of the new column
+			if m.CurrentCol == 0 && m.CurrentRow > 6 {
+				m.CurrentRow = 6 // Global column max is 6
+			}
+			storage.AutoSave(m)
+		}
 	} else if m.ViewMode == types.MixerView {
 		if m.CurrentMixerTrack > 0 { // Select previous track (0-7)
 			m.CurrentMixerTrack = m.CurrentMixerTrack - 1
@@ -901,6 +917,15 @@ func handleRight(m *model.Model) tea.Cmd {
 		// No horizontal navigation in MIDI view - use up/down for settings
 	} else if m.ViewMode == types.SoundMakerView {
 		// No horizontal navigation in SoundMaker view - use up/down for settings
+	} else if m.ViewMode == types.SettingsView {
+		if m.CurrentCol < 1 { // Switch between Global (0) and Input (1) columns
+			m.CurrentCol = m.CurrentCol + 1
+			// Adjust row if it's beyond the bounds of the new column
+			if m.CurrentCol == 1 && m.CurrentRow > 1 {
+				m.CurrentRow = 1 // Input column max is 1
+			}
+			storage.AutoSave(m)
+		}
 	} else if m.ViewMode == types.MixerView {
 		if m.CurrentMixerTrack < 7 { // Select next track (0-7)
 			m.CurrentMixerTrack = m.CurrentMixerTrack + 1

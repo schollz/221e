@@ -4,16 +4,45 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/schollz/2n/internal/model"
 )
 
 func RenderSettingsView(m *model.Model) string {
 	return renderViewWithCommonPattern(m, "Preferences ", "", func(styles *ViewStyles) string {
-		var content strings.Builder
-		content.WriteString("\n")
+		// Column widths
+		const globalColWidth = 18
+		const inputColWidth = 16
 
-		// Settings rows with common rendering pattern
-		settings := []struct {
+		// Column styles
+		columnStyle := lipgloss.NewStyle().
+			Width(globalColWidth).
+			Align(lipgloss.Left)
+
+		inputColumnStyle := lipgloss.NewStyle().
+			Width(inputColWidth).
+			Align(lipgloss.Left)
+
+		// Column headers
+		var globalHeader, inputHeader string
+		if m.CurrentCol == 0 {
+			globalHeader = styles.Selected.Render("Global")
+		} else {
+			globalHeader = styles.Label.Render("Global")
+		}
+		if m.CurrentCol == 1 {
+			inputHeader = styles.Selected.Render("Input")
+		} else {
+			inputHeader = styles.Label.Render("Input")
+		}
+
+		// Create header row
+		globalHeaderCell := columnStyle.Render(globalHeader)
+		inputHeaderCell := inputColumnStyle.Render(inputHeader)
+		headerRow := lipgloss.JoinHorizontal(lipgloss.Top, globalHeaderCell, inputHeaderCell)
+
+		// Global settings (column 0)
+		globalSettings := []struct {
 			label string
 			value string
 			row   int
@@ -25,32 +54,84 @@ func RenderSettingsView(m *model.Model) string {
 			{"Bias:", fmt.Sprintf("%.1f dB", m.BiasDB), 4},
 			{"Sat:", fmt.Sprintf("%.1f dB", m.SaturationDB), 5},
 			{"Drive:", fmt.Sprintf("%.1f dB", m.DriveDB), 6},
-			{"Input:", fmt.Sprintf("%.1f dB", m.InputLevelDB), 7},
-			{"Reverb:", fmt.Sprintf("%.1f%%", m.ReverbSendPercent), 8},
 		}
 
-		for _, setting := range settings {
-			var valueCell string
-			if m.CurrentRow == setting.row {
-				valueCell = styles.Selected.Render(setting.value)
+		// Input settings (column 1)
+		inputSettings := []struct {
+			label string
+			value string
+			row   int
+		}{
+			{"Input:", fmt.Sprintf("%.1f dB", m.InputLevelDB), 0},
+			{"Reverb:", fmt.Sprintf("%.1f%%", m.ReverbSendPercent), 1},
+		}
+
+		// Build column content
+		var globalRows []string
+		var inputRows []string
+
+		maxRows := len(globalSettings)
+		if len(inputSettings) > maxRows {
+			maxRows = len(inputSettings)
+		}
+
+		for i := 0; i < maxRows; i++ {
+			// Global column row
+			if i < len(globalSettings) {
+				setting := globalSettings[i]
+				var valueStyle lipgloss.Style
+				if m.CurrentCol == 0 && m.CurrentRow == setting.row {
+					valueStyle = styles.Selected
+				} else {
+					valueStyle = styles.Normal
+				}
+				row := fmt.Sprintf("%-6s %s", styles.Label.Render(setting.label), valueStyle.Render(setting.value))
+				globalRows = append(globalRows, row)
 			} else {
-				valueCell = styles.Normal.Render(setting.value)
+				globalRows = append(globalRows, "") // Empty row
 			}
-			row := fmt.Sprintf("  %-4s %s", styles.Label.Render(setting.label), valueCell)
-			content.WriteString(row)
-			content.WriteString("\n")
+
+			// Input column row
+			if i < len(inputSettings) {
+				setting := inputSettings[i]
+				var valueStyle lipgloss.Style
+				if m.CurrentCol == 1 && m.CurrentRow == setting.row {
+					valueStyle = styles.Selected
+				} else {
+					valueStyle = styles.Normal
+				}
+				row := fmt.Sprintf("%-7s %s", styles.Label.Render(setting.label), valueStyle.Render(setting.value))
+				inputRows = append(inputRows, row)
+			} else {
+				inputRows = append(inputRows, "") // Empty row
+			}
 		}
 
-		content.WriteString("\n")
+		// Join rows in each column
+		globalColumn := columnStyle.Render(strings.Join(globalRows, "\n"))
+		inputColumn := inputColumnStyle.Render(strings.Join(inputRows, "\n"))
+
+		// Join columns horizontally
+		columnsRow := lipgloss.JoinHorizontal(lipgloss.Top, globalColumn, inputColumn)
 
 		// Timing info
 		beatsPerSecond := float64(m.BPM) / 60.0
 		ticksPerSecond := beatsPerSecond * float64(m.PPQ)
 		secondsPerTick := 1.0 / ticksPerSecond
-		timingInfo := fmt.Sprintf("Timing: %.3f seconds per row", secondsPerTick)
-		content.WriteString(styles.Normal.Render(timingInfo))
-		content.WriteString("\n\n")
+		timingInfo := styles.Normal.Render(fmt.Sprintf("Timing: %.3f seconds per row", secondsPerTick))
 
-		return content.String()
-	}, "Up/Down: Navigate | Ctrl+Arrow: Adjust values | Shift+Down: Back to Chain view", 12)
+		// Join everything vertically
+		content := lipgloss.JoinVertical(
+			lipgloss.Left,
+			"", // Empty line after title
+			headerRow,
+			"", // Empty line after headers
+			columnsRow,
+			"", // Empty line before timing
+			timingInfo,
+			"", // Final empty line
+		)
+
+		return content
+	}, "Up/Down/Left/Right: Navigate | Ctrl+Arrow: Adjust values | Shift+Down: Back to Chain view", 12)
 }
