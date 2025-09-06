@@ -24,6 +24,7 @@ This program is heavily inspired by my norns tracker, [zxcvbn](https://zxcvbn.no
 ## Prerequisites
 
 - **SuperCollider** (required; extensions are checked at launch). Download [here](https://supercollider.github.io/downloads.html). 
+- **SuperCollider extensions** (required): Download [here](https://supercollider.github.io/sc3-plugins/)
 - **JACK (jackd)** must be running with the output to your favorite speaker. Download [here](https://jackaudio.org/downloads/).
 - **2n** binary. Grab the latest build from **[Releases](https://github.com/schollz/2n/releases/latest)**.
 
