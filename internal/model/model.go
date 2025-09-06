@@ -63,6 +63,8 @@ type Model struct {
 	BiasDB                float32        // Bias in decibels (-96.0 to +32.0, default -6.0)
 	SaturationDB          float32        // Saturation in decibels (-96.0 to +32.0, default -6.0)
 	DriveDB               float32        // Drive in decibels (-96.0 to +32.0, default -6.0)
+	InputLevelDB          float32        // Input level in decibels (-48.0 to +24.0, default 0.0)
+	ReverbSendPercent     float32        // Reverb send percentage (0.0 to 100.0, default 0.0)
 	PreviousView          types.ViewMode // Track the view we came from when entering Settings
 	// Playback state for inheriting values from previous rows
 	lastPlaybackNote     int    // Last non-null note value during playback
@@ -522,13 +524,15 @@ func NewModel(oscPort int, saveFile string) *Model {
 		ViewMode:      types.SongView, // Start with song view
 		CurrentPhrase: 0,
 		LastEditRow:   -1,    // No row edited yet
-		BPM:           120.0, // Default BPM
-		PPQ:           2,     // Default PPQ
-		PregainDB:     0.0,   // Default pregain (0 dB)
-		PostgainDB:    0.0,   // Default postgain (0 dB)
-		BiasDB:        -6.0,  // Default bias (-6 dB)
-		SaturationDB:  -6.0,  // Default saturation (-6 dB)
-		DriveDB:       -6.0,  // Default drive (-6 dB)
+		BPM:               120.0, // Default BPM
+		PPQ:               2,     // Default PPQ
+		PregainDB:         0.0,   // Default pregain (0 dB)
+		PostgainDB:        0.0,   // Default postgain (0 dB)
+		BiasDB:            -6.0,  // Default bias (-6 dB)
+		SaturationDB:      -6.0,  // Default saturation (-6 dB)
+		DriveDB:           -6.0,  // Default drive (-6 dB)
+		InputLevelDB:      0.0,   // Default input level (0 dB)
+		ReverbSendPercent: 0.0,   // Default reverb send (0%)
 		// Initialize playback inheritance values
 		lastPlaybackNote:     -1,
 		lastPlaybackDT:       -1,
@@ -1504,6 +1508,31 @@ func (m *Model) SendOSCDriveMessage() {
 		Parameters: []interface{}{"drive", m.DriveDB},
 		LogFormat:  "OSC drive message sent: /set 'drive' %.1f",
 		LogArgs:    []interface{}{m.DriveDB},
+	}
+
+	m.sendOSCMessage(config)
+}
+
+func (m *Model) SendOSCInputLevelMessage() {
+	config := OSCMessageConfig{
+		Address:    "/set_track",
+		Parameters: []interface{}{int32(9), "trackVolume", m.InputLevelDB},
+		LogFormat:  "OSC input level message sent: /set_track 9 'trackVolume' %.1f",
+		LogArgs:    []interface{}{m.InputLevelDB},
+	}
+
+	m.sendOSCMessage(config)
+}
+
+func (m *Model) SendOSCReverbSendMessage() {
+	// Normalize percentage (0-100) to 0.0-1.0 for SuperCollider
+	normalizedValue := m.ReverbSendPercent / 100.0
+	
+	config := OSCMessageConfig{
+		Address:    "/set_track",
+		Parameters: []interface{}{int32(9), "effectReverb", normalizedValue},
+		LogFormat:  "OSC reverb send message sent: /set_track 9 'effectReverb' %.3f (%.1f%%)",
+		LogArgs:    []interface{}{normalizedValue, m.ReverbSendPercent},
 	}
 
 	m.sendOSCMessage(config)

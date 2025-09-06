@@ -74,10 +74,10 @@ s.waitForBoot({
 			effectComb = 0.0, effectCombOut
 			;
 			var snd;
-			snd = SoundIn.ar([0,1]).poll * EnvGen.ar(Env.adsr(1.0,0.0,1.0,1.0),1);
+			snd = SoundIn.ar([0,1]) * EnvGen.ar(Env.adsr(1.0,0.0,1.0,1.0),1);
 			snd = Balance2.ar(snd[0], snd[1], pan);
 			snd = snd * -10.dbamp * trackVolume.dbamp;
-			Out.ar(effectDryOut, snd);
+			Out.ar(effectDryOut, snd*(1.0 - effectReverb));
 			Out.ar(effectCombOut, snd*effectComb);
 			Out.ar(effectReverbOut, snd*effectReverb);
 		}).add;
@@ -341,7 +341,8 @@ s.waitForBoot({
 			volumeDB: -24,
 		]);
 		s.sync;
-		~synthsPlaying.put(9, Synth.head(Server.default,"externalInput",[
+		~synthsPlaying.put(9, Dictionary.new());
+		~synthsPlaying.at(9).put(0, Synth.head(Server.default,"externalInput",[
 			inbus: 0,
 			effectDryOut: ~busDry,
 			effectReverbOut: ~busReverb,
@@ -350,6 +351,7 @@ s.waitForBoot({
 			trackVolume: 0,
 			pan: 0,
 		]));
+		NodeWatcher.register(~synthsPlaying.at(9).at(0));
 		s.sync;
 		~sampleCache = Dictionary.new();
 
@@ -564,12 +566,13 @@ s.waitForBoot({
 			~synOut.set(msg[1],msg[2]);
 		},'/set');
 		OSCFunc({ |msg|
-			["setting",msg[1],msg[2],msg[3]].postln;
+			["/set_track",msg[1],msg[2],msg[3]].postln;
 			if (~synthsPlaying.at(msg[1].asInteger).notNil,{
 				~synthsPlaying.at(msg[1].asInteger).values.do({ arg syn;
 					if (syn.isPlaying,{
 						if (syn.notNil,{
-							syn.set(msg[2],msg[3]);
+							[syn,"setting",msg[2],msg[3]].postln;
+							syn.set(msg[2].asString,msg[3]);
 						});
 					});
 				});

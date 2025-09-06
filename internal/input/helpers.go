@@ -243,6 +243,28 @@ func ModifySettingsValue(m *model.Model, delta float32) {
 			-96, 32, "DriveDB",
 		)
 		modifyValueWithBounds(modifier, delta)
+
+	case 7: // InputLevelDB
+		modifier := createFloatModifier(
+			func() float32 { return m.InputLevelDB },
+			func(v float32) {
+				m.InputLevelDB = v
+				m.SendOSCInputLevelMessage() // Send OSC message for input level change
+			},
+			-48, 24, "InputLevelDB",
+		)
+		modifyValueWithBounds(modifier, delta)
+
+	case 8: // ReverbSendPercent
+		modifier := createFloatModifier(
+			func() float32 { return m.ReverbSendPercent },
+			func(v float32) {
+				m.ReverbSendPercent = v
+				m.SendOSCReverbSendMessage() // Send OSC message for reverb send change
+			},
+			0, 100, "ReverbSendPercent",
+		)
+		modifyValueWithBounds(modifier, delta)
 	}
 	storage.AutoSave(m)
 }

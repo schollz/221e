@@ -751,7 +751,7 @@ func handleDown(m *model.Model) tea.Cmd {
 			m.CurrentRow = m.CurrentRow + 1
 		}
 	} else if m.ViewMode == types.SettingsView {
-		if m.CurrentRow < 6 { // 0=BPM, 1=PPQ, 2=PregainDB, 3=PostgainDB, 4=BiasDB, 5=SaturationDB, 6=DriveDB
+		if m.CurrentRow < 8 { // 0=BPM, 1=PPQ, 2=PregainDB, 3=PostgainDB, 4=BiasDB, 5=SaturationDB, 6=DriveDB, 7=InputLevelDB, 8=ReverbSendPercent
 			m.CurrentRow = m.CurrentRow + 1
 		}
 	} else if m.ViewMode == types.FileMetadataView {
