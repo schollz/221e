@@ -519,11 +519,11 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 
 func NewModel(oscPort int, saveFile string) *Model {
 	m := &Model{
-		CurrentRow:    0,
-		CurrentCol:    1,              // Start at phrase column in chain view
-		ViewMode:      types.SongView, // Start with song view
-		CurrentPhrase: 0,
-		LastEditRow:   -1,    // No row edited yet
+		CurrentRow:        0,
+		CurrentCol:        1,              // Start at phrase column in chain view
+		ViewMode:          types.SongView, // Start with song view
+		CurrentPhrase:     0,
+		LastEditRow:       -1,    // No row edited yet
 		BPM:               120.0, // Default BPM
 		PPQ:               2,     // Default PPQ
 		PregainDB:         0.0,   // Default pregain (0 dB)
@@ -1527,7 +1527,7 @@ func (m *Model) SendOSCInputLevelMessage() {
 func (m *Model) SendOSCReverbSendMessage() {
 	// Normalize percentage (0-100) to 0.0-1.0 for SuperCollider
 	normalizedValue := m.ReverbSendPercent / 100.0
-	
+
 	config := OSCMessageConfig{
 		Address:    "/set_track",
 		Parameters: []interface{}{int32(9), "effectReverb", normalizedValue},
