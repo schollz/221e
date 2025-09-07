@@ -125,6 +125,7 @@ jobs:
           export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
           export CGO_CFLAGS="-I/usr/local/include"
           export CGO_LDFLAGS="-L/usr/local/lib"
+          export CGO_CXXFLAGS="${CGO_CXXFLAGS}"
           CGO_ENABLED=1 go build -buildvcs=false -ldflags '-linkmode external -extldflags "-static -L/usr/local/lib"' -o 2n
 
       - name: Verify static binary
@@ -168,6 +169,7 @@ jobs:
           echo "CGO_ENABLED=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "CC=x86_64-w64-mingw32-gcc" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "CGO_LDFLAGS=-static" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "CGO_CXXFLAGS=-D__RTMIDI_DEBUG__=0 -D__RTMIDI_QUIET__" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - uses: actions/setup-go@v6
         with:
