@@ -1135,7 +1135,8 @@ func (m *Model) sendOSCInstrumentMessage(params InstrumentOSCParams) {
 		msg := osc.NewMessage("/instrument")
 		msg.Append(int32(params.TrackId)) // Track ID
 		msg.Append(int32(params.NoteOn))  // Note on (1) or off (0)
-		msg.Append("PolyPerc")
+		// send the name of the current sound maker
+		msg.Append(params.SoundMakerIndex)
 		// add all notes as float32
 		for _, note := range params.Notes {
 			msg.Append(float32(note))
