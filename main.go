@@ -150,7 +150,9 @@ func main() {
 	p := tea.NewProgram(tm, tea.WithAltScreen())
 
 	// Start SuperCollider in the background so it doesn't block the splash
+	// Always check JACK status, but only exit if --skip-jack-check is not set
 	if supercollider.IsJackEnabled() {
+		log.Printf("JACK server enabled; starting SuperCollider if not already running")
 		go func() {
 			if !supercollider.IsSuperColliderEnabled() {
 				if err := supercollider.StartSuperCollider(); err != nil {
@@ -159,8 +161,10 @@ func main() {
 			}
 		}()
 	} else {
+		// JACK is not running - log this but don't start SuperCollider
+		log.Printf("JACK server not enabled; skipping SuperCollider startup")
 		if !skipJackCheck {
-			log.Printf("JACK server not enabled; cannot start SuperCollider")
+			// Only exit if --skip-jack-check flag was not provided
 			os.Exit(1)
 		}
 	}
