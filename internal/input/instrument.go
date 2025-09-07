@@ -192,7 +192,7 @@ func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
 		}
 
 		// Use the available SoundMaker names
-		soundMakers := []string{"None", "Polyperc", "Infinite Pad"}
+		soundMakers := []string{"None", "Polyperc", "Infinite Pad", "DX7"}
 
 		// Find current index
 		currentIndex := -1
@@ -219,7 +219,107 @@ func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
 		oldName := settings.Name
 		settings.Name = soundMakers[newIndex]
 		log.Printf("Modified SoundMaker %02X Name: %s -> %s", m.SoundMakerEditingIndex, oldName, settings.Name)
-	} else if m.CurrentRow >= 1 && m.CurrentRow <= 4 { // Parameters A, B, C, D
+	} else if m.CurrentRow == 1 { // Parameter row (A or Preset depending on SoundMaker)
+		if settings.Name == "DX7" {
+			// For DX7, handle Preset parameter (0-1000)
+			var delta int
+			if baseDelta >= 1.0 || baseDelta <= -1.0 {
+				// Coarse control: Ctrl+Up/Down = ±50
+				if baseDelta > 0 {
+					delta = 50
+				} else {
+					delta = -50
+				}
+			} else {
+				// Fine control: Ctrl+Left/Right = ±1
+				if baseDelta > 0 {
+					delta = 1
+				} else {
+					delta = -1
+				}
+			}
+
+			oldValue := settings.Preset
+			var newValue int
+
+			if settings.Preset == -1 {
+				// If currently "--", start from 0 or 1000
+				if delta > 0 {
+					newValue = 0
+				} else {
+					newValue = 1000
+				}
+			} else {
+				newValue = settings.Preset + delta
+				// Wrap around: 0-1000 or -- (-1)
+				if newValue > 1000 {
+					newValue = -1 // Wrap to "--"
+				} else if newValue < -1 {
+					newValue = 1000 // Wrap to 1000
+				}
+			}
+
+			settings.Preset = newValue
+			if newValue == -1 {
+				log.Printf("Modified SoundMaker %02X Preset: %d -> -- (delta: %d)", m.SoundMakerEditingIndex, oldValue, delta)
+			} else {
+				if oldValue == -1 {
+					log.Printf("Modified SoundMaker %02X Preset: -- -> %d (delta: %d)", m.SoundMakerEditingIndex, newValue, delta)
+				} else {
+					log.Printf("Modified SoundMaker %02X Preset: %d -> %d (delta: %d)", m.SoundMakerEditingIndex, oldValue, newValue, delta)
+				}
+			}
+		} else {
+			// For other SoundMakers, handle Parameter A (00-FE)
+			var delta int
+			if baseDelta >= 1.0 || baseDelta <= -1.0 {
+				// Coarse control: Ctrl+Up/Down = ±16
+				if baseDelta > 0 {
+					delta = 16
+				} else {
+					delta = -16
+				}
+			} else {
+				// Fine control: Ctrl+Left/Right = ±1
+				if baseDelta > 0 {
+					delta = 1
+				} else {
+					delta = -1
+				}
+			}
+
+			oldValue := settings.A
+			var newValue int
+
+			if settings.A == -1 {
+				// If currently "--", start from 00
+				if delta > 0 {
+					newValue = 0
+				} else {
+					newValue = 254 // FE
+				}
+			} else {
+				newValue = settings.A + delta
+				// Wrap around: 00-FE (0-254) or -- (-1)
+				if newValue > 254 {
+					newValue = -1 // Wrap to "--"
+				} else if newValue < -1 {
+					newValue = 254 // Wrap to FE
+				}
+			}
+
+			settings.A = newValue
+			if newValue == -1 {
+				log.Printf("Modified SoundMaker %02X Parameter A: %02X -> -- (delta: %d)", m.SoundMakerEditingIndex, oldValue, delta)
+			} else {
+				if oldValue == -1 {
+					log.Printf("Modified SoundMaker %02X Parameter A: -- -> %02X (delta: %d)", m.SoundMakerEditingIndex, newValue, delta)
+				} else {
+					log.Printf("Modified SoundMaker %02X Parameter A: %02X -> %02X (delta: %d)", m.SoundMakerEditingIndex, oldValue, newValue, delta)
+				}
+			}
+		}
+	} else if m.CurrentRow >= 2 && m.CurrentRow <= 4 && settings.Name != "DX7" { // Parameters B, C, D (only for non-DX7)
 		// Parameters cycle through 00-FE or -- (which is -1)
 		var delta int
 		if baseDelta >= 1.0 || baseDelta <= -1.0 {
@@ -240,15 +340,17 @@ func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
 
 		// Get the current parameter value
 		var currentValue *int
+		var paramName string
 		switch m.CurrentRow {
-		case 1: // Parameter A
-			currentValue = &settings.A
 		case 2: // Parameter B
 			currentValue = &settings.B
+			paramName = "B"
 		case 3: // Parameter C
 			currentValue = &settings.C
+			paramName = "C"
 		case 4: // Parameter D
 			currentValue = &settings.D
+			paramName = "D"
 		}
 
 		if currentValue != nil {
@@ -273,7 +375,6 @@ func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
 			}
 
 			*currentValue = newValue
-			paramName := string(rune('A' + (m.CurrentRow - 1)))
 			if newValue == -1 {
 				log.Printf("Modified SoundMaker %02X Parameter %s: %02X -> -- (delta: %d)", m.SoundMakerEditingIndex, paramName, oldValue, delta)
 			} else {

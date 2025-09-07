@@ -695,8 +695,11 @@ r = File("DX7.afx".resolveRelative,"r");
 });
 
 
-mainCaller = { arg set,k,v,preset, note, vel, pan, attack, release, duration, compressible, compressing, sendreverb, sendtape, senddelay, out, outsc, outnsc, outreverb, outtape, outdelay, synBefore, amp, filter, outtrack;
-	[set,k,v,preset, note, vel, pan, attack, release, duration, compressible, compressing, sendreverb, sendtape, senddelay, out, outsc, outnsc, outreverb, outtape, outdelay, synBefore, amp, filter, outtrack].postln;
+mainCaller = { arg set,k,v,preset, note, vel, pan, 
+	attack, release, duration,	
+trackVolume, filter,
+effectDryOut, effectCombOut, effectReverbOut, effectReverb, effectComb;
+	//set 0 = preset change, 1 = all notes off, 2 =
 	if (set>0,{
 		if (set>1,{
 			headno.free;
@@ -726,7 +729,6 @@ mainCaller = { arg set,k,v,preset, note, vel, pan, attack, release, duration, co
 				//~midiOutDX7.control(~cirklonCCparse[item][0],~cirklonCCparse[item][1],k);
 			});
 		});
-		noteParser.value(note, vel, pan, attack, release, duration, compressible, compressing, sendreverb, sendtape, senddelay, out, outsc, outnsc, outreverb, outtape, outdelay, synBefore, amp, filter, outtrack)
 	});
 }
 )
