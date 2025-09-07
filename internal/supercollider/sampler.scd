@@ -353,6 +353,10 @@ s.waitForBoot({
 		]));
 		NodeWatcher.register(~synthsPlaying.at(9).at(0));
 		s.sync;
+		~dx7syn = thisProcess.interpreter.executeFile(
+			PathName(thisProcess.nowExecutingPath).pathOnly +/+ "DX7.scd"
+		);
+		s.sync;
 		~sampleCache = Dictionary.new();
 
 
@@ -362,6 +366,7 @@ s.waitForBoot({
 			var track = msg[1].asInteger;
 			var argLast;
 			var noteOn = msg[2].asInteger;
+			var synthToPlay = msg[3].asString;
 			var args = [
 				\effectDryOut, ~busDry,
 				\effectCombOut, ~busComb,
@@ -369,13 +374,13 @@ s.waitForBoot({
 				\trackId, track,
 			];
 			var notes = Array.new();
-			var nonNoteIndex = 3;
+			var nonNoteIndex = 4;
 			var keepSearching = true;
-			// find where msg[3:] is not a float
-			msg[3..].do({ |v,i|
+			// find where msg[4:] is not a float
+			msg[4..].do({ |v,i|
 				if (v.isNumber && keepSearching,{
 					notes = notes.add(v);
-					nonNoteIndex = i + 4;
+					nonNoteIndex = i + 5;
 				},{
 					// break out of do loop
 					keepSearching = false;
@@ -475,8 +480,12 @@ s.waitForBoot({
 			});
 		},'/sampler');
 		OSCFunc({ |msg|
-		msg.postln;
-			~playSynthFromMsg.(msg);
+			var synthToPlay = msg[3].asString;
+			if (synthToPlay=="DX7",{
+				["playing DX7"].postln;
+			},{
+				~playSynthFromMsg.(msg);
+			});
 		},'/instrument');
 
 		OSCFunc({ |msg|
@@ -589,6 +598,7 @@ s.waitForBoot({
 			});
 		}.play;
 
+
 		// ~bpmTarget = 180;
 		// ~sliceNum = 32;
 		// Routine {
@@ -620,3 +630,4 @@ s.waitForBoot({
 	}.play;
 });
 )
+
