@@ -29,15 +29,43 @@ type Device struct {
 
 func filterName(name string) (foundName string, foundNum int, err error) {
 	names := Devices()
+	
+	// Truncate name to first 3 words
+	words := strings.Fields(name)
+	if len(words) > 3 {
+		words = words[:3]
+	}
+	truncatedName := strings.Join(words, " ")
+	
+	// First try exact match with truncated name
 	for i, n := range names {
-		if strings.Contains(strings.ToLower(n), strings.ToLower(name)) {
+		if strings.EqualFold(n, truncatedName) {
 			foundName = n
 			foundNum = i
-			break
+			return
 		}
 	}
+	
+	// Then try prefix match with truncated name
+	for i, n := range names {
+		if strings.HasPrefix(strings.ToLower(n), strings.ToLower(truncatedName)) {
+			foundName = n
+			foundNum = i
+			return
+		}
+	}
+	
+	// Finally try contains match for backward compatibility
+	for i, n := range names {
+		if strings.Contains(strings.ToLower(n), strings.ToLower(truncatedName)) {
+			foundName = n
+			foundNum = i
+			return
+		}
+	}
+	
 	if foundNum == -1 {
-		err = fmt.Errorf("could not find device with name %s", name)
+		err = fmt.Errorf("could not find device with name %s", truncatedName)
 	}
 	return
 }
