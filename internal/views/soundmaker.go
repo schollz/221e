@@ -14,35 +14,56 @@ func GetSoundMakerStatusMessage(m *model.Model) string {
 	switch m.CurrentRow {
 	case 0: // SoundMaker Name row
 		columnStatus = fmt.Sprintf("SoundMaker: %s", settings.Name)
-	case 1: // Parameter A row
-		if settings.A == -1 {
-			columnStatus = "Parameter A: --"
+	case 1: // Parameter row (A or Preset depending on SoundMaker)
+		if settings.Name == "DX7" {
+			if settings.Preset == -1 {
+				columnStatus = "Preset: --"
+			} else {
+				columnStatus = fmt.Sprintf("Preset: %d", settings.Preset)
+			}
 		} else {
-			columnStatus = fmt.Sprintf("Parameter A: %02X", settings.A)
+			if settings.A == -1 {
+				columnStatus = "Parameter A: --"
+			} else {
+				columnStatus = fmt.Sprintf("Parameter A: %02X", settings.A)
+			}
 		}
-	case 2: // Parameter B row
-		if settings.B == -1 {
-			columnStatus = "Parameter B: --"
-		} else {
-			columnStatus = fmt.Sprintf("Parameter B: %02X", settings.B)
+	case 2: // Parameter B row (only for non-DX7)
+		if settings.Name != "DX7" {
+			if settings.B == -1 {
+				columnStatus = "Parameter B: --"
+			} else {
+				columnStatus = fmt.Sprintf("Parameter B: %02X", settings.B)
+			}
 		}
-	case 3: // Parameter C row
-		if settings.C == -1 {
-			columnStatus = "Parameter C: --"
-		} else {
-			columnStatus = fmt.Sprintf("Parameter C: %02X", settings.C)
+	case 3: // Parameter C row (only for non-DX7)
+		if settings.Name != "DX7" {
+			if settings.C == -1 {
+				columnStatus = "Parameter C: --"
+			} else {
+				columnStatus = fmt.Sprintf("Parameter C: %02X", settings.C)
+			}
 		}
-	case 4: // Parameter D row
-		if settings.D == -1 {
-			columnStatus = "Parameter D: --"
-		} else {
-			columnStatus = fmt.Sprintf("Parameter D: %02X", settings.D)
+	case 4: // Parameter D row (only for non-DX7)
+		if settings.Name != "DX7" {
+			if settings.D == -1 {
+				columnStatus = "Parameter D: --"
+			} else {
+				columnStatus = fmt.Sprintf("Parameter D: %02X", settings.D)
+			}
 		}
 	default:
 		// SoundMaker selection rows
-		availableSoundMakers := []string{"Polyperc", "Infinite Pad"}
-		if m.CurrentRow >= 5 && m.CurrentRow-5+m.ScrollOffset < len(availableSoundMakers) {
-			soundMakerIndex := m.CurrentRow - 5 + m.ScrollOffset
+		availableSoundMakers := []string{"Polyperc", "Infinite Pad", "DX7"}
+		var soundMakerStartRow int
+		if settings.Name == "DX7" {
+			soundMakerStartRow = 2 // SoundMakers start at row 2 for DX7
+		} else {
+			soundMakerStartRow = 5 // SoundMakers start at row 5 for others
+		}
+		
+		if m.CurrentRow >= soundMakerStartRow && m.CurrentRow-soundMakerStartRow+m.ScrollOffset < len(availableSoundMakers) {
+			soundMakerIndex := m.CurrentRow - soundMakerStartRow + m.ScrollOffset
 			columnStatus = fmt.Sprintf("Select SoundMaker: %s", availableSoundMakers[soundMakerIndex])
 		} else {
 			columnStatus = "Available SoundMakers"
@@ -63,36 +84,74 @@ func RenderSoundMakerView(m *model.Model) string {
 		settings := m.SoundMakerSettings[m.SoundMakerEditingIndex]
 
 		// Settings rows with common rendering pattern
-		settingsRows := []struct {
+		var settingsRows []struct {
 			label string
 			value string
 			row   int
-		}{
-			{"Name:", settings.Name, 0},
-			{"A:", func() string {
+		}
+
+		// Always show Name row
+		settingsRows = append(settingsRows, struct {
+			label string
+			value string
+			row   int
+		}{"Name:", settings.Name, 0})
+
+		// Show different parameters based on SoundMaker type
+		if settings.Name == "DX7" {
+			// For DX7, show Preset instead of A, B, C, D
+			settingsRows = append(settingsRows, struct {
+				label string
+				value string
+				row   int
+			}{"Preset:", func() string {
+				if settings.Preset == -1 {
+					return "--"
+				}
+				return fmt.Sprintf("%d", settings.Preset)
+			}(), 1})
+		} else {
+			// For other SoundMakers, show A, B, C, D
+			settingsRows = append(settingsRows, struct {
+				label string
+				value string
+				row   int
+			}{"A:", func() string {
 				if settings.A == -1 {
 					return "--"
 				}
 				return fmt.Sprintf("%02X", settings.A)
-			}(), 1},
-			{"B:", func() string {
+			}(), 1})
+			settingsRows = append(settingsRows, struct {
+				label string
+				value string
+				row   int
+			}{"B:", func() string {
 				if settings.B == -1 {
 					return "--"
 				}
 				return fmt.Sprintf("%02X", settings.B)
-			}(), 2},
-			{"C:", func() string {
+			}(), 2})
+			settingsRows = append(settingsRows, struct {
+				label string
+				value string
+				row   int
+			}{"C:", func() string {
 				if settings.C == -1 {
 					return "--"
 				}
 				return fmt.Sprintf("%02X", settings.C)
-			}(), 3},
-			{"D:", func() string {
+			}(), 3})
+			settingsRows = append(settingsRows, struct {
+				label string
+				value string
+				row   int
+			}{"D:", func() string {
 				if settings.D == -1 {
 					return "--"
 				}
 				return fmt.Sprintf("%02X", settings.D)
-			}(), 4},
+			}(), 4})
 		}
 
 		for _, setting := range settingsRows {
@@ -113,9 +172,14 @@ func RenderSoundMakerView(m *model.Model) string {
 		content.WriteString("\n\n")
 
 		// Available SoundMakers list (scrollable)
-		availableSoundMakers := []string{"Polyperc", "Infinite Pad"}
+		availableSoundMakers := []string{"Polyperc", "Infinite Pad", "DX7"}
 		visibleRows := m.GetVisibleRows() - 9 // Reserve space for header, settings, and labels
-		soundMakerStartRow := 5               // SoundMakers start at row 5 (after Name and A,B,C,D settings)
+		var soundMakerStartRow int
+		if settings.Name == "DX7" {
+			soundMakerStartRow = 2 // SoundMakers start at row 2 for DX7 (after Name and Preset)
+		} else {
+			soundMakerStartRow = 5 // SoundMakers start at row 5 (after Name and A,B,C,D settings)
+		}
 
 		for i := 0; i < visibleRows && i+m.ScrollOffset < len(availableSoundMakers); i++ {
 			dataIndex := i + m.ScrollOffset

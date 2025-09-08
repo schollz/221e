@@ -191,7 +191,7 @@ s.waitForBoot({
 				// Calculate rate
 				rate = rate*BufRateScale.ir(buf)*bpmTarget/bpmSource;
 				// Calculate pitch
-				pitch = pitch + (retrigNumTotal * retrigPitchChange.neg);
+				// pitch = pitch + (retrigNumTotal * retrigPitchChange.neg);
 				rate = rate * (2 ** (pitch/12.0));
 
 				// Calculate retriggers
@@ -353,6 +353,10 @@ s.waitForBoot({
 		]));
 		NodeWatcher.register(~synthsPlaying.at(9).at(0));
 		s.sync;
+		~dx7syn = thisProcess.interpreter.executeFile(
+			PathName(thisProcess.nowExecutingPath).pathOnly +/+ "DX7.scd"
+		);
+		s.sync;
 		~sampleCache = Dictionary.new();
 
 
@@ -362,6 +366,7 @@ s.waitForBoot({
 			var track = msg[1].asInteger;
 			var argLast;
 			var noteOn = msg[2].asInteger;
+			var synthToPlay = msg[3].asString;
 			var args = [
 				\effectDryOut, ~busDry,
 				\effectCombOut, ~busComb,
@@ -369,13 +374,13 @@ s.waitForBoot({
 				\trackId, track,
 			];
 			var notes = Array.new();
-			var nonNoteIndex = 3;
+			var nonNoteIndex = 4;
 			var keepSearching = true;
-			// find where msg[3:] is not a float
-			msg[3..].do({ |v,i|
+			// find where msg[4:] is not a float
+			msg[4..].do({ |v,i|
 				if (v.isNumber && keepSearching,{
 					notes = notes.add(v);
-					nonNoteIndex = i + 4;
+					nonNoteIndex = i + 5;
 				},{
 					// break out of do loop
 					keepSearching = false;
@@ -475,8 +480,80 @@ s.waitForBoot({
 			});
 		},'/sampler');
 		OSCFunc({ |msg|
-		msg.postln;
-			~playSynthFromMsg.(msg);
+			var synthToPlay = msg[3].asString;
+			if (synthToPlay=="DX7",{
+				var settings = Dictionary.new();
+				var notes = Array.new();
+				var nonNoteIndex = 4;
+				var keepSearching = true;
+				// find where msg[4:] is not a float
+				msg[4..].do({ |v,i|
+					if (v.isNumber && keepSearching,{
+						notes = notes.add(v);
+						nonNoteIndex = i + 5;
+					},{
+						// break out of do loop
+						keepSearching = false;
+					});
+				});
+
+				settings.put("set",0);
+				settings.put("k","");
+				settings.put("v",0);
+				settings.put("preset",1959);
+				settings.put("synBefore",~synOut);
+				settings.put("note",60);
+				settings.put("vel",100);
+				settings.put("pan",0);
+				settings.put("attack",0.1);
+				settings.put("release",0.5);
+				settings.put("duration",1.0);
+				settings.put("trackVolume",-24.0);
+				settings.put("filter",20000);
+				settings.put("effectDryOut", ~busDry);
+				settings.put("effectCombOut", ~busComb);
+				settings.put("effectReverbOut", ~busReverb);
+				settings.put("effectReverb",0.0);
+				settings.put("effectComb",0.0);
+				// for all other messages, they are key/value pairs
+				msg[nonNoteIndex..].do({ |v,i|
+					if (i.mod(2) == 1,{
+						settings.put(msg[nonNoteIndex + i - 1].asString,v);
+					});
+				});
+				// print all settings 
+				settings.keysValuesDo({ |k,v|
+					[k,v].postln;
+				});
+				["playing DX7"].postln;
+				notes.do({ |n|
+					settings.put("note",n);
+					["note",n].postln;
+					~dx7syn.value(
+						settings.at("set"),
+						settings.at("k"),
+						settings.at("v"),
+						settings.at("preset"),
+						settings.at("synBefore"),
+						settings.at("note"),
+						settings.at("vel"),
+						settings.at("pan"),
+						settings.at("attack"),
+						settings.at("release"),
+						settings.at("duration"),
+						settings.at("trackVolume"),
+						settings.at("filter"),
+						settings.at("effectDryOut"), 
+						settings.at("effectCombOut"),
+						settings.at("effectReverbOut"), 
+						settings.at("effectReverb"), 
+						settings.at("effectComb")
+					);
+				});
+
+			},{
+				~playSynthFromMsg.(msg);
+			});
 		},'/instrument');
 
 		OSCFunc({ |msg|
@@ -589,6 +666,7 @@ s.waitForBoot({
 			});
 		}.play;
 
+
 		// ~bpmTarget = 180;
 		// ~sliceNum = 32;
 		// Routine {
@@ -620,3 +698,4 @@ s.waitForBoot({
 	}.play;
 });
 )
+

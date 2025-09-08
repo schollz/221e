@@ -745,11 +745,12 @@ func (m *Model) initializeDefaultData() {
 	// Initialize SoundMaker settings with defaults
 	for i := 0; i < 255; i++ {
 		m.SoundMakerSettings[i] = types.SoundMakerSettings{
-			Name: "None", // Default to "None"
-			A:    -1,     // Default: "--"
-			B:    -1,     // Default: "--"
-			C:    -1,     // Default: "--"
-			D:    -1,     // Default: "--"
+			Name:   "None", // Default to "None"
+			A:      -1,     // Default: "--"
+			B:      -1,     // Default: "--"
+			C:      -1,     // Default: "--"
+			D:      -1,     // Default: "--"
+			Preset: -1,     // Default: "--"
 		}
 	}
 
@@ -1135,6 +1136,9 @@ func (m *Model) sendOSCInstrumentMessage(params InstrumentOSCParams) {
 		msg := osc.NewMessage("/instrument")
 		msg.Append(int32(params.TrackId)) // Track ID
 		msg.Append(int32(params.NoteOn))  // Note on (1) or off (0)
+		// send the name of the current sound maker instead of index
+		soundMakerSettings := m.SoundMakerSettings[params.SoundMakerIndex]
+		msg.Append(soundMakerSettings.Name)
 		// add all notes as float32
 		for _, note := range params.Notes {
 			msg.Append(float32(note))
@@ -1163,54 +1167,84 @@ func (m *Model) sendOSCInstrumentMessage(params InstrumentOSCParams) {
 		msg.Append(float32(params.EffectReverb))
 
 		// Add SoundMaker information
-		var soundMakerName string
-		var valueA, valueB, valueC, valueD float32
-
 		if params.SoundMakerIndex == -1 {
 			// No SoundMaker selected
-			soundMakerName = "none"
-			valueA, valueB, valueC, valueD = 0.0, 0.0, 0.0, 0.0
+			msg.Append("soundMakerName")
+			msg.Append("none")
+			msg.Append("valueA")
+			msg.Append(float32(0.0))
+			msg.Append("valueB")
+			msg.Append(float32(0.0))
+			msg.Append("valueC")
+			msg.Append(float32(0.0))
+			msg.Append("valueD")
+			msg.Append(float32(0.0))
 		} else {
-			// SoundMaker selected, get name and normalize values
+			// SoundMaker selected, get name and parameters
 			soundMakerSettings := m.SoundMakerSettings[params.SoundMakerIndex]
-			soundMakerName = soundMakerSettings.Name
 
-			// Normalize A, B, C, D values to 1.0 (values are 0-254, -1 means unset)
-			if soundMakerSettings.A == -1 {
-				valueA = 0.0
-			} else {
-				valueA = float32(soundMakerSettings.A) / 254.0
-			}
+			msg.Append("soundMakerName")
+			msg.Append(soundMakerSettings.Name)
 
-			if soundMakerSettings.B == -1 {
-				valueB = 0.0
-			} else {
-				valueB = float32(soundMakerSettings.B) / 254.0
-			}
+			if soundMakerSettings.Name == "DX7" {
+				// For DX7, send preset value instead of A, B, C, D
+				var presetValue int32
+				if soundMakerSettings.Preset == -1 {
+					presetValue = 0.0 // Default to 0 if unset
+				} else {
+					// Normalize 0-1000 to 0.0-1.0
+					presetValue = int32(soundMakerSettings.Preset)
+				}
 
-			if soundMakerSettings.C == -1 {
-				valueC = 0.0
+				msg.Append("preset")
+				msg.Append(presetValue)
+				// Still send A, B, C, D as 0.0 for compatibility
+				msg.Append("valueA")
+				msg.Append(float32(0.0))
+				msg.Append("valueB")
+				msg.Append(float32(0.0))
+				msg.Append("valueC")
+				msg.Append(float32(0.0))
+				msg.Append("valueD")
+				msg.Append(float32(0.0))
 			} else {
-				valueC = float32(soundMakerSettings.C) / 254.0
-			}
+				// For other SoundMakers, normalize A, B, C, D values to 1.0 (values are 0-254, -1 means unset)
+				var valueA, valueB, valueC, valueD float32
 
-			if soundMakerSettings.D == -1 {
-				valueD = 0.0
-			} else {
-				valueD = float32(soundMakerSettings.D) / 254.0
+				if soundMakerSettings.A == -1 {
+					valueA = 0.0
+				} else {
+					valueA = float32(soundMakerSettings.A) / 254.0
+				}
+
+				if soundMakerSettings.B == -1 {
+					valueB = 0.0
+				} else {
+					valueB = float32(soundMakerSettings.B) / 254.0
+				}
+
+				if soundMakerSettings.C == -1 {
+					valueC = 0.0
+				} else {
+					valueC = float32(soundMakerSettings.C) / 254.0
+				}
+
+				if soundMakerSettings.D == -1 {
+					valueD = 0.0
+				} else {
+					valueD = float32(soundMakerSettings.D) / 254.0
+				}
+
+				msg.Append("valueA")
+				msg.Append(valueA)
+				msg.Append("valueB")
+				msg.Append(valueB)
+				msg.Append("valueC")
+				msg.Append(valueC)
+				msg.Append("valueD")
+				msg.Append(valueD)
 			}
 		}
-
-		msg.Append("soundMakerName")
-		msg.Append(soundMakerName)
-		msg.Append("valueA")
-		msg.Append(valueA)
-		msg.Append("valueB")
-		msg.Append(valueB)
-		msg.Append("valueC")
-		msg.Append(valueC)
-		msg.Append("valueD")
-		msg.Append(valueD)
 
 		err := m.oscClient.Send(msg)
 		if err != nil {

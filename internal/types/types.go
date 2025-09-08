@@ -319,11 +319,12 @@ type MidiSettings struct {
 }
 
 type SoundMakerSettings struct {
-	Name string `json:"name"` // SoundMaker name ("Polyperc", "Infinite Pad", etc.)
-	A    int    `json:"a"`    // Parameter A (00-FE, -1 for "--")
-	B    int    `json:"b"`    // Parameter B (00-FE, -1 for "--")
-	C    int    `json:"c"`    // Parameter C (00-FE, -1 for "--")
-	D    int    `json:"d"`    // Parameter D (00-FE, -1 for "--")
+	Name   string `json:"name"`   // SoundMaker name ("Polyperc", "Infinite Pad", "DX7", etc.)
+	A      int    `json:"a"`      // Parameter A (00-FE, -1 for "--") - used for Polyperc, Infinite Pad
+	B      int    `json:"b"`      // Parameter B (00-FE, -1 for "--") - used for Polyperc, Infinite Pad
+	C      int    `json:"c"`      // Parameter C (00-FE, -1 for "--") - used for Polyperc, Infinite Pad
+	D      int    `json:"d"`      // Parameter D (00-FE, -1 for "--") - used for Polyperc, Infinite Pad
+	Preset int    `json:"preset"` // Preset number (0-1000, -1 for "--") - used for DX7
 }
 
 type ClipboardData struct {
