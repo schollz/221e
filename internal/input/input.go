@@ -766,7 +766,7 @@ func handleDown(m *model.Model) tea.Cmd {
 			m.CurrentRow = m.CurrentRow + 1
 		}
 	} else if m.ViewMode == types.RetriggerView {
-		if m.CurrentRow < 5 { // 0=Times, 1=Starting Rate, 2=Final Rate, 3=Beats, 4=Volume, 5=Pitch
+		if m.CurrentRow < 7 { // 0=Times, 1=Starting Rate, 2=Final Rate, 3=Beats, 4=Volume, 5=Pitch, 6=FinalPitchToStart, 7=FinalVolumeToStart
 			m.CurrentRow = m.CurrentRow + 1
 		}
 	} else if m.ViewMode == types.TimestrechView {

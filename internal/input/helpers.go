@@ -746,6 +746,8 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 			retriggerSettings.PitchChange,
 			retriggerSettings.VolumeDB,
 			deltaTimeSeconds,
+			retriggerSettings.FinalPitchToStart,
+			retriggerSettings.FinalVolumeToStart,
 		)
 	} else {
 		oscParams = model.NewSamplerOSCParams(effectiveFilename, trackId, sliceCount, sliceNumber, bpmSource, m.BPM, sliceDuration, deltaTimeSeconds)
