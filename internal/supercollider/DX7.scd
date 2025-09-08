@@ -389,13 +389,13 @@ SynthDef(\DX7, {
 		(out[4] * 1 * dn40),
 		(out[5] * 1 * dn41),
 	]);
-	pitch.poll;
 	//FreeSelfWhenDone.kr(Line.kr(0, 1, 10));
 	//kilnod = DetectSilence.ar(out, 0.01, 0.2, doneAction:2);
 	//out = out * Lag2.ar(In.ar(busMe),0.01);
 	//Out.ar([0,1], 0.5 * In.ar(busMe)); //deneme
 	out = out / outMult;
-	out = out * Env.asr(attack, 1, release).ar(Done.freeSelf, gate * ToggleFF.kr(1-TDelay.kr(DC.kr(1),duration)) );
+	out = out * EnvGen.ar(Env.adsr(attack,0.01,1.0,release),1-EnvGen.kr(Env.new([0,0,1],[duration,0])),doneAction:2);
+
 	//DetectSilence.ar(out, 0.01, 0.2,doneAction:2);
 	//out = out * ((totVol -15).dbamp);
 	snd=LPF.ar(out,filter);
@@ -645,31 +645,28 @@ noteParser = { arg synBefore, note, vel, pan, attack, release, duration, trackVo
 				{
 					//150.do({ arg c; ("cc#" ++ c.asString ++ " = " ++ vr[c]).postln}); //general cc printer, rates are not inverted.
 					if(noteArrayDX7[note] !== nil,{
-						["setting gate 0 on note", note].postln;
 						noteArrayDX7[note].set(\gate,0)
 					});
-					if(vr[137] == 1, {//lfo sync controller
-						if(betass == 1,   {
-							headno.free;
-						});
-						betass = 1;
-						// headno = Synth.before(synBefore, \InfEfx, defjamHead0.());
-						["creating new headno with lfo sync"].postln;
-						headno = Synth.new(\InfEfx, defjamHead0.(),synBefore, \addBefore);
-					},
-					{
+					// if(vr[137] == 1, {//lfo sync controller
+					// 	if(betass == 1,   {
+					// 		["freeing headno for lfo sync"].postln;
+					// 		headno.free;
+					// 	});
+					// 	betass = 1;
+					// 	// headno = Synth.before(synBefore, \InfEfx, defjamHead0.());
+					// 	["creating new headno with lfo sync"].postln;
+					// 	headno = Synth.new(\InfEfx, defjamHead0.(),synBefore, \addBefore);
+					// },
+					// {
 						if(betass == 0,   {
 							betass = 1;
 							// headno = Synth.before(synBefore, \InfEfx, defjamHead0.())
-							["creating new headno with lfo non-sync"].postln;
 							headno = Synth.new(\InfEfx, defjamHead0.(), synBefore, \addBefore)
 						},
 						{
-							["updating headno with lfo non-sync"].postln;
 							headno.set(defjamHead0.())
 						});
-					});
-					["playing note", note, "with velocity", vel].postln;
+					// });
 					noteArrayDX7[note] = Synth.new(\DX7 ,defme.value(note, vel)++[
 						\pan,pan,\attack,attack,\release,release,\duration,duration,
 						\trackVolume, trackVolume, \effectDryOut,effectDryOut, \effectCombOut,effectCombOut, \effectReverbOut,effectReverbOut,
@@ -681,7 +678,6 @@ noteParser = { arg synBefore, note, vel, pan, attack, release, duration, trackVo
 
 				},
 				{
-					["stopping note", note].postln;
 					noteArrayDX7[note].set(\gate,0);
 					noteArrayDX7[note] = nil;
 
@@ -705,10 +701,8 @@ r = File("DX7.afx".resolveRelative,"r");
 
 
 mainCaller = { arg set,k,v,preset, synBefore, note, vel, pan, 
-	attack, release, duration,	
-trackVolume, filter,
+	attack, release, duration,	trackVolume, filter,
 effectDryOut, effectCombOut, effectReverbOut, effectReverb, effectComb;
-	["mainCaller",set,k,v,preset,note,vel].postln;
 	//set 0 = preset change, 1 = all notes off, 2 =
 	if (set>0,{
 		if (set>1,{
@@ -724,7 +718,6 @@ effectDryOut, effectCombOut, effectReverbOut, effectReverb, effectComb;
 			128.do({ arg noteSet;
 				if (noteArrayDX7[noteSet].notNil,{
 					if (noteArrayDX7[noteSet].isRunning,{
-						["noteArrayDX7",noteSet,k,v].postln;
 						noteArrayDX7[noteSet].set(k.asString,v);
 					});
 				});
@@ -738,11 +731,9 @@ effectDryOut, effectCombOut, effectReverbOut, effectReverb, effectComb;
 				f.value(cirklonCCparse[item][0],cirklonCCparse[item][1],k);
 				//~midiOutDX7.control(~cirklonCCparse[item][0],~cirklonCCparse[item][1],k);
 			});
-			[synBefore, note, vel, pan, attack, release, duration, trackVolume, filter, 
-				effectDryOut, effectCombOut, effectReverbOut, effectReverb, effectComb].postln;
-			noteParser.value(synBefore, note, vel, pan, attack, release, duration, trackVolume, filter, 
-				effectDryOut, effectCombOut, effectReverbOut, effectReverb, effectComb)
 		});
+		noteParser.value(synBefore, note, vel, pan, attack, release, duration, trackVolume, filter, 
+			effectDryOut, effectCombOut, effectReverbOut, effectReverb, effectComb)
 	});
 }
 )

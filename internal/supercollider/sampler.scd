@@ -496,7 +496,7 @@ s.waitForBoot({
 						keepSearching = false;
 					});
 				});
-				["notes",notes].postln;
+
 				settings.put("set",0);
 				settings.put("k","");
 				settings.put("v",0);
@@ -515,6 +515,16 @@ s.waitForBoot({
 				settings.put("effectReverbOut", ~busReverb);
 				settings.put("effectReverb",0.0);
 				settings.put("effectComb",0.0);
+				// for all other messages, they are key/value pairs
+				msg[nonNoteIndex..].do({ |v,i|
+					if (i.mod(2) == 1,{
+						settings.put(msg[nonNoteIndex + i - 1].asString,v);
+					});
+				});
+				// print all settings 
+				settings.keysValuesDo({ |k,v|
+					[k,v].postln;
+				});
 				["playing DX7"].postln;
 				notes.do({ |n|
 					settings.put("note",n);

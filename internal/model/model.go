@@ -1182,20 +1182,20 @@ func (m *Model) sendOSCInstrumentMessage(params InstrumentOSCParams) {
 		} else {
 			// SoundMaker selected, get name and parameters
 			soundMakerSettings := m.SoundMakerSettings[params.SoundMakerIndex]
-			
+
 			msg.Append("soundMakerName")
 			msg.Append(soundMakerSettings.Name)
 
 			if soundMakerSettings.Name == "DX7" {
 				// For DX7, send preset value instead of A, B, C, D
-				var presetValue float32
+				var presetValue int32
 				if soundMakerSettings.Preset == -1 {
 					presetValue = 0.0 // Default to 0 if unset
 				} else {
 					// Normalize 0-1000 to 0.0-1.0
-					presetValue = float32(soundMakerSettings.Preset) / 1000.0
+					presetValue = int32(soundMakerSettings.Preset)
 				}
-				
+
 				msg.Append("preset")
 				msg.Append(presetValue)
 				// Still send A, B, C, D as 0.0 for compatibility
@@ -1210,7 +1210,7 @@ func (m *Model) sendOSCInstrumentMessage(params InstrumentOSCParams) {
 			} else {
 				// For other SoundMakers, normalize A, B, C, D values to 1.0 (values are 0-254, -1 means unset)
 				var valueA, valueB, valueC, valueD float32
-				
+
 				if soundMakerSettings.A == -1 {
 					valueA = 0.0
 				} else {
@@ -1234,7 +1234,7 @@ func (m *Model) sendOSCInstrumentMessage(params InstrumentOSCParams) {
 				} else {
 					valueD = float32(soundMakerSettings.D) / 254.0
 				}
-				
+
 				msg.Append("valueA")
 				msg.Append(valueA)
 				msg.Append("valueB")
