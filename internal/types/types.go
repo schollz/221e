@@ -320,32 +320,32 @@ const (
 type SoundMakerRow int
 
 const (
-	SoundMakerRowName      SoundMakerRow = iota // 0: Name row
-	SoundMakerRowParamA                         // 1: Parameter A / Preset row
-	SoundMakerRowParamB                         // 2: Parameter B row
-	SoundMakerRowParamC                         // 3: Parameter C row
-	SoundMakerRowParamD                         // 4: Parameter D row
+	SoundMakerRowName   SoundMakerRow = iota // 0: Name row
+	SoundMakerRowParamA                      // 1: Parameter A / Preset row
+	SoundMakerRowParamB                      // 2: Parameter B row
+	SoundMakerRowParamC                      // 3: Parameter C row
+	SoundMakerRowParamD                      // 4: Parameter D row
 )
 
 // GlobalSettingsRow represents different rows in the Global settings column
 type GlobalSettingsRow int
 
 const (
-	GlobalSettingsRowBPM        GlobalSettingsRow = iota // 0: BPM
-	GlobalSettingsRowPPQ                                 // 1: PPQ
-	GlobalSettingsRowPregainDB                           // 2: PregainDB
-	GlobalSettingsRowPostgainDB                          // 3: PostgainDB
-	GlobalSettingsRowBiasDB                              // 4: BiasDB
-	GlobalSettingsRowSaturationDB                        // 5: SaturationDB
-	GlobalSettingsRowDriveDB                             // 6: DriveDB
+	GlobalSettingsRowBPM          GlobalSettingsRow = iota // 0: BPM
+	GlobalSettingsRowPPQ                                   // 1: PPQ
+	GlobalSettingsRowPregainDB                             // 2: PregainDB
+	GlobalSettingsRowPostgainDB                            // 3: PostgainDB
+	GlobalSettingsRowBiasDB                                // 4: BiasDB
+	GlobalSettingsRowSaturationDB                          // 5: SaturationDB
+	GlobalSettingsRowDriveDB                               // 6: DriveDB
 )
 
 // InputSettingsRow represents different rows in the Input settings column
 type InputSettingsRow int
 
 const (
-	InputSettingsRowInputLevelDB     InputSettingsRow = iota // 0: InputLevelDB
-	InputSettingsRowReverbSendPercent                        // 1: ReverbSendPercent
+	InputSettingsRowInputLevelDB      InputSettingsRow = iota // 0: InputLevelDB
+	InputSettingsRowReverbSendPercent                         // 1: ReverbSendPercent
 )
 
 // BrailleDotRow represents different rows in a 2x4 Braille cell
