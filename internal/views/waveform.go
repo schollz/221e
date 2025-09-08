@@ -3,6 +3,8 @@ package views
 import (
 	"math"
 	"strings"
+
+	"github.com/schollz/2n/internal/types"
 )
 
 // RenderWaveform renders waveform data (assumed in [-1,1]) into a Braille string.
@@ -78,26 +80,26 @@ func RenderWaveform(width, height int, data []float64) string {
 
 		// Map (inRow,inCol) -> braille dot bit
 		var bit byte
-		switch inRow {
-		case 0:
+		switch types.BrailleDotRow(inRow) {
+		case types.BrailleDotRow0:
 			if inCol == 0 {
 				bit = dot1
 			} else {
 				bit = dot4
 			}
-		case 1:
+		case types.BrailleDotRow1:
 			if inCol == 0 {
 				bit = dot2
 			} else {
 				bit = dot5
 			}
-		case 2:
+		case types.BrailleDotRow2:
 			if inCol == 0 {
 				bit = dot3
 			} else {
 				bit = dot6
 			}
-		default: // 3
+		default: // BrailleDotRow3
 			if inCol == 0 {
 				bit = dot7
 			} else {

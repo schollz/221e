@@ -5,16 +5,17 @@ import (
 	"strings"
 
 	"github.com/schollz/2n/internal/model"
+	"github.com/schollz/2n/internal/types"
 )
 
 func GetMidiStatusMessage(m *model.Model) string {
 	settings := m.MidiSettings[m.MidiEditingIndex]
 
 	var columnStatus string
-	switch m.CurrentRow {
-	case 0: // MIDI Device row
+	switch types.MidiSettingsRow(m.CurrentRow) {
+	case types.MidiSettingsRowDevice: // MIDI Device row
 		columnStatus = fmt.Sprintf("MIDI Device: %s", settings.Device)
-	case 1: // MIDI Channel row
+	case types.MidiSettingsRowChannel: // MIDI Channel row
 		columnStatus = fmt.Sprintf("MIDI Channel: %s", settings.Channel)
 	default:
 		// Device selection rows
@@ -45,8 +46,8 @@ func RenderMidiView(m *model.Model) string {
 			value string
 			row   int
 		}{
-			{"Device:", settings.Device, 0},
-			{"Channel:", settings.Channel, 1},
+			{"Device:", settings.Device, int(types.MidiSettingsRowDevice)},
+			{"Channel:", settings.Channel, int(types.MidiSettingsRowChannel)},
 		}
 
 		for _, setting := range settingsRows {

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/schollz/2n/internal/model"
+	"github.com/schollz/2n/internal/types"
 )
 
 func GetArpeggioStatusMessage(m *model.Model) string {
@@ -15,10 +16,10 @@ func GetArpeggioStatusMessage(m *model.Model) string {
 	switch m.CurrentCol {
 	case 0: // DI (Direction) column
 		directionText := "--"
-		switch currentRow.Direction {
-		case 1:
+		switch types.ArpeggioDirection(currentRow.Direction) {
+		case types.ArpeggioDirectionUp:
 			directionText = "u-"
-		case 2:
+		case types.ArpeggioDirectionDown:
 			directionText = "d-"
 		}
 		columnStatus = fmt.Sprintf("Direction %s", directionText)
@@ -64,12 +65,12 @@ func RenderArpeggioView(m *model.Model) string {
 
 			// Direction (DI) text for this row
 			var diText string
-			switch arpeggioRow.Direction {
-			case 0:
+			switch types.ArpeggioDirection(arpeggioRow.Direction) {
+			case types.ArpeggioDirectionNone:
 				diText = "--"
-			case 1:
+			case types.ArpeggioDirectionUp:
 				diText = "u-"
-			case 2:
+			case types.ArpeggioDirectionDown:
 				diText = "d-"
 			default:
 				diText = "--"
