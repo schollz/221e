@@ -703,12 +703,14 @@ func (m *Model) initializeDefaultData() {
 	// Initialize retrigger settings with defaults
 	for i := 0; i < 255; i++ {
 		m.RetriggerSettings[i] = types.RetriggerSettings{
-			Times:       0,   // Default times (0)
-			Start:       0.0, // Default starting rate
-			End:         0.0, // Default final rate
-			Beats:       0,   // Default beats
-			VolumeDB:    0.0, // Default volume change (0 dB)
-			PitchChange: 0.0, // Default pitch change (0 semitones)
+			Times:              0,   // Default times (0)
+			Start:              0.0, // Default starting rate
+			End:                0.0, // Default final rate
+			Beats:              0,   // Default beats
+			VolumeDB:           0.0, // Default volume change (0 dB)
+			PitchChange:        0.0, // Default pitch change (0 semitones)
+			FinalPitchToStart:  0,   // Default No (0)
+			FinalVolumeToStart: 0,   // Default No (0)
 		}
 	}
 
@@ -802,6 +804,8 @@ type SamplerOSCParams struct {
 	RetriggerRateEnd      float32 // Retrigger Settings "Final Rate"
 	RetriggerPitchChange  float32 // Retrigger Settings "Pitch"
 	RetriggerVolumeChange float32 // Retrigger Settings "Volume dB"
+	FinalPitchToStart     int     // Retrigger Settings "Final pitch to start" (0=No, 1=Yes)
+	FinalVolumeToStart    int     // Retrigger Settings "Final volume to start" (0=No, 1=Yes)
 	TimestretchStart      float32 // Timestretch Settings "Start"
 	TimestretchEnd        float32 // Timestretch Settings "End"
 	TimestretchBeats      float32 // Timestretch Settings "Beats"
@@ -855,6 +859,8 @@ func NewSamplerOSCParams(filename string, trackId int, sliceCount, sliceNumber i
 		RetriggerRateEnd:      0,
 		RetriggerPitchChange:  0,
 		RetriggerVolumeChange: 0,
+		FinalPitchToStart:     0, // Default No (0)
+		FinalVolumeToStart:    0, // Default No (0)
 		TimestretchStart:      0,
 		TimestretchEnd:        0,
 		TimestretchBeats:      0,
@@ -869,7 +875,8 @@ func NewSamplerOSCParams(filename string, trackId int, sliceCount, sliceNumber i
 
 // NewSamplerOSCParamsWithRetrigger creates sampler parameters with retrigger settings
 func NewSamplerOSCParamsWithRetrigger(filename string, trackId, sliceCount, sliceNumber int, bpmSource, bpmTarget, sliceDuration float32,
-	retrigTimes int, retrigBeats float32, retrigRateStart, retrigRateEnd, retrigPitch, retrigVolume, deltaTime float32) SamplerOSCParams {
+	retrigTimes int, retrigBeats float32, retrigRateStart, retrigRateEnd, retrigPitch, retrigVolume, deltaTime float32,
+	finalPitchToStart, finalVolumeToStart int) SamplerOSCParams {
 	return SamplerOSCParams{
 		Filename:              filename,
 		TrackId:               trackId,
@@ -885,6 +892,8 @@ func NewSamplerOSCParamsWithRetrigger(filename string, trackId, sliceCount, slic
 		RetriggerRateEnd:      retrigRateEnd,
 		RetriggerPitchChange:  retrigPitch,
 		RetriggerVolumeChange: retrigVolume,
+		FinalPitchToStart:     finalPitchToStart,
+		FinalVolumeToStart:    finalVolumeToStart,
 		TimestretchStart:      0,
 		TimestretchEnd:        0,
 		TimestretchBeats:      0,
@@ -1446,6 +1455,10 @@ func (m *Model) SendOSCSamplerMessage(params SamplerOSCParams) {
 	msg.Append(float32(params.RetriggerPitchChange))
 	msg.Append("retrigVolumeChange")
 	msg.Append(float32(params.RetriggerVolumeChange))
+	msg.Append("finalPitchToStart")
+	msg.Append(int32(params.FinalPitchToStart))
+	msg.Append("finalVolumeToStart")
+	msg.Append(int32(params.FinalVolumeToStart))
 	msg.Append("effectTimestretchStart")
 	msg.Append(float32(params.TimestretchStart))
 	msg.Append("effectTimestretchEnd")

@@ -116,6 +116,38 @@ func RenderRetriggerView(m *model.Model) string {
 	}
 	pitchRow := fmt.Sprintf("  %-14s %s", labelStyle.Render(pitchLabel), pitchCell)
 	content.WriteString(pitchRow)
+	content.WriteString("\n")
+
+	// Final pitch to start setting
+	finalPitchLabel := "Final pitch to start:"
+	finalPitchValue := "No"
+	if settings.FinalPitchToStart == 1 {
+		finalPitchValue = "Yes"
+	}
+	var finalPitchCell string
+	if m.CurrentRow == 6 {
+		finalPitchCell = selectedStyle.Render(finalPitchValue)
+	} else {
+		finalPitchCell = normalStyle.Render(finalPitchValue)
+	}
+	finalPitchRow := fmt.Sprintf("  %-14s %s", labelStyle.Render(finalPitchLabel), finalPitchCell)
+	content.WriteString(finalPitchRow)
+	content.WriteString("\n")
+
+	// Final volume to start setting
+	finalVolumeLabel := "Final volume to start:"
+	finalVolumeValue := "No"
+	if settings.FinalVolumeToStart == 1 {
+		finalVolumeValue = "Yes"
+	}
+	var finalVolumeCell string
+	if m.CurrentRow == 7 {
+		finalVolumeCell = selectedStyle.Render(finalVolumeValue)
+	} else {
+		finalVolumeCell = normalStyle.Render(finalVolumeValue)
+	}
+	finalVolumeRow := fmt.Sprintf("  %-14s %s", labelStyle.Render(finalVolumeLabel), finalVolumeCell)
+	content.WriteString(finalVolumeRow)
 	content.WriteString("\n\n")
 
 	// Footer with status
