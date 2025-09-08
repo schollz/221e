@@ -1192,7 +1192,7 @@ func (m *Model) sendOSCInstrumentMessage(params InstrumentOSCParams) {
 				if soundMakerSettings.Preset == -1 {
 					presetValue = 0.0 // Default to 0 if unset
 				} else {
-					// Normalize 0-1000 to 0.0-1.0
+					// Send preset index directly (0 to patchCount-1)
 					presetValue = int32(soundMakerSettings.Preset)
 				}
 

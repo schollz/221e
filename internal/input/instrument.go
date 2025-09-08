@@ -5,6 +5,7 @@ import (
 
 	"github.com/schollz/2n/internal/model"
 	"github.com/schollz/2n/internal/storage"
+	"github.com/schollz/2n/internal/supercollider"
 	"github.com/schollz/2n/internal/types"
 )
 
@@ -243,23 +244,33 @@ func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
 			var newValue int
 
 			if settings.Preset == -1 {
-				// If currently "--", start from 0 or 1000
+				// If currently "--", start from 0 or maxPatch
+				maxPatch := supercollider.GetDX7PatchCount() - 1
 				if delta > 0 {
 					newValue = 0
 				} else {
-					newValue = 1000
+					newValue = maxPatch
 				}
 			} else {
+				maxPatch := supercollider.GetDX7PatchCount() - 1
 				newValue = settings.Preset + delta
-				// Wrap around: 0-1000 or -- (-1)
-				if newValue > 1000 {
+				// Wrap around: 0-maxPatch or -- (-1)
+				if newValue > maxPatch {
 					newValue = -1 // Wrap to "--"
 				} else if newValue < -1 {
-					newValue = 1000 // Wrap to 1000
+					newValue = maxPatch // Wrap to maxPatch
 				}
 			}
 
 			settings.Preset = newValue
+			// Update patch name when preset changes
+			if newValue >= 0 {
+				if patchName, err := supercollider.GetDX7PatchName(newValue); err == nil {
+					settings.PatchName = patchName
+				}
+			} else {
+				settings.PatchName = ""
+			}
 			if newValue == -1 {
 				log.Printf("Modified SoundMaker %02X Preset: %d -> -- (delta: %d)", m.SoundMakerEditingIndex, oldValue, delta)
 			} else {

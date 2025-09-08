@@ -1,6 +1,8 @@
 package types
 
-import "math"
+import (
+	"math"
+)
 
 type ViewMode int
 
@@ -319,12 +321,13 @@ type MidiSettings struct {
 }
 
 type SoundMakerSettings struct {
-	Name   string `json:"name"`   // SoundMaker name ("Polyperc", "Infinite Pad", "DX7", etc.)
-	A      int    `json:"a"`      // Parameter A (00-FE, -1 for "--") - used for Polyperc, Infinite Pad
-	B      int    `json:"b"`      // Parameter B (00-FE, -1 for "--") - used for Polyperc, Infinite Pad
-	C      int    `json:"c"`      // Parameter C (00-FE, -1 for "--") - used for Polyperc, Infinite Pad
-	D      int    `json:"d"`      // Parameter D (00-FE, -1 for "--") - used for Polyperc, Infinite Pad
-	Preset int    `json:"preset"` // Preset number (0-1000, -1 for "--") - used for DX7
+	Name      string `json:"name"`      // SoundMaker name ("Polyperc", "Infinite Pad", "DX7", etc.)
+	A         int    `json:"a"`         // Parameter A (00-FE, -1 for "--") - used for Polyperc, Infinite Pad
+	B         int    `json:"b"`         // Parameter B (00-FE, -1 for "--") - used for Polyperc, Infinite Pad
+	C         int    `json:"c"`         // Parameter C (00-FE, -1 for "--") - used for Polyperc, Infinite Pad
+	D         int    `json:"d"`         // Parameter D (00-FE, -1 for "--") - used for Polyperc, Infinite Pad
+	Preset    int    `json:"preset"`    // Preset number (0-len(patches)-1, -1 for "--") - used for DX7
+	PatchName string `json:"patchName"` // Patch name (used for DX7 when setting by name)
 }
 
 type ClipboardData struct {
