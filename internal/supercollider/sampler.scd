@@ -21,6 +21,7 @@ s.waitForBoot({
 			sustain=0.7,
 			release=0.5,
 			duration=30,
+			trackOut,
 			effectDryOut,
 			effectReverb = 0.0, effectReverbOut,
 			effectComb = 0.0, effectCombOut,
@@ -34,6 +35,7 @@ s.waitForBoot({
 			env = env * EnvGen.ar(Env.adsr(0.01,0.01,1.0,release),gate);
 			snd = snd * env * (1.0 / noteSize.sqrt);
 			snd = Pan2.ar(snd,pan);
+			Out.ar(trackOut, snd*(1.0 - effectReverb));
 			Out.ar(effectDryOut, snd*(1.0 - effectReverb));
 			Out.ar(effectCombOut, snd*effectComb);
 			Out.ar(effectReverbOut, snd*effectReverb);
@@ -46,6 +48,7 @@ s.waitForBoot({
 			pan=0,
 			note=0,
 			attack=1.0,
+			trackOut,
 			effectDryOut,
 			effectReverb = 0.0, effectReverbOut,
 			effectComb = 0.0, effectCombOut,
@@ -59,7 +62,8 @@ s.waitForBoot({
 			snd = snd * EnvGen.ar(Env.adsr(attack, 0.0, 1.0, \release.kr(0.5)),\gate.kr(1) * ToggleFF.kr(1-TDelay.kr(DC.kr(1),\duration.kr(1))),doneAction:2);
 			snd = Balance2.ar(snd[0], snd[1], pan);
 			snd = snd * -10.dbamp * trackVolume.dbamp;
-			Out.ar(effectDryOut, snd);
+			Out.ar(trackOut, snd*(1.0 - effectReverb));
+			Out.ar(effectDryOut, snd*(1.0 - effectReverb));
 			Out.ar(effectCombOut, snd*effectComb);
 			Out.ar(effectReverbOut, snd*effectReverb);
 		}).add;
@@ -69,6 +73,7 @@ s.waitForBoot({
 			trackVolume = 0,
 			pan=0,
 			inbus=0,
+			trackOut,
 			effectDryOut,
 			effectReverb = 0.0, effectReverbOut,
 			effectComb = 0.0, effectCombOut
@@ -77,6 +82,7 @@ s.waitForBoot({
 			snd = SoundIn.ar([0,1]) * EnvGen.ar(Env.adsr(1.0,0.0,1.0,1.0),1);
 			snd = Balance2.ar(snd[0], snd[1], pan);
 			snd = snd * -10.dbamp * trackVolume.dbamp;
+			Out.ar(trackOut, snd*(1.0 - effectReverb));
 			Out.ar(effectDryOut, snd*(1.0 - effectReverb));
 			Out.ar(effectCombOut, snd*effectComb);
 			Out.ar(effectReverbOut, snd*effectReverb);
@@ -130,6 +136,7 @@ s.waitForBoot({
 				sliceReleaseBeats = 0.001,
 				sliceNum = 0,
 				sliceCount = 32, // number of slices to cut the sample into
+				trackOut,
 				effectDry = 1.0,
 				effectDryOut,
 				effectComb = 0.0,
@@ -274,6 +281,7 @@ s.waitForBoot({
 
 				// Feedback
 				LocalOut.ar(retrigCount);
+				Out.ar(trackOut, snd*(1.0 - effectReverb));
 				Out.ar(effectDryOut, snd*effectDry);
 				Out.ar(effectCombOut, snd*XLine.kr(0.001,effectComb,sliceDurationBeats*beatDuration/2));
 				Out.ar(effectReverbOut, snd*XLine.kr(0.001,effectReverb,sliceDurationBeats*beatDuration/2));
@@ -373,10 +381,11 @@ s.waitForBoot({
 		~synthsPlaying.put(9, Dictionary.new());
 		~synthsPlaying.at(9).put(0, Synth.head(Server.default,"externalInput",[
 			inbus: 0,
+			trackOut: ~busTrack[8],
 			effectDryOut: ~busDry,
 			effectReverbOut: ~busReverb,
 			effectCombOut: ~busComb,
-			trackId: 9,
+			trackId: 8,
 			trackVolume: 0,
 			pan: 0,
 		]));
@@ -401,6 +410,7 @@ s.waitForBoot({
 				\effectCombOut, ~busComb,
 				\effectReverbOut, ~busReverb,
 				\trackId, track,
+				\trackOut, ~busTrack[track],
 			];
 			var notes = Array.new();
 			var nonNoteIndex = 4;
@@ -459,6 +469,7 @@ s.waitForBoot({
 				\effectCombOut, ~busComb,
 				\effectReverbOut, ~busReverb,
 				\trackId, track,
+				\trackOut, ~busTrack[track],
 			];
 			// create a new dictionary for the track if it doesn't exist
 			if (~samplesPlaying.at(track).isNil,{
@@ -514,6 +525,7 @@ s.waitForBoot({
 				var settings = Dictionary.new();
 				var notes = Array.new();
 				var nonNoteIndex = 4;
+				var trackId = msg[1].asInteger;
 				var keepSearching = true;
 				// find where msg[4:] is not a float
 				msg[4..].do({ |v,i|
@@ -542,6 +554,7 @@ s.waitForBoot({
 				settings.put("effectDryOut", ~busDry);
 				settings.put("effectCombOut", ~busComb);
 				settings.put("effectReverbOut", ~busReverb);
+				settings.put("trackOut", ~busTrack[trackId]);
 				settings.put("effectReverb",0.0);
 				settings.put("effectComb",0.0);
 				// for all other messages, they are key/value pairs
@@ -576,7 +589,8 @@ s.waitForBoot({
 						settings.at("effectCombOut"),
 						settings.at("effectReverbOut"), 
 						settings.at("effectReverb"), 
-						settings.at("effectComb")
+						settings.at("effectComb"),
+						settings.at("trackOut"),
 					);
 				});
 
