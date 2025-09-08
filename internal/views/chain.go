@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/schollz/2n/internal/model"
+	"github.com/schollz/2n/internal/ticks"
 	"github.com/schollz/2n/internal/types"
 )
 
@@ -14,7 +15,10 @@ func RenderChainView(m *model.Model) string {
 
 		// Render header with chain name on the right (like Phrase View)
 		columnHeader := "      PH"
-		chainHeader := fmt.Sprintf("Chain %02X", m.CurrentChain)
+		chainsData := m.GetCurrentChainsData()
+		phrasesData := m.GetCurrentPhrasesData()
+		totalTicks := ticks.CalculateChainTicks(chainsData, phrasesData, m.CurrentChain)
+		chainHeader := fmt.Sprintf("Chain %02X (%d ticks)", m.CurrentChain, totalTicks)
 		content.WriteString(RenderHeader(m, columnHeader, chainHeader))
 
 		// Render 16 rows of the current chain

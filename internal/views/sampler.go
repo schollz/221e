@@ -8,6 +8,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/schollz/2n/internal/model"
+	"github.com/schollz/2n/internal/ticks"
 	"github.com/schollz/2n/internal/types"
 )
 
@@ -29,7 +30,9 @@ func RenderSamplerPhraseView(m *model.Model) string {
 
 	// Render header (Я is a single-character column)
 	columnHeader := "  SL  DT  NN  PI  GT  RT  TS  Я  PA  LP  HP  CO  VE  FI"
-	phraseHeader := fmt.Sprintf("Phrase %02X", m.CurrentPhrase)
+	phrasesData := m.GetCurrentPhrasesData()
+	totalTicks := ticks.CalculatePhraseTicks(phrasesData, m.CurrentPhrase)
+	phraseHeader := fmt.Sprintf("Phrase %02X (%d ticks)", m.CurrentPhrase, totalTicks)
 	content.WriteString(RenderHeader(m, columnHeader, phraseHeader))
 
 	// Data rows

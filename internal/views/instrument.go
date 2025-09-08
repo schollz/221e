@@ -9,6 +9,7 @@ import (
 	"github.com/schollz/2n/internal/input"
 	"github.com/schollz/2n/internal/model"
 	"github.com/schollz/2n/internal/music"
+	"github.com/schollz/2n/internal/ticks"
 	"github.com/schollz/2n/internal/types"
 )
 
@@ -30,7 +31,9 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 
 	// Render header for Instrument view (row, playback, note, and chord columns)
 	columnHeader := "  SL  DT  NOT  CAT  GT A D S R   RE  CO  PA  LP  HP  AR  MI  SO"
-	phraseHeader := fmt.Sprintf("Instrument %02X", m.CurrentPhrase)
+	phrasesData := m.GetCurrentPhrasesData()
+	totalTicks := ticks.CalculatePhraseTicks(phrasesData, m.CurrentPhrase)
+	phraseHeader := fmt.Sprintf("Instrument %02X (%d ticks)", m.CurrentPhrase, totalTicks)
 	content.WriteString(RenderHeader(m, columnHeader, phraseHeader))
 
 	// Data rows
