@@ -67,7 +67,7 @@ func GetSoundMakerStatusMessage(m *model.Model) string {
 		} else {
 			soundMakerStartRow = 5 // SoundMakers start at row 5 for others
 		}
-		
+
 		if m.CurrentRow >= soundMakerStartRow && m.CurrentRow-soundMakerStartRow+m.ScrollOffset < len(availableSoundMakers) {
 			soundMakerIndex := m.CurrentRow - soundMakerStartRow + m.ScrollOffset
 			columnStatus = fmt.Sprintf("Select SoundMaker: %s", availableSoundMakers[soundMakerIndex])
