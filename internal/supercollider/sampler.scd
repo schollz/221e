@@ -290,12 +290,31 @@ s.waitForBoot({
 			saturation=6.0.neg,
 			drive=6.0.neg,
 			shimmer=1.0,
-			combAmt=0.0;
+			combAmt=0.0,
+			track0Bus,
+			track1Bus,
+			track2Bus,
+			track3Bus,
+			track4Bus,
+			track5Bus,
+			track6Bus,
+			track7Bus,
+			track8Bus; // track "8" is the external input
 			var sndWet = In.ar(busReverb,2);
 			var sndDry = In.ar(busDry,2);
 			var sndComb = In.ar(busComb,2);
 			var snd = 				sndDry;
-			SendReply.kr(Impulse.kr(30),'/track_volume',[0,Lag.kr(Amplitude.kr(snd[0],0.3,0.3).ampdb,3)]);
+			SendReply.kr(Impulse.kr(30),'/track_volume',[Lag.kr(Amplitude.kr([
+				Mix.new(In.ar(track0Bus,2)),	
+				Mix.new(In.ar(track1Bus,2)),	
+				Mix.new(In.ar(track2Bus,2)),	
+				Mix.new(In.ar(track3Bus,2)),	
+				Mix.new(In.ar(track4Bus,2)),	
+				Mix.new(In.ar(track5Bus,2)),	
+				Mix.new(In.ar(track6Bus,2)),	
+				Mix.new(In.ar(track7Bus,2)),	
+				Mix.new(In.ar(track8Bus,2)),
+			],0.3,0.3).ampdb,3)]);
 
 			// add in comb
 			snd = snd + ((0.5*sndComb)+
@@ -332,12 +351,22 @@ s.waitForBoot({
 		~busReverb = Bus.audio(s, 2);
 		~busComb = Bus.audio(s, 2);
 		~busDisk = Bus.audio(s, 2);
+		~busTrack = Array.fill(9, { Bus.audio(s, 2) });
 		s.sync;
 		~synOut = Synth.tail(s,"out",[
 			busReverb: ~busReverb,
 			busDry: ~busDry,
 			busComb: ~busComb,
 			busDisk: ~busDisk,
+			track0Bus: ~busTrack[0],
+			track1Bus: ~busTrack[1],
+			track2Bus: ~busTrack[2],
+			track3Bus: ~busTrack[3],
+			track4Bus: ~busTrack[4],
+			track5Bus: ~busTrack[5],
+			track6Bus: ~busTrack[6],
+			track7Bus: ~busTrack[7],
+			track8Bus: ~busTrack[8],			
 			volumeDB: -24,
 		]);
 		s.sync;
