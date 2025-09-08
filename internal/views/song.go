@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/schollz/2n/internal/model"
+	"github.com/schollz/2n/internal/ticks"
 	"github.com/schollz/2n/internal/types"
 )
 
@@ -148,13 +149,17 @@ func GetSongStatusMessage(m *model.Model) string {
 			trackType = "Instrument"
 		}
 
+		// Calculate total ticks for the entire track
+		chainsData := m.GetChainsDataForTrack(trackCol)
+		phrasesData := m.GetPhrasesDataForTrack(trackCol)
+		totalTicks := ticks.CalculateTrackTicks(&m.SongData, chainsData, phrasesData, trackCol)
+
 		if chainID == -1 {
-			statusMsg = fmt.Sprintf("Track %d: %s", trackCol, trackType)
+			statusMsg = fmt.Sprintf("Track %d: %s (%d ticks)", trackCol, trackType, totalTicks)
 		} else {
 			// Check if chain has data and get first phrase for display
 			hasChainData := false
 			firstPhraseID := -1
-			chainsData := m.GetChainsDataForTrack(trackCol)
 			if chainID >= 0 && chainID < len(*chainsData) {
 				for row := 0; row < 16; row++ {
 					if (*chainsData)[chainID][row] != -1 {
@@ -166,18 +171,10 @@ func GetSongStatusMessage(m *model.Model) string {
 				}
 			}
 
-			// Determine track type
-			var trackType string
-			if m.TrackTypes[trackCol] {
-				trackType = "Sampler"
-			} else {
-				trackType = "Instrument"
-			}
-
 			if hasChainData {
-				statusMsg = fmt.Sprintf("Track %d: %s", trackCol, trackType)
+				statusMsg = fmt.Sprintf("Track %d: %s (%d ticks)", trackCol, trackType, totalTicks)
 			} else {
-				statusMsg = fmt.Sprintf("Track %d: %s (Empty)", trackCol, trackType)
+				statusMsg = fmt.Sprintf("Track %d: %s (%d ticks) (Empty)", trackCol, trackType, totalTicks)
 			}
 		}
 	}
