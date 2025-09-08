@@ -291,14 +291,14 @@ type FileMetadata struct {
 }
 
 type RetriggerSettings struct {
-	Times            int     `json:"times"`            // Number of retriggers (0-256)
-	Start            float32 `json:"start"`            // Starting rate (0-256, 0.05 increments) /beat
-	End              float32 `json:"end"`              // Final rate (0-256, 0.05 increments, default 0) /beat
-	Beats            int     `json:"beats"`            // Beats value (0-256)
-	VolumeDB         float32 `json:"volumeDB"`         // Volume change (-16 to +16 dB, default 0) - NOTE: This is for retrigger-specific volume, not global
-	PitchChange      float32 `json:"pitchChange"`      // Pitch change (-24 to +24, default 0)
-	FinalPitchToStart int    `json:"finalPitchToStart"` // Final pitch to start: 0=No, 1=Yes (default 0)
-	FinalVolumeToStart int   `json:"finalVolumeToStart"` // Final volume to start: 0=No, 1=Yes (default 0)
+	Times              int     `json:"times"`              // Number of retriggers (0-256)
+	Start              float32 `json:"start"`              // Starting rate (0-256, 0.05 increments) /beat
+	End                float32 `json:"end"`                // Final rate (0-256, 0.05 increments, default 0) /beat
+	Beats              int     `json:"beats"`              // Beats value (0-256)
+	VolumeDB           float32 `json:"volumeDB"`           // Volume change (-16 to +16 dB, default 0) - NOTE: This is for retrigger-specific volume, not global
+	PitchChange        float32 `json:"pitchChange"`        // Pitch change (-24 to +24, default 0)
+	FinalPitchToStart  int     `json:"finalPitchToStart"`  // Final pitch to start: 0=No, 1=Yes (default 0)
+	FinalVolumeToStart int     `json:"finalVolumeToStart"` // Final volume to start: 0=No, 1=Yes (default 0)
 }
 
 type TimestrechSettings struct {

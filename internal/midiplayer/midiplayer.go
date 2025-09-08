@@ -142,35 +142,35 @@ func getGlobalState() *GlobalMidiState {
 // findInstrumentByName looks for a MIDI instrument that matches the given string using prefix matching
 func (gms *GlobalMidiState) findInstrumentByName(midiinstrument string) string {
 	devices := midiconnector.Devices()
-	
+
 	// Truncate name to first 3 words
 	words := strings.Fields(midiinstrument)
 	if len(words) > 3 {
 		words = words[:3]
 	}
 	truncatedName := strings.Join(words, " ")
-	
+
 	// First try exact match with truncated name
 	for _, device := range devices {
 		if strings.EqualFold(device, truncatedName) {
 			return device
 		}
 	}
-	
+
 	// Then try prefix match with truncated name
 	for _, device := range devices {
 		if strings.HasPrefix(strings.ToLower(device), strings.ToLower(truncatedName)) {
 			return device
 		}
 	}
-	
+
 	// Finally try contains match for backward compatibility
 	for _, device := range devices {
 		if strings.Contains(strings.ToLower(device), strings.ToLower(truncatedName)) {
 			return device
 		}
 	}
-	
+
 	return ""
 }
 

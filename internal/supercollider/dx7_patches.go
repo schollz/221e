@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	
+
 	"github.com/schollz/2n/internal/types"
 )
 
@@ -19,7 +19,7 @@ func init() {
 	if err := json.Unmarshal(dx7PatchesData, &dx7Patches); err != nil {
 		panic(fmt.Sprintf("Failed to load DX7 patches: %v", err))
 	}
-	
+
 	dx7PatchMap = make(map[string]int, len(dx7Patches))
 	for i, patch := range dx7Patches {
 		dx7PatchMap[patch] = i
@@ -41,13 +41,13 @@ func GetDX7PatchIndex(name string) (int, error) {
 	if index, exists := dx7PatchMap[name]; exists {
 		return index, nil
 	}
-	
+
 	for patchName, index := range dx7PatchMap {
 		if strings.EqualFold(patchName, name) {
 			return index, nil
 		}
 	}
-	
+
 	return -1, fmt.Errorf("patch name %q not found", name)
 }
 
@@ -61,12 +61,12 @@ func SetDX7PatchByName(settings *types.SoundMakerSettings, patchName string) err
 	if settings.Name != "DX7" {
 		return fmt.Errorf("cannot set DX7 patch on non-DX7 SoundMaker: %s", settings.Name)
 	}
-	
+
 	index, err := GetDX7PatchIndex(patchName)
 	if err != nil {
 		return err
 	}
-	
+
 	settings.Preset = index
 	settings.PatchName = patchName
 	return nil
@@ -76,12 +76,12 @@ func SetDX7PatchByIndex(settings *types.SoundMakerSettings, index int) error {
 	if settings.Name != "DX7" {
 		return fmt.Errorf("cannot set DX7 patch on non-DX7 SoundMaker: %s", settings.Name)
 	}
-	
+
 	patchName, err := GetDX7PatchName(index)
 	if err != nil {
 		return err
 	}
-	
+
 	settings.Preset = index
 	settings.PatchName = patchName
 	return nil
