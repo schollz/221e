@@ -482,7 +482,46 @@ s.waitForBoot({
 		OSCFunc({ |msg|
 			var synthToPlay = msg[3].asString;
 			if (synthToPlay=="DX7",{
+				var settings = Dictionary.new();
+				settings.put("set",0);
+				settings.put("k","");
+				settings.put("v",0);
+				settings.put("preset",1959);
+				settings.put("synBefore",~synOut);
+				settings.put("note",60);
+				settings.put("vel",100);
+				settings.put("pan",0);
+				settings.put("attack",0.1);
+				settings.put("release",0.5);
+				settings.put("duration",1.0);
+				settings.put("trackVolume",-12.0);
+				settings.put("filter",20000);
+				settings.put("effectDryOut", ~busDry);
+				settings.put("effectCombOut", ~busComb);
+				settings.put("effectReverbOut", ~busReverb);
+				settings.put("effectReverb",0.0);
+				settings.put("effectComb",0.0);
 				["playing DX7"].postln;
+				~dx7syn.value(
+					settings.at("set"),
+					settings.at("k"),
+					settings.at("v"),
+					settings.at("preset"),
+					settings.at("synBefore"),
+					settings.at("note"),
+					settings.at("vel"),
+					settings.at("pan"),
+					settings.at("attack"),
+					settings.at("release"),
+					settings.at("duration"),
+					settings.at("trackVolume"),
+					settings.at("filter"),
+					settings.at("effectDryOut"), 
+					settings.at("effectCombOut"),
+					settings.at("effectReverbOut"), 
+					settings.at("effectReverb"), 
+					settings.at("effectComb")
+				);
 			},{
 				~playSynthFromMsg.(msg);
 			});
