@@ -125,14 +125,8 @@ func main() {
 	var tm *TrackerModel // Will be set after model creation
 
 	d.AddMsgHandler("/track_volume", func(msg *osc.Message) {
-		// argument 0: track number (0 to 7)
-		// argument 1: volume in dB (floating point)
-		trackNum := int(msg.Arguments[0].(float32))
-		volume := msg.Arguments[1].(float32)
-
-		// Store the track volume in the model if available
-		if tm != nil && trackNum >= 0 && trackNum < 8 {
-			tm.model.TrackVolumes[trackNum] = volume
+		for i := 0; i < len(tm.model.TrackVolumes) && i < len(msg.Arguments); i++ {
+			tm.model.TrackVolumes[i] = msg.Arguments[i].(float32)
 		}
 	})
 	// Start OSC server early
