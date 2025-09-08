@@ -644,22 +644,28 @@ noteParser = { arg synBefore, note, vel, pan, attack, release, duration, trackVo
 			if(vel > 0,
 				{
 					//150.do({ arg c; ("cc#" ++ c.asString ++ " = " ++ vr[c]).postln}); //general cc printer, rates are not inverted.
-					if(noteArrayDX7[note] !== nil,noteArrayDX7[note].set(\gate,0));
+					if(noteArrayDX7[note] !== nil,{
+						["setting gate 0 on note", note].postln;
+						noteArrayDX7[note].set(\gate,0)
+					});
 					if(vr[137] == 1, {//lfo sync controller
 						if(betass == 1,   {
 							headno.free;
 						});
 						betass = 1;
 						// headno = Synth.before(synBefore, \InfEfx, defjamHead0.());
+						["creating new headno with lfo sync"].postln;
 						headno = Synth.new(\InfEfx, defjamHead0.(),synBefore, \addBefore);
 					},
 					{
 						if(betass == 0,   {
 							betass = 1;
 							// headno = Synth.before(synBefore, \InfEfx, defjamHead0.())
+							["creating new headno with lfo non-sync"].postln;
 							headno = Synth.new(\InfEfx, defjamHead0.(), synBefore, \addBefore)
 						},
 						{
+							["updating headno with lfo non-sync"].postln;
 							headno.set(defjamHead0.())
 						});
 					});

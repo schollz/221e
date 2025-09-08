@@ -508,7 +508,7 @@ s.waitForBoot({
 				settings.put("attack",0.1);
 				settings.put("release",0.5);
 				settings.put("duration",1.0);
-				settings.put("trackVolume",-12.0);
+				settings.put("trackVolume",-24.0);
 				settings.put("filter",20000);
 				settings.put("effectDryOut", ~busDry);
 				settings.put("effectCombOut", ~busComb);
