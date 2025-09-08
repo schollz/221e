@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/schollz/2n/internal/model"
+	"github.com/schollz/2n/internal/supercollider"
 )
 
 func GetSoundMakerStatusMessage(m *model.Model) string {
@@ -19,7 +20,12 @@ func GetSoundMakerStatusMessage(m *model.Model) string {
 			if settings.Preset == -1 {
 				columnStatus = "Preset: --"
 			} else {
-				columnStatus = fmt.Sprintf("Preset: %d", settings.Preset)
+				patchName, err := supercollider.GetDX7PatchName(settings.Preset)
+				if err == nil {
+					columnStatus = fmt.Sprintf("Preset: %s (%d)", patchName, settings.Preset)
+				} else {
+					columnStatus = fmt.Sprintf("Preset: %d", settings.Preset)
+				}
 			}
 		} else {
 			if settings.A == -1 {
@@ -107,6 +113,10 @@ func RenderSoundMakerView(m *model.Model) string {
 			}{"Preset:", func() string {
 				if settings.Preset == -1 {
 					return "--"
+				}
+				patchName, err := supercollider.GetDX7PatchName(settings.Preset)
+				if err == nil {
+					return fmt.Sprintf("%s (%d)", patchName, settings.Preset)
 				}
 				return fmt.Sprintf("%d", settings.Preset)
 			}(), 1})
