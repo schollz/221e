@@ -389,6 +389,7 @@ SynthDef(\DX7, {
 		(out[4] * 1 * dn40),
 		(out[5] * 1 * dn41),
 	]);
+	pitch.poll;
 	//FreeSelfWhenDone.kr(Line.kr(0, 1, 10));
 	//kilnod = DetectSilence.ar(out, 0.01, 0.2, doneAction:2);
 	//out = out * Lag2.ar(In.ar(busMe),0.01);
@@ -662,6 +663,7 @@ noteParser = { arg synBefore, note, vel, pan, attack, release, duration, trackVo
 							headno.set(defjamHead0.())
 						});
 					});
+					["playing note", note, "with velocity", vel].postln;
 					noteArrayDX7[note] = Synth.new(\DX7 ,defme.value(note, vel)++[
 						\pan,pan,\attack,attack,\release,release,\duration,duration,
 						\trackVolume, trackVolume, \effectDryOut,effectDryOut, \effectCombOut,effectCombOut, \effectReverbOut,effectReverbOut,
@@ -673,6 +675,7 @@ noteParser = { arg synBefore, note, vel, pan, attack, release, duration, trackVo
 
 				},
 				{
+					["stopping note", note].postln;
 					noteArrayDX7[note].set(\gate,0);
 					noteArrayDX7[note] = nil;
 

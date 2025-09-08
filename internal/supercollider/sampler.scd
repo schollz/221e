@@ -483,6 +483,20 @@ s.waitForBoot({
 			var synthToPlay = msg[3].asString;
 			if (synthToPlay=="DX7",{
 				var settings = Dictionary.new();
+				var notes = Array.new();
+				var nonNoteIndex = 4;
+				var keepSearching = true;
+				// find where msg[4:] is not a float
+				msg[4..].do({ |v,i|
+					if (v.isNumber && keepSearching,{
+						notes = notes.add(v);
+						nonNoteIndex = i + 5;
+					},{
+						// break out of do loop
+						keepSearching = false;
+					});
+				});
+				["notes",notes].postln;
 				settings.put("set",0);
 				settings.put("k","");
 				settings.put("v",0);
@@ -502,26 +516,31 @@ s.waitForBoot({
 				settings.put("effectReverb",0.0);
 				settings.put("effectComb",0.0);
 				["playing DX7"].postln;
-				~dx7syn.value(
-					settings.at("set"),
-					settings.at("k"),
-					settings.at("v"),
-					settings.at("preset"),
-					settings.at("synBefore"),
-					settings.at("note"),
-					settings.at("vel"),
-					settings.at("pan"),
-					settings.at("attack"),
-					settings.at("release"),
-					settings.at("duration"),
-					settings.at("trackVolume"),
-					settings.at("filter"),
-					settings.at("effectDryOut"), 
-					settings.at("effectCombOut"),
-					settings.at("effectReverbOut"), 
-					settings.at("effectReverb"), 
-					settings.at("effectComb")
-				);
+				notes.do({ |n|
+					settings.put("note",n);
+					["note",n].postln;
+					~dx7syn.value(
+						settings.at("set"),
+						settings.at("k"),
+						settings.at("v"),
+						settings.at("preset"),
+						settings.at("synBefore"),
+						settings.at("note"),
+						settings.at("vel"),
+						settings.at("pan"),
+						settings.at("attack"),
+						settings.at("release"),
+						settings.at("duration"),
+						settings.at("trackVolume"),
+						settings.at("filter"),
+						settings.at("effectDryOut"), 
+						settings.at("effectCombOut"),
+						settings.at("effectReverbOut"), 
+						settings.at("effectReverb"), 
+						settings.at("effectComb")
+					);
+				});
+
 			},{
 				~playSynthFromMsg.(msg);
 			});
