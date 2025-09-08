@@ -191,7 +191,7 @@ s.waitForBoot({
 				// Calculate rate
 				rate = rate*BufRateScale.ir(buf)*bpmTarget/bpmSource;
 				// Calculate pitch
-				pitch = pitch + (retrigNumTotal * retrigPitchChange.neg);
+				// pitch = pitch + (retrigNumTotal * retrigPitchChange.neg);
 				rate = rate * (2 ** (pitch/12.0));
 
 				// Calculate retriggers
