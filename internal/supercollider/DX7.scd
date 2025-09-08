@@ -400,6 +400,7 @@ SynthDef(\DX7, {
 	//out = out * ((totVol -15).dbamp);
 	snd=LPF.ar(out,filter);
 	snd=Pan2.ar(snd,pan)*amp*\trackVolume.kr(0).dbamp;
+	Out.ar(\trackOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
 	Out.ar(\effectDryOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
 	Out.ar(\effectCombOut.kr(1), snd * \effectComb.kr(0));
 	Out.ar(\effectReverbOut.kr(2), snd * \effectReverb.kr(0));
@@ -702,7 +703,7 @@ r = File("DX7.afx".resolveRelative,"r");
 
 mainCaller = { arg set,k,v,preset, synBefore, note, vel, pan, 
 	attack, release, duration,	trackVolume, filter,
-effectDryOut, effectCombOut, effectReverbOut, effectReverb, effectComb;
+effectDryOut, effectCombOut, effectReverbOut, effectReverb, effectComb, trackOut;
 	//set 0 = preset change, 1 = all notes off, 2 =
 	if (set>0,{
 		if (set>1,{
@@ -733,7 +734,7 @@ effectDryOut, effectCombOut, effectReverbOut, effectReverb, effectComb;
 			});
 		});
 		noteParser.value(synBefore, note, vel, pan, attack, release, duration, trackVolume, filter, 
-			effectDryOut, effectCombOut, effectReverbOut, effectReverb, effectComb)
+			effectDryOut, effectCombOut, effectReverbOut, effectReverb, effectComb, trackOut);
 	});
 }
 )
