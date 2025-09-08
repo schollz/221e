@@ -322,7 +322,7 @@ s.waitForBoot({
 				Mix.new(In.ar(track6Bus,2)),	
 				Mix.new(In.ar(track7Bus,2)),	
 				Mix.new(In.ar(track8Bus,2)),
-			],0.3,0.3).ampdb,3)]);
+			],0.3,0.3).max(0.00001).ampdb,3)]);
 
 			// add in comb
 			snd = snd + ((0.5*sndComb)+
@@ -378,8 +378,8 @@ s.waitForBoot({
 			volumeDB: -24,
 		]);
 		s.sync;
-		~synthsPlaying.put(9, Dictionary.new());
-		~synthsPlaying.at(9).put(0, Synth.head(Server.default,"externalInput",[
+		~synthsPlaying.put(8, Dictionary.new());
+		~synthsPlaying.at(8).put(0, Synth.head(Server.default,"externalInput",[
 			inbus: 0,
 			trackOut: ~busTrack[8],
 			effectDryOut: ~busDry,
@@ -389,7 +389,7 @@ s.waitForBoot({
 			trackVolume: 0,
 			pan: 0,
 		]));
-		NodeWatcher.register(~synthsPlaying.at(9).at(0));
+		NodeWatcher.register(~synthsPlaying.at(8).at(0));
 		s.sync;
 		~dx7syn = thisProcess.interpreter.executeFile(
 			PathName(thisProcess.nowExecutingPath).pathOnly +/+ "DX7.scd"
@@ -623,7 +623,7 @@ s.waitForBoot({
 			NetAddr.new("127.0.0.1", 57121).sendMsg("/waveform", msg[3]);
 		},'/waveform');
 		OSCFunc({ |msg|
-			NetAddr.new("127.0.0.1", 57121).sendMsg("/track_volume", msg[3],msg[4]);
+			NetAddr.new("127.0.0.1", 57121).sendMsg("/track_volume", *msg[3..]);
 		},'/track_volume');
 		OSCFunc({ |msg|
 			var filename = msg[1].asString;

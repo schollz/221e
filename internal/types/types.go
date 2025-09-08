@@ -391,8 +391,8 @@ type SaveData struct {
 	LastSongTrack         int                     `json:"lastSongTrack"`
 	CurrentChain          int                     `json:"currentChain"`
 	CurrentTrack          int                     `json:"currentTrack"`
-	TrackSetLevels        [8]float32              `json:"trackSetLevels"`
-	TrackTypes            [8]bool                 `json:"trackTypes"`
+	TrackSetLevels        [9]float32              `json:"trackSetLevels"`
+	TrackTypes            [9]bool                 `json:"trackTypes"`
 	CurrentMixerTrack     int                     `json:"currentMixerTrack"`
 }
 
