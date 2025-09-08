@@ -125,9 +125,10 @@ func main() {
 	var tm *TrackerModel // Will be set after model creation
 
 	d.AddMsgHandler("/track_volume", func(msg *osc.Message) {
-		for i := 0; i < len(tm.model.TrackVolumes) && i < len(msg.Arguments); i++ {
-			tm.model.TrackVolumes[i] = msg.Arguments[i].(float32)
-		}
+		log.Printf("Received /track_volume OSC message: %v", msg.Arguments)
+		// for i := 0; i < len(tm.model.TrackVolumes) && i < len(msg.Arguments); i++ {
+		// 	tm.model.TrackVolumes[i] = msg.Arguments[i].(float32)
+		// }
 	})
 	// Start OSC server early
 	server := &osc.Server{Addr: fmt.Sprintf(":%d", oscPort+1), Dispatcher: d}

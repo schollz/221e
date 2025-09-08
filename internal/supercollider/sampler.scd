@@ -628,16 +628,16 @@ s.waitForBoot({
 		OSCFunc({ |msg|
 			var filename = msg[1].asString;
 			var doRecord = msg[2].asInteger;
-			var synRecord = ~synthRecord.at(filename);
-			// stop recording if recording
-			if (synRecord.notNil,{
-				if (synRecord.isPlaying,{
-					[synRecord,"stopped"].postln;
-					synRecord.set(\gate,0);
-					~synthRecord.removeAt(filename);
-					["stopping recording",filename].postln;
+			// stop all recordings
+			["stopping all recordings"].postln;
+			~synthRecord.values.do({ |syn,name|
+				[syn,name,"stopping"].postln;
+				if (syn.notNil and: { syn.isPlaying }, {
+					[syn,"stopped"].postln;
+					syn.set(\gate,0);
 				});
 			});
+			~synthRecord.clear;
 			if (doRecord<1,{
 				// do nothing, recording already released
 			}, {
@@ -655,6 +655,22 @@ s.waitForBoot({
 					recordingBuffer.free;
 				}));
 				NodeWatcher.register(~synthRecord.at(filename));
+				// now create recorders for each track
+				8.do({ arg track;
+					var trackRecordingBuffer=Buffer.alloc(Server.default,65536,2);
+					var trackPathname=filename.asString.replace(".wav","_track"++track.asString++".wav");
+					["starting track recording",trackPathname].postln;
+					trackRecordingBuffer.write(trackPathname.standardizePath,PathName.new(trackPathname.standardizePath).extension,"int16",0,0,true);
+					~synthRecord.put("track"++track.asString,Synth.tail(s,"diskout",[
+						\bufnum,trackRecordingBuffer.bufnum,
+						\inbus,~busTrack[track],
+						\gate,1,
+					]).onFree({
+						[trackRecordingBuffer,"freed"].postln;
+						trackRecordingBuffer.free;
+					}));
+					NodeWatcher.register(~synthRecord.at("track"++track.asString));
+				});
 			});
 		},'/record');
 		OSCFunc({ |msg|
