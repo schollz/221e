@@ -105,6 +105,30 @@ func ModifyRetriggerValue(m *model.Model, baseDelta float32) {
 		}
 		settings.PitchChange = newPitchChange
 		log.Printf("Modified retrigger %02X PitchChange: %.1f -> %.1f (delta: %.1f)", m.RetriggerEditingIndex, settings.PitchChange-baseDelta, settings.PitchChange, baseDelta)
+	} else if m.CurrentRow == 6 { // Final pitch to start
+		// Toggle between 0 (No) and 1 (Yes)
+		if baseDelta > 0 {
+			settings.FinalPitchToStart = 1
+		} else {
+			settings.FinalPitchToStart = 0
+		}
+		finalPitchValue := "No"
+		if settings.FinalPitchToStart == 1 {
+			finalPitchValue = "Yes"
+		}
+		log.Printf("Modified retrigger %02X FinalPitchToStart: %s", m.RetriggerEditingIndex, finalPitchValue)
+	} else if m.CurrentRow == 7 { // Final volume to start
+		// Toggle between 0 (No) and 1 (Yes)
+		if baseDelta > 0 {
+			settings.FinalVolumeToStart = 1
+		} else {
+			settings.FinalVolumeToStart = 0
+		}
+		finalVolumeValue := "No"
+		if settings.FinalVolumeToStart == 1 {
+			finalVolumeValue = "Yes"
+		}
+		log.Printf("Modified retrigger %02X FinalVolumeToStart: %s", m.RetriggerEditingIndex, finalVolumeValue)
 	}
 
 	// Store back the modified settings
