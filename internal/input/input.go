@@ -751,26 +751,26 @@ func handleDown(m *model.Model) tea.Cmd {
 			m.CurrentRow = m.CurrentRow + 1
 		}
 	} else if m.ViewMode == types.SettingsView {
-		// Column 0 (Global): 0-6 (BPM to Drive), Column 1 (Input): 0-1 (Input, Reverb)
+		// Column 0 (Global): BPM to Drive, Column 1 (Input): InputLevelDB to ReverbSendPercent
 		var maxRow int
 		if m.CurrentCol == 0 {
-			maxRow = 6 // Global column: BPM(0) to Drive(6)
+			maxRow = int(types.GlobalSettingsRowDriveDB) // Global column: BPM(0) to Drive(6)
 		} else {
-			maxRow = 1 // Input column: Input(0) to Reverb(1)
+			maxRow = int(types.InputSettingsRowReverbSendPercent) // Input column: InputLevelDB(0) to ReverbSendPercent(1)
 		}
 		if m.CurrentRow < maxRow {
 			m.CurrentRow = m.CurrentRow + 1
 		}
 	} else if m.ViewMode == types.FileMetadataView {
-		if m.CurrentRow < 1 { // 0=BPM, 1=Slices
+		if m.CurrentRow < int(types.FileMetadataRowSlices) { // BPM(0) to Slices(1)
 			m.CurrentRow = m.CurrentRow + 1
 		}
 	} else if m.ViewMode == types.RetriggerView {
-		if m.CurrentRow < 7 { // 0=Times, 1=Starting Rate, 2=Final Rate, 3=Beats, 4=Volume, 5=Pitch, 6=FinalPitchToStart, 7=FinalVolumeToStart
+		if m.CurrentRow < int(types.RetriggerSettingsRowFinalVolumeToStart) { // Times(0) to FinalVolumeToStart(7)
 			m.CurrentRow = m.CurrentRow + 1
 		}
 	} else if m.ViewMode == types.TimestrechView {
-		if m.CurrentRow < 2 { // 0=Start, 1=End, 2=Beats
+		if m.CurrentRow < int(types.TimestrechSettingsRowBeats) { // Start(0) to Beats(2)
 			m.CurrentRow = m.CurrentRow + 1
 		}
 	} else if m.ViewMode == types.ArpeggioView {
@@ -779,7 +779,7 @@ func handleDown(m *model.Model) tea.Cmd {
 		}
 	} else if m.ViewMode == types.MidiView {
 		// Calculate maximum row: 2 settings rows + available MIDI devices
-		maxRow := 1 + len(m.AvailableMidiDevices) // Device(0), Channel(1), then devices starting at row 2
+		maxRow := int(types.MidiSettingsRowChannel) + len(m.AvailableMidiDevices) // Device(0), Channel(1), then devices starting at row 2
 		if m.CurrentRow < maxRow {
 			m.CurrentRow = m.CurrentRow + 1
 			visibleRows := m.GetVisibleRows()
@@ -1295,7 +1295,7 @@ func handleBackspace(m *model.Model) tea.Cmd {
 
 		switch m.CurrentCol {
 		case 0: // Direction column
-			currentRow.Direction = 0 // Clear to "--"
+			currentRow.Direction = int(types.ArpeggioDirectionNone) // Clear to "--"
 			log.Printf("Cleared arpeggio %02X row %02X Direction", m.ArpeggioEditingIndex, m.CurrentRow)
 		case 1: // Count column
 			currentRow.Count = -1 // Clear to "--"

@@ -19,8 +19,8 @@ func ModifyFileMetadataValue(m *model.Model, delta float32) {
 		metadata = types.FileMetadata{BPM: 120.0, Slices: 16} // Default values
 	}
 
-	switch m.CurrentRow {
-	case 0: // BPM
+	switch types.FileMetadataRow(m.CurrentRow) {
+	case types.FileMetadataRowBPM: // BPM
 		modifier := createFloatModifier(
 			func() float32 { return metadata.BPM },
 			func(v float32) {
@@ -31,7 +31,7 @@ func ModifyFileMetadataValue(m *model.Model, delta float32) {
 		)
 		modifyValueWithBounds(modifier, delta)
 
-	case 1: // Slices
+	case types.FileMetadataRowSlices: // Slices
 		modifier := createIntModifier(
 			func() int { return metadata.Slices },
 			func(v int) {

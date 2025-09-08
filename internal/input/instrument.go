@@ -22,7 +22,7 @@ func ModifyArpeggioValue(m *model.Model, baseDelta float32) {
 	currentRow := &settings.Rows[m.CurrentRow] // Get reference to specific row
 
 	if m.CurrentCol == int(types.ArpeggioColDI) { // DI (Direction) column
-		// Direction cycles through: 0="--", 1="u-", 2="d-"
+		// Direction cycles through: ArpeggioDirectionNone, ArpeggioDirectionUp, ArpeggioDirectionDown
 		var delta int
 		if baseDelta > 0 {
 			delta = 1
@@ -31,10 +31,10 @@ func ModifyArpeggioValue(m *model.Model, baseDelta float32) {
 		}
 
 		newDirection := currentRow.Direction + delta
-		if newDirection < 0 {
-			newDirection = 2 // Wrap to "d-"
-		} else if newDirection > 2 {
-			newDirection = 0 // Wrap to "--"
+		if newDirection < int(types.ArpeggioDirectionNone) {
+			newDirection = int(types.ArpeggioDirectionDown) // Wrap to "d-"
+		} else if newDirection > int(types.ArpeggioDirectionDown) {
+			newDirection = int(types.ArpeggioDirectionNone) // Wrap to "--"
 		}
 		currentRow.Direction = newDirection
 		log.Printf("Modified arpeggio %02X row %02X Direction: %d -> %d", m.ArpeggioEditingIndex, m.CurrentRow, currentRow.Direction-delta, currentRow.Direction)
@@ -183,7 +183,7 @@ func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
 	// Get current settings
 	settings := &m.SoundMakerSettings[m.SoundMakerEditingIndex]
 
-	if m.CurrentRow == 0 { // Name row
+	if m.CurrentRow == int(types.SoundMakerRowName) { // Name row
 		// Name cycles through available SoundMakers
 		var delta int
 		if baseDelta > 0 {
@@ -220,7 +220,7 @@ func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
 		oldName := settings.Name
 		settings.Name = soundMakers[newIndex]
 		log.Printf("Modified SoundMaker %02X Name: %s -> %s", m.SoundMakerEditingIndex, oldName, settings.Name)
-	} else if m.CurrentRow == 1 { // Parameter row (A or Preset depending on SoundMaker)
+	} else if m.CurrentRow == int(types.SoundMakerRowParamA) { // Parameter row (A or Preset depending on SoundMaker)
 		if settings.Name == "DX7" {
 			// For DX7, handle Preset parameter (0-1000)
 			var delta int
@@ -330,7 +330,7 @@ func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
 				}
 			}
 		}
-	} else if m.CurrentRow >= 2 && m.CurrentRow <= 4 && settings.Name != "DX7" { // Parameters B, C, D (only for non-DX7)
+	} else if m.CurrentRow >= int(types.SoundMakerRowParamB) && m.CurrentRow <= int(types.SoundMakerRowParamD) && settings.Name != "DX7" { // Parameters B, C, D (only for non-DX7)
 		// Parameters cycle through 00-FE or -- (which is -1)
 		var delta int
 		if baseDelta >= 1.0 || baseDelta <= -1.0 {
@@ -352,14 +352,14 @@ func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
 		// Get the current parameter value
 		var currentValue *int
 		var paramName string
-		switch m.CurrentRow {
-		case 2: // Parameter B
+		switch types.SoundMakerRow(m.CurrentRow) {
+		case types.SoundMakerRowParamB: // Parameter B
 			currentValue = &settings.B
 			paramName = "B"
-		case 3: // Parameter C
+		case types.SoundMakerRowParamC: // Parameter C
 			currentValue = &settings.C
 			paramName = "C"
-		case 4: // Parameter D
+		case types.SoundMakerRowParamD: // Parameter D
 			currentValue = &settings.D
 			paramName = "D"
 		}
@@ -419,7 +419,7 @@ func ClearArpeggioCell(m *model.Model) {
 
 	switch m.CurrentCol {
 	case 0: // DI (Direction) column
-		currentRow.Direction = 0 // Clear to "--"
+		currentRow.Direction = int(types.ArpeggioDirectionNone) // Clear to "--"
 		log.Printf("Cleared arpeggio %02X row %02X Direction", m.ArpeggioEditingIndex, m.CurrentRow)
 	case 1: // CO (Count) column
 		currentRow.Count = -1 // Clear to "--"

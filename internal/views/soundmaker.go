@@ -6,16 +6,17 @@ import (
 
 	"github.com/schollz/2n/internal/model"
 	"github.com/schollz/2n/internal/supercollider"
+	"github.com/schollz/2n/internal/types"
 )
 
 func GetSoundMakerStatusMessage(m *model.Model) string {
 	settings := m.SoundMakerSettings[m.SoundMakerEditingIndex]
 
 	var columnStatus string
-	switch m.CurrentRow {
-	case 0: // SoundMaker Name row
+	switch types.SoundMakerRow(m.CurrentRow) {
+	case types.SoundMakerRowName: // SoundMaker Name row
 		columnStatus = fmt.Sprintf("SoundMaker: %s", settings.Name)
-	case 1: // Parameter row (A or Preset depending on SoundMaker)
+	case types.SoundMakerRowParamA: // Parameter row (A or Preset depending on SoundMaker)
 		if settings.Name == "DX7" {
 			if settings.Preset == -1 {
 				columnStatus = "Preset: --"
@@ -34,7 +35,7 @@ func GetSoundMakerStatusMessage(m *model.Model) string {
 				columnStatus = fmt.Sprintf("Parameter A: %02X", settings.A)
 			}
 		}
-	case 2: // Parameter B row (only for non-DX7)
+	case types.SoundMakerRowParamB: // Parameter B row (only for non-DX7)
 		if settings.Name != "DX7" {
 			if settings.B == -1 {
 				columnStatus = "Parameter B: --"
@@ -42,7 +43,7 @@ func GetSoundMakerStatusMessage(m *model.Model) string {
 				columnStatus = fmt.Sprintf("Parameter B: %02X", settings.B)
 			}
 		}
-	case 3: // Parameter C row (only for non-DX7)
+	case types.SoundMakerRowParamC: // Parameter C row (only for non-DX7)
 		if settings.Name != "DX7" {
 			if settings.C == -1 {
 				columnStatus = "Parameter C: --"
@@ -50,7 +51,7 @@ func GetSoundMakerStatusMessage(m *model.Model) string {
 				columnStatus = fmt.Sprintf("Parameter C: %02X", settings.C)
 			}
 		}
-	case 4: // Parameter D row (only for non-DX7)
+	case types.SoundMakerRowParamD: // Parameter D row (only for non-DX7)
 		if settings.Name != "DX7" {
 			if settings.D == -1 {
 				columnStatus = "Parameter D: --"
@@ -101,7 +102,7 @@ func RenderSoundMakerView(m *model.Model) string {
 			label string
 			value string
 			row   int
-		}{"Name:", settings.Name, 0})
+		}{"Name:", settings.Name, int(types.SoundMakerRowName)})
 
 		// Show different parameters based on SoundMaker type
 		if settings.Name == "DX7" {
@@ -119,7 +120,7 @@ func RenderSoundMakerView(m *model.Model) string {
 					return fmt.Sprintf("%s (%d)", patchName, settings.Preset)
 				}
 				return fmt.Sprintf("%d", settings.Preset)
-			}(), 1})
+			}(), int(types.SoundMakerRowParamA)})
 		} else {
 			// For other SoundMakers, show A, B, C, D
 			settingsRows = append(settingsRows, struct {
@@ -131,7 +132,7 @@ func RenderSoundMakerView(m *model.Model) string {
 					return "--"
 				}
 				return fmt.Sprintf("%02X", settings.A)
-			}(), 1})
+			}(), int(types.SoundMakerRowParamA)})
 			settingsRows = append(settingsRows, struct {
 				label string
 				value string
@@ -141,7 +142,7 @@ func RenderSoundMakerView(m *model.Model) string {
 					return "--"
 				}
 				return fmt.Sprintf("%02X", settings.B)
-			}(), 2})
+			}(), int(types.SoundMakerRowParamB)})
 			settingsRows = append(settingsRows, struct {
 				label string
 				value string
@@ -151,7 +152,7 @@ func RenderSoundMakerView(m *model.Model) string {
 					return "--"
 				}
 				return fmt.Sprintf("%02X", settings.C)
-			}(), 3})
+			}(), int(types.SoundMakerRowParamC)})
 			settingsRows = append(settingsRows, struct {
 				label string
 				value string
@@ -161,7 +162,7 @@ func RenderSoundMakerView(m *model.Model) string {
 					return "--"
 				}
 				return fmt.Sprintf("%02X", settings.D)
-			}(), 4})
+			}(), int(types.SoundMakerRowParamD)})
 		}
 
 		for _, setting := range settingsRows {

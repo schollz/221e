@@ -3,13 +3,14 @@ package input
 import (
 	"github.com/schollz/2n/internal/model"
 	"github.com/schollz/2n/internal/storage"
+	"github.com/schollz/2n/internal/types"
 )
 
 func ModifySettingsValue(m *model.Model, delta float32) {
 	if m.CurrentCol == 0 {
 		// Global column settings
-		switch m.CurrentRow {
-		case 0: // BPM
+		switch types.GlobalSettingsRow(m.CurrentRow) {
+		case types.GlobalSettingsRowBPM: // BPM
 			modifier := createFloatModifier(
 				func() float32 { return m.BPM },
 				func(v float32) { m.BPM = v },
@@ -17,7 +18,7 @@ func ModifySettingsValue(m *model.Model, delta float32) {
 			)
 			modifyValueWithBounds(modifier, delta)
 
-		case 1: // PPQ
+		case types.GlobalSettingsRowPPQ: // PPQ
 			modifier := createIntModifier(
 				func() int { return m.PPQ },
 				func(v int) { m.PPQ = v },
@@ -25,7 +26,7 @@ func ModifySettingsValue(m *model.Model, delta float32) {
 			)
 			modifyValueWithBounds(modifier, delta)
 
-		case 2: // PregainDB
+		case types.GlobalSettingsRowPregainDB: // PregainDB
 			modifier := createFloatModifier(
 				func() float32 { return m.PregainDB },
 				func(v float32) {
@@ -36,7 +37,7 @@ func ModifySettingsValue(m *model.Model, delta float32) {
 			)
 			modifyValueWithBounds(modifier, delta)
 
-		case 3: // PostgainDB
+		case types.GlobalSettingsRowPostgainDB: // PostgainDB
 			modifier := createFloatModifier(
 				func() float32 { return m.PostgainDB },
 				func(v float32) {
@@ -47,7 +48,7 @@ func ModifySettingsValue(m *model.Model, delta float32) {
 			)
 			modifyValueWithBounds(modifier, delta)
 
-		case 4: // BiasDB
+		case types.GlobalSettingsRowBiasDB: // BiasDB
 			modifier := createFloatModifier(
 				func() float32 { return m.BiasDB },
 				func(v float32) {
@@ -58,7 +59,7 @@ func ModifySettingsValue(m *model.Model, delta float32) {
 			)
 			modifyValueWithBounds(modifier, delta)
 
-		case 5: // SaturationDB
+		case types.GlobalSettingsRowSaturationDB: // SaturationDB
 			modifier := createFloatModifier(
 				func() float32 { return m.SaturationDB },
 				func(v float32) {
@@ -69,7 +70,7 @@ func ModifySettingsValue(m *model.Model, delta float32) {
 			)
 			modifyValueWithBounds(modifier, delta)
 
-		case 6: // DriveDB
+		case types.GlobalSettingsRowDriveDB: // DriveDB
 			modifier := createFloatModifier(
 				func() float32 { return m.DriveDB },
 				func(v float32) {
@@ -82,8 +83,8 @@ func ModifySettingsValue(m *model.Model, delta float32) {
 		}
 	} else if m.CurrentCol == 1 {
 		// Input column settings
-		switch m.CurrentRow {
-		case 0: // InputLevelDB
+		switch types.InputSettingsRow(m.CurrentRow) {
+		case types.InputSettingsRowInputLevelDB: // InputLevelDB
 			modifier := createFloatModifier(
 				func() float32 { return m.InputLevelDB },
 				func(v float32) {
@@ -94,7 +95,7 @@ func ModifySettingsValue(m *model.Model, delta float32) {
 			)
 			modifyValueWithBounds(modifier, delta)
 
-		case 1: // ReverbSendPercent
+		case types.InputSettingsRowReverbSendPercent: // ReverbSendPercent
 			modifier := createFloatModifier(
 				func() float32 { return m.ReverbSendPercent },
 				func(v float32) {

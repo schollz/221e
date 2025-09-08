@@ -307,6 +307,96 @@ type TimestrechSettings struct {
 	Beats int     `json:"beats"` // Beats value (0-256)
 }
 
+// ArpeggioDirection represents different arpeggio directions
+type ArpeggioDirection int
+
+const (
+	ArpeggioDirectionNone ArpeggioDirection = iota // 0: "--"
+	ArpeggioDirectionUp                            // 1: "u-"
+	ArpeggioDirectionDown                          // 2: "d-"
+)
+
+// SoundMakerRow represents different rows in the SoundMaker settings view
+type SoundMakerRow int
+
+const (
+	SoundMakerRowName      SoundMakerRow = iota // 0: Name row
+	SoundMakerRowParamA                         // 1: Parameter A / Preset row
+	SoundMakerRowParamB                         // 2: Parameter B row
+	SoundMakerRowParamC                         // 3: Parameter C row
+	SoundMakerRowParamD                         // 4: Parameter D row
+)
+
+// GlobalSettingsRow represents different rows in the Global settings column
+type GlobalSettingsRow int
+
+const (
+	GlobalSettingsRowBPM        GlobalSettingsRow = iota // 0: BPM
+	GlobalSettingsRowPPQ                                 // 1: PPQ
+	GlobalSettingsRowPregainDB                           // 2: PregainDB
+	GlobalSettingsRowPostgainDB                          // 3: PostgainDB
+	GlobalSettingsRowBiasDB                              // 4: BiasDB
+	GlobalSettingsRowSaturationDB                        // 5: SaturationDB
+	GlobalSettingsRowDriveDB                             // 6: DriveDB
+)
+
+// InputSettingsRow represents different rows in the Input settings column
+type InputSettingsRow int
+
+const (
+	InputSettingsRowInputLevelDB     InputSettingsRow = iota // 0: InputLevelDB
+	InputSettingsRowReverbSendPercent                        // 1: ReverbSendPercent
+)
+
+// BrailleDotRow represents different rows in a 2x4 Braille cell
+type BrailleDotRow int
+
+const (
+	BrailleDotRow0 BrailleDotRow = iota // 0: Top row
+	BrailleDotRow1                      // 1: Second row
+	BrailleDotRow2                      // 2: Third row
+	BrailleDotRow3                      // 3: Bottom row
+)
+
+// FileMetadataRow represents different rows in the file metadata view
+type FileMetadataRow int
+
+const (
+	FileMetadataRowBPM    FileMetadataRow = iota // 0: BPM
+	FileMetadataRowSlices                        // 1: Slices
+)
+
+// MidiSettingsRow represents different rows in the MIDI settings view
+type MidiSettingsRow int
+
+const (
+	MidiSettingsRowDevice  MidiSettingsRow = iota // 0: MIDI Device
+	MidiSettingsRowChannel                        // 1: MIDI Channel
+)
+
+// RetriggerSettingsRow represents different rows in the retrigger settings view
+type RetriggerSettingsRow int
+
+const (
+	RetriggerSettingsRowTimes              RetriggerSettingsRow = iota // 0: Times
+	RetriggerSettingsRowStartingRate                                   // 1: Starting Rate
+	RetriggerSettingsRowFinalRate                                      // 2: Final Rate
+	RetriggerSettingsRowBeats                                          // 3: Beats
+	RetriggerSettingsRowVolume                                         // 4: Volume
+	RetriggerSettingsRowPitch                                          // 5: Pitch
+	RetriggerSettingsRowFinalPitchToStart                              // 6: FinalPitchToStart
+	RetriggerSettingsRowFinalVolumeToStart                             // 7: FinalVolumeToStart
+)
+
+// TimestrechSettingsRow represents different rows in the timestrech settings view
+type TimestrechSettingsRow int
+
+const (
+	TimestrechSettingsRowStart TimestrechSettingsRow = iota // 0: Start
+	TimestrechSettingsRowEnd                                // 1: End
+	TimestrechSettingsRowBeats                              // 2: Beats
+)
+
 type ArpeggioRow struct {
 	Direction int `json:"direction"` // Direction: 0="--", 1="u-", 2="d-"
 	Count     int `json:"count"`     // Count: -1="--", 0-254 for hex values 00-FE
