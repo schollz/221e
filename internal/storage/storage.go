@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"compress/gzip"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -96,15 +98,40 @@ func DoSave(m *model.Model) {
 		return
 	}
 
-	err = os.WriteFile(m.SaveFile, data, 0644)
+	// Create the save file with gzip compression
+	file, err := os.Create(m.SaveFile)
 	if err != nil {
-		log.Printf("Error writing save file: %v", err)
+		log.Printf("Error creating save file: %v", err)
+		return
+	}
+	defer file.Close()
+
+	gzWriter := gzip.NewWriter(file)
+	defer gzWriter.Close()
+
+	_, err = gzWriter.Write(data)
+	if err != nil {
+		log.Printf("Error writing gzipped save data: %v", err)
 		return
 	}
 }
 
 func LoadState(m *model.Model, oscPort int, saveFile string) error {
-	data, err := os.ReadFile(saveFile)
+	// Open the gzipped save file
+	file, err := os.Open(saveFile)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	gzReader, err := gzip.NewReader(file)
+	if err != nil {
+		return err
+	}
+	defer gzReader.Close()
+
+	// Read the decompressed data
+	data, err := io.ReadAll(gzReader)
 	if err != nil {
 		return err
 	}
