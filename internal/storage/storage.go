@@ -2,6 +2,7 @@ package storage
 
 import (
 	"compress/gzip"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -47,6 +48,17 @@ func AutoSave(m *model.Model) {
 
 func DoSave(m *model.Model) {
 	log.Printf("doing save")
+
+	// Create bundle directory and get relative paths for sampler files
+	bundleDir, relativePaths, err := createPortableBundle(m.SaveFile, m.SamplerPhrasesFiles)
+	if err != nil {
+		log.Printf("Error creating portable bundle: %v", err)
+		// Continue with normal save without bundling
+		relativePaths = m.SamplerPhrasesFiles
+	} else {
+		log.Printf("Created portable bundle in directory: %s", bundleDir)
+	}
+
 	saveData := types.SaveData{
 		ViewMode:      m.ViewMode,
 		CurrentRow:    m.CurrentRow,
@@ -62,7 +74,7 @@ func DoSave(m *model.Model) {
 		InstrumentPhrasesData: m.InstrumentPhrasesData,
 		SamplerChainsData:     m.SamplerChainsData,
 		SamplerPhrasesData:    m.SamplerPhrasesData,
-		SamplerPhrasesFiles:   m.SamplerPhrasesFiles,
+		SamplerPhrasesFiles:   relativePaths, // Use relative paths in save data
 		LastEditRow:           m.LastEditRow,
 		PhrasesFiles:          m.PhrasesFiles,
 		CurrentDir:            m.CurrentDir,
@@ -204,7 +216,9 @@ func LoadState(m *model.Model, oscPort int, saveFile string) error {
 		m.SamplerPhrasesData = saveData.SamplerPhrasesData
 	}
 	if saveData.SamplerPhrasesFiles != nil {
-		m.SamplerPhrasesFiles = append([]string(nil), saveData.SamplerPhrasesFiles...)
+		// Convert relative paths to absolute paths for portable bundles
+		resolvedPaths := resolvePortablePaths(saveFile, saveData.SamplerPhrasesFiles)
+		m.SamplerPhrasesFiles = append([]string(nil), resolvedPaths...)
 	}
 
 	// Restore phrase file list
@@ -272,4 +286,134 @@ func LoadFiles(m *model.Model) {
 	sort.Strings(files[1:]) // Sort everything except ".."
 	m.Files = files
 	log.Printf("Loaded %d files in %s", len(files), m.CurrentDir)
+}
+
+// createPortableBundle creates a directory based on save filename and copies sampler files
+func createPortableBundle(saveFilePath string, samplerFiles []string) (string, []string, error) {
+	if len(samplerFiles) == 0 {
+		// No files to bundle, return original paths
+		return "", samplerFiles, nil
+	}
+
+	// Extract bundle directory name from save file
+	// e.g., "save.json.gz" -> "save"
+	saveFileName := filepath.Base(saveFilePath)
+	bundleDirName := strings.TrimSuffix(saveFileName, filepath.Ext(saveFileName))
+	if strings.HasSuffix(bundleDirName, ".json") {
+		bundleDirName = strings.TrimSuffix(bundleDirName, ".json")
+	}
+
+	// Create bundle directory next to save file
+	saveDir := filepath.Dir(saveFilePath)
+	bundleDir := filepath.Join(saveDir, bundleDirName)
+
+	// Create bundle directory
+	err := os.MkdirAll(bundleDir, 0755)
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to create bundle directory %s: %w", bundleDir, err)
+	}
+
+	// Process each sampler file
+	relativePaths := make([]string, len(samplerFiles))
+	for i, originalPath := range samplerFiles {
+		if originalPath == "" {
+			relativePaths[i] = ""
+			continue
+		}
+
+		// Get original file name
+		fileName := filepath.Base(originalPath)
+		destPath := filepath.Join(bundleDir, fileName)
+
+		// Copy file to bundle directory
+		err := copyFile(originalPath, destPath)
+		if err != nil {
+			log.Printf("Warning: Failed to copy file %s to %s: %v", originalPath, destPath, err)
+			// Use original path if copy fails
+			relativePaths[i] = originalPath
+			continue
+		}
+
+		// Store relative path from save file location to bundled file
+		relativePath := filepath.Join(bundleDirName, fileName)
+		relativePaths[i] = relativePath
+
+		log.Printf("Bundled file: %s -> %s (relative: %s)", originalPath, destPath, relativePath)
+	}
+
+	return bundleDir, relativePaths, nil
+}
+
+// copyFile copies a file from source to destination
+func copyFile(src, dst string) error {
+	// Open source file
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("failed to open source file: %w", err)
+	}
+	defer srcFile.Close()
+
+	// Create destination file
+	dstFile, err := os.Create(dst)
+	if err != nil {
+		return fmt.Errorf("failed to create destination file: %w", err)
+	}
+	defer dstFile.Close()
+
+	// Copy contents
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		return fmt.Errorf("failed to copy file contents: %w", err)
+	}
+
+	// Copy file permissions
+	srcInfo, err := os.Stat(src)
+	if err != nil {
+		return fmt.Errorf("failed to get source file info: %w", err)
+	}
+	err = os.Chmod(dst, srcInfo.Mode())
+	if err != nil {
+		return fmt.Errorf("failed to set file permissions: %w", err)
+	}
+
+	return nil
+}
+
+// resolvePortablePaths converts relative paths from portable bundles back to absolute paths
+func resolvePortablePaths(saveFilePath string, paths []string) []string {
+	if len(paths) == 0 {
+		return paths
+	}
+
+	saveDir := filepath.Dir(saveFilePath)
+	resolvedPaths := make([]string, len(paths))
+
+	for i, path := range paths {
+		if path == "" {
+			resolvedPaths[i] = ""
+			continue
+		}
+
+		// If path is already absolute, use it as-is
+		if filepath.IsAbs(path) {
+			resolvedPaths[i] = path
+			continue
+		}
+
+		// Convert relative path to absolute by joining with save file directory
+		absolutePath := filepath.Join(saveDir, path)
+
+		// Check if the bundled file exists
+		if _, err := os.Stat(absolutePath); err == nil {
+			resolvedPaths[i] = absolutePath
+			log.Printf("Resolved bundled file: %s -> %s", path, absolutePath)
+		} else {
+			// File doesn't exist in bundle, keep original relative path
+			// This handles cases where files were saved before bundling feature
+			log.Printf("Warning: Bundled file not found: %s", absolutePath)
+			resolvedPaths[i] = path
+		}
+	}
+
+	return resolvedPaths
 }
