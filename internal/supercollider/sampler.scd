@@ -660,9 +660,7 @@ s.waitForBoot({
 				NodeWatcher.register(~synthRecord.at(filename));
 				// create recorders only for enabled tracks (based on track mask)
 				8.do({ arg track;
-					var trackBit = 2.pow(track);
 					var enabled = isTrackEnabled.(track);
-					["track",track,"bit",trackBit,"enabled",enabled].postln;
 					if (enabled, {
 						var trackRecordingBuffer=Buffer.alloc(Server.default,65536,2);
 						var trackPathname=filename.asString.replace(".wav","_track"++track.asString++".wav");
