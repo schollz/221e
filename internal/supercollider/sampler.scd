@@ -53,7 +53,7 @@ s.waitForBoot({
 				pitch: \note.kr(60),
 				timbre: \timbre.kr(0),
 				color: \color.kr(0),
-				model: \model.kr(0),
+				model: \model.kr(0).poll,
 				trig: 1,
 				resamp: \resamp.kr(0),
 				decim: \decim.kr(1),
@@ -469,7 +469,7 @@ s.waitForBoot({
 					var synthName = synName ++ "_" ++ n.asString;
 					[synthName,"started",synthArgs].postln;
 					~synthsPlaying.at(track).put(synthName,
-						Synth.head(Server.default,"PolyPerc",synthArgs).onFree({
+						Synth.head(Server.default,synthToPlay,synthArgs).onFree({
 							[synthName,"freed"].postln;
 							~synthsPlaying.at(track).removeAt(synthName);
 						});
