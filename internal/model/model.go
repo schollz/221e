@@ -111,8 +111,8 @@ type Model struct {
 	SongPlaybackPhrase      [8]int  // Current phrase being played for each track
 	SongPlaybackRowInPhrase [8]int  // Current row within phrase for each track
 	SongPlaybackTicksLeft   [8]int  // Remaining ticks until next row advance for each track
-	// Save file configuration
-	SaveFile string // Path to the save file
+	// Save folder configuration
+	SaveFolder string // Path to the save folder
 	// Recording state
 	RecordingEnabled     bool   // Whether recording is queued/enabled
 	RecordingActive      bool   // Whether recording is currently active
@@ -517,7 +517,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 	}
 }
 
-func NewModel(oscPort int, saveFile string) *Model {
+func NewModel(oscPort int, saveFolder string) *Model {
 	m := &Model{
 		CurrentRow:        0,
 		CurrentCol:        1,              // Start at phrase column in chain view
@@ -565,8 +565,8 @@ func NewModel(oscPort int, saveFile string) *Model {
 		LastPhraseRow: 0,
 		LastSongRow:   0,
 		LastSongTrack: 0,
-		// Set save file
-		SaveFile: saveFile,
+		// Set save folder
+		SaveFolder: saveFolder,
 		// Initialize recording state
 		RecordingEnabled:     false,
 		RecordingActive:      false,

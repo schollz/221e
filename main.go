@@ -29,10 +29,10 @@ func main() {
 	// Parse command line arguments (no no-splash anymore)
 	var oscPort int
 	var skipJackCheck bool
-	var saveFile string
+	var saveFolder string
 	var debugLog string
 	flag.IntVar(&oscPort, "osc-port", 57120, "OSC port for sending playback messages")
-	flag.StringVar(&saveFile, "save-file", "save.json.gz", "Save file to load from or create")
+	flag.StringVar(&saveFolder, "save-folder", "save", "Save folder to load from or create (contains data.json.gz and audio files)")
 	flag.BoolVar(&skipJackCheck, "skip-jack-check", false, "Skip checking for JACK server (for testing only)")
 	flag.StringVar(&debugLog, "debug", "", "If set, write debug logs to this file; empty disables logging")
 
@@ -130,7 +130,7 @@ func main() {
 		}
 	})
 	// Build program
-	tm = initialModel(oscPort, saveFile, d)
+	tm = initialModel(oscPort, saveFolder, d)
 
 	p := tea.NewProgram(tm, tea.WithAltScreen())
 
@@ -182,14 +182,14 @@ func main() {
 	supercollider.Cleanup()
 }
 
-func initialModel(oscPort int, saveFile string, dispatcher *osc.StandardDispatcher) *TrackerModel {
-	m := model.NewModel(oscPort, saveFile)
+func initialModel(oscPort int, saveFolder string, dispatcher *osc.StandardDispatcher) *TrackerModel {
+	m := model.NewModel(oscPort, saveFolder)
 
 	// Try to load saved state
-	if err := storage.LoadState(m, oscPort, saveFile); err == nil {
-		log.Printf("Loaded saved state successfully from %s", saveFile)
+	if err := storage.LoadState(m, oscPort, saveFolder); err == nil {
+		log.Printf("Loaded saved state successfully from %s", saveFolder)
 	} else {
-		log.Printf("No saved state found or error loading from %s: %v", saveFile, err)
+		log.Printf("No saved state found or error loading from %s: %v", saveFolder, err)
 		// Load files for new model
 		storage.LoadFiles(m)
 	}
