@@ -38,6 +38,35 @@ s.waitForBoot({
 			Out.ar(\effectReverbOut.kr(0), snd*\effectReverb.kr(0));
 		}).add;
 
+		SynthDef("MiBraids",{
+			var env = EnvGen.ar(
+				Env.adsr(
+					\attack.kr(0.1),
+					\decay.kr(1.0),
+					\sustain.kr(0.7),
+					\release.kr(0.5)
+				),
+				1-EnvGen.kr(Env.new([0,0,1],[\duration.kr(1),0])),
+				doneAction:2,
+			);
+			var snd = MiBraids.ar(
+				pitch: \note.kr(60),
+				timbre: \timbre.kr(0),
+				color: \color.kr(0),
+				model: \model.kr(0),
+				trig: 1,
+				resamp: \resamp.kr(0),
+				decim: \decim.kr(1),
+				bits: \bits.kr(0),
+				ws: \ws.kr(0),
+			)
+			snd = snd * env * \trackVolume.kr(0).dbamp * (1.0 / \noteSize.kr(1).sqrt);
+			Out.ar(\trackOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
+			Out.ar(\effectDryOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
+			Out.ar(\effectCombOut.kr(0), snd*\effectComb.kr(0));
+			Out.ar(\effectReverbOut.kr(0), snd*\effectReverb.kr(0));
+		}).add;
+
 		SynthDef("PolyPerc",{
 			var env = EnvGen.ar(
 				Env.adsr(
