@@ -88,6 +88,7 @@ func DoSave(m *model.Model) {
 		FileMetadata:          m.FileMetadata,
 		LastChainRow:          m.LastChainRow,
 		LastPhraseRow:         m.LastPhraseRow,
+		LastPhraseCol:         m.LastPhraseCol,
 		RecordingEnabled:      m.RecordingEnabled,
 		RetriggerSettings:     m.RetriggerSettings,
 		TimestrechSettings:    m.TimestrechSettings,
@@ -187,6 +188,7 @@ func LoadState(m *model.Model, oscPort int, saveFolder string) error {
 	m.FileMetadata = saveData.FileMetadata
 	m.LastChainRow = saveData.LastChainRow
 	m.LastPhraseRow = saveData.LastPhraseRow
+	m.LastPhraseCol = saveData.LastPhraseCol
 	m.RecordingEnabled = saveData.RecordingEnabled
 	m.RetriggerSettings = saveData.RetriggerSettings
 	m.TimestrechSettings = saveData.TimestrechSettings
