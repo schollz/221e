@@ -40,3 +40,5 @@ test-tracker.json
 Limewax/*
 *.wav
 *.mkv
+save/*
+*.gz
