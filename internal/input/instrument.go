@@ -32,9 +32,9 @@ func ModifyArpeggioValue(m *model.Model, baseDelta float32) {
 
 		newDirection := currentRow.Direction + delta
 		if newDirection < int(types.ArpeggioDirectionNone) {
-			newDirection = int(types.ArpeggioDirectionDown) // Wrap to "d-"
+			newDirection = int(types.ArpeggioDirectionNone) // Stay at "--"
 		} else if newDirection > int(types.ArpeggioDirectionDown) {
-			newDirection = int(types.ArpeggioDirectionNone) // Wrap to "--"
+			newDirection = int(types.ArpeggioDirectionDown) // Stay at "d-"
 		}
 		currentRow.Direction = newDirection
 		log.Printf("Modified arpeggio %02X row %02X Direction: %d -> %d", m.ArpeggioEditingIndex, m.CurrentRow, currentRow.Direction-delta, currentRow.Direction)
@@ -123,12 +123,12 @@ func ModifyMidiValue(m *model.Model, baseDelta float32) {
 			currentIndex = 0
 		}
 
-		// Apply delta with wrapping
+		// Apply delta with clamping (no wrapping)
 		newIndex := currentIndex + delta
 		if newIndex < 0 {
-			newIndex = len(devices) - 1 // Wrap to last device
+			newIndex = 0 // Stay at first device
 		} else if newIndex >= len(devices) {
-			newIndex = 0 // Wrap to first device
+			newIndex = len(devices) - 1 // Stay at last device
 		}
 
 		oldDevice := settings.Device
@@ -159,12 +159,12 @@ func ModifyMidiValue(m *model.Model, baseDelta float32) {
 			currentIndex = 0
 		}
 
-		// Apply delta with wrapping
+		// Apply delta with clamping (no wrapping)
 		newIndex := currentIndex + delta
 		if newIndex < 0 {
-			newIndex = len(channels) - 1 // Wrap to "all"
+			newIndex = 0 // Stay at "1"
 		} else if newIndex >= len(channels) {
-			newIndex = 0 // Wrap to "1"
+			newIndex = len(channels) - 1 // Stay at "all"
 		}
 
 		oldChannel := settings.Channel
@@ -209,12 +209,12 @@ func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
 			currentIndex = 0
 		}
 
-		// Apply delta with wrapping
+		// Apply delta with clamping (no wrapping)
 		newIndex := currentIndex + delta
 		if newIndex < 0 {
-			newIndex = len(soundMakers) - 1 // Wrap to last SoundMaker
+			newIndex = 0 // Stay at first SoundMaker
 		} else if newIndex >= len(soundMakers) {
-			newIndex = 0 // Wrap to first SoundMaker
+			newIndex = len(soundMakers) - 1 // Stay at last SoundMaker
 		}
 
 		oldName := settings.Name
@@ -281,13 +281,11 @@ func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
 					}
 				} else {
 					newValue = oldValue + delta
-					// Handle wrapping
+					// Handle clamping (no wrapping)
 					if newValue > param.MaxValue {
-						newValue = -1 // Wrap to "--"
-					} else if newValue < -1 {
-						newValue = param.MaxValue // Wrap to max
+						newValue = param.MaxValue // Clamp to max
 					} else if newValue < param.MinValue {
-						newValue = -1 // Go to "--" if below min
+						newValue = param.MinValue // Clamp to min
 					}
 				}
 

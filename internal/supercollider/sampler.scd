@@ -61,6 +61,8 @@ s.waitForBoot({
 				ws: \ws.kr(0),
 			);
 			snd = snd * env * \trackVolume.kr(0).dbamp * (1.0 / \noteSize.kr(1).sqrt);
+			snd = RLPF.ar(snd, \lowPassFilter.kr(20000), 0.707);
+			snd = Pan2.ar(snd,\pan.kr(0));
 			Out.ar(\trackOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
 			Out.ar(\effectDryOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
 			Out.ar(\effectCombOut.kr(0), snd*\effectComb.kr(0));
