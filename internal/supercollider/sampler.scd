@@ -125,11 +125,13 @@ s.waitForBoot({
 				trackVolume = 0.0,
 				pan=0,
 				// retriggering
+				finalVolumeToStart=0,
 				retrigNumTotal=0,
 				retrigRateChangeBeats=1,
 				retrigRateStart=1,
 				retrigRateEnd=0,
 				retrigPitchChange=0,
+				finalPitchToStart=0,
 				retrigVolumeChange=0,
 				sliceAttackBeats = 0.001,
 				sliceDurationBeats = 0,
@@ -198,7 +200,7 @@ s.waitForBoot({
 				// Calculate rate
 				rate = rate*BufRateScale.ir(buf)*bpmTarget/bpmSource;
 				// Calculate pitch
-				// pitch = pitch + (retrigNumTotal * retrigPitchChange.neg);
+				pitch = pitch + (retrigNumTotal * retrigPitchChange.neg * finalPitchToStart);
 				rate = rate * (2 ** (pitch/12.0));
 
 				// Calculate retriggers
@@ -219,7 +221,7 @@ s.waitForBoot({
 				]);
 
 				// Change volume based on retrigger
-				volumeDB = volumeDB + (A2K.kr(retrigCount) * retrigVolumeChange) + (retrigVolumeChange.neg * retrigNumTotal * (retrigVolumeChange>0));
+				volumeDB = volumeDB + (A2K.kr(retrigCount) * retrigVolumeChange) + (retrigVolumeChange.neg * retrigNumTotal * finalVolumeToStart);
 
 
 				// do timestretching
