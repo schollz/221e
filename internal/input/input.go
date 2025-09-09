@@ -1357,6 +1357,10 @@ func handleCtrlR(m *model.Model) tea.Cmd {
 }
 
 func startRecording(m *model.Model) {
+	startRecordingWithContext(m, false, false)
+}
+
+func startRecordingWithContext(m *model.Model, fromSongView bool, fromCtrlSpace bool) {
 	if !m.RecordingEnabled || m.RecordingActive {
 		return
 	}
@@ -1366,9 +1370,12 @@ func startRecording(m *model.Model) {
 	m.CurrentRecordingFile = filename
 	m.RecordingActive = true
 
-	// Send OSC message to start recording
-	m.SendOSCRecordMessage(filename, true)
-	log.Printf("Recording started: %s", filename)
+	// Determine which tracks should be recorded
+	trackMask := m.GetRecordingTrackMask(fromSongView, fromCtrlSpace)
+
+	// Send OSC message to start recording with track mask
+	m.SendOSCRecordMessage(filename, true, trackMask)
+	log.Printf("Recording started: %s (tracks: 0x%02X)", filename, trackMask)
 }
 
 func stopRecording(m *model.Model) {
@@ -1376,8 +1383,8 @@ func stopRecording(m *model.Model) {
 		return
 	}
 
-	// Send OSC message to stop recording with the same filename
-	m.SendOSCRecordMessage(m.CurrentRecordingFile, false)
+	// Send OSC message to stop recording with the same filename (track mask 0 for stop)
+	m.SendOSCRecordMessage(m.CurrentRecordingFile, false, 0)
 	log.Printf("Recording stopped: %s", m.CurrentRecordingFile)
 
 	// Reset recording state but keep enabled flag

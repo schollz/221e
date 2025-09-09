@@ -1341,7 +1341,125 @@ func startPlaybackWithConfig(m *model.Model, config PlaybackConfig) tea.Cmd {
 
 	// Start recording if enabled
 	if m.RecordingEnabled && !m.RecordingActive {
-		startRecording(m)
+		// Determine context based on playback mode
+		fromSongView := (config.Mode == types.SongView)
+		fromCtrlSpace := false // This is not from Ctrl+Space, but from regular playback start
+		startRecordingWithContext(m, fromSongView, fromCtrlSpace)
+	}
+
+	return Tick(m)
+}
+
+// startPlaybackWithConfigFromCtrlSpace is specialized for Ctrl+Space recording context
+func startPlaybackWithConfigFromCtrlSpace(m *model.Model, config PlaybackConfig) tea.Cmd {
+	m.IsPlaying = true
+	m.PlaybackMode = config.Mode
+
+	if config.Mode == types.SongView {
+		// Song playback mode - reset single-track playback variables and initialize all tracks with data
+		m.PlaybackPhrase = -1
+		m.PlaybackRow = -1
+		m.PlaybackChain = -1
+		m.PlaybackChainRow = -1
+
+		startRow := 0
+		if config.UseCurrentRow && config.Row >= 0 && config.Row < 16 {
+			startRow = config.Row
+		}
+		log.Printf("Song playback starting from row %02X (Ctrl+Space)", startRow)
+
+		for track := 0; track < 8; track++ {
+			chainID := m.SongData[track][startRow]
+			log.Printf("Song track %d at row %02X: chainID = %d", track, startRow, chainID)
+			if chainID == -1 {
+				// No chain at this position
+				m.SongPlaybackActive[track] = false
+				log.Printf("Song track %d: no chain data, skipping", track)
+				continue
+			}
+
+			// Check if chain has valid phrase data (find first phrase in chain)
+			firstPhraseID := -1
+			firstChainRow := -1
+			chainsData := m.GetChainsDataForTrack(track)
+			for chainRow := 0; chainRow < 16; chainRow++ {
+				if (*chainsData)[chainID][chainRow] != -1 {
+					firstPhraseID = (*chainsData)[chainID][chainRow]
+					firstChainRow = chainRow
+					log.Printf("Song track %d: found phrase %d in chain %d at row %d", track, firstPhraseID, chainID, chainRow)
+					break
+				}
+			}
+
+			if firstPhraseID != -1 {
+				m.SongPlaybackActive[track] = true
+				m.SongPlaybackRow[track] = startRow
+				m.SongPlaybackPhrase[track] = firstPhraseID
+				m.SongPlaybackChain[track] = chainID
+				m.SongPlaybackChainRow[track] = firstChainRow
+				m.SongPlaybackRowInPhrase[track] = FindFirstNonEmptyRowInPhraseForTrack(m, firstPhraseID, track)
+				m.LoadTicksLeftForTrack(track)
+
+				// Emit the initial row immediately
+				EmitRowDataFor(m, firstPhraseID, m.SongPlaybackRowInPhrase[track], track)
+				log.Printf("Song track %d initialized: phrase %d, row %d, ticks %d", track, firstPhraseID, m.SongPlaybackRowInPhrase[track], m.SongPlaybackTicksLeft[track])
+			} else {
+				m.SongPlaybackActive[track] = false
+				log.Printf("Song track %d: chain %d has no phrases, skipping", track, chainID)
+			}
+		}
+
+		log.Printf("Song playback initialized (Ctrl+Space)")
+	} else {
+		// Chain/Phrase playback modes - same logic as regular playback
+		if config.Mode == types.ChainView {
+			chainsData := m.GetCurrentChainsData()
+			m.PlaybackChain = config.Chain
+			m.PlaybackChainRow = 0
+
+			if config.UseCurrentRow && config.Row >= 0 {
+				m.PlaybackChainRow = config.Row
+				m.PlaybackPhrase = (*chainsData)[config.Chain][config.Row]
+			}
+
+			// If no phrase found yet, find first non-empty phrase slot in this chain
+			if m.PlaybackPhrase == -1 {
+				for row := 0; row < 16; row++ {
+					if (*chainsData)[config.Chain][row] != -1 {
+						m.PlaybackPhrase = (*chainsData)[config.Chain][row]
+						m.PlaybackChainRow = row
+						break
+					}
+				}
+			}
+
+			if config.UseCurrentRow && config.Row >= 0 {
+				m.PlaybackRow = config.Row
+			} else {
+				m.PlaybackRow = FindFirstNonEmptyRowInPhrase(m, m.PlaybackPhrase)
+			}
+
+			log.Printf("Chain playback started (Ctrl+Space): chain %d, phrase %d, row %d", m.PlaybackChain, m.PlaybackPhrase, m.PlaybackRow)
+		} else {
+			// Phrase playback mode
+			m.PlaybackPhrase = config.Phrase
+			m.PlaybackChain = -1
+
+			if config.UseCurrentRow && config.Row >= 0 {
+				m.PlaybackRow = config.Row
+			} else {
+				m.PlaybackRow = FindFirstNonEmptyRowInPhrase(m, m.PlaybackPhrase)
+			}
+
+			log.Printf("Phrase playback started (Ctrl+Space): phrase %d, row %d", m.PlaybackPhrase, m.PlaybackRow)
+		}
+	}
+
+	// Start recording if enabled (with Ctrl+Space context)
+	if m.RecordingEnabled && !m.RecordingActive {
+		fromSongView := (config.Mode == types.SongView)
+		fromCtrlSpace := true // This IS from Ctrl+Space
+		startRecordingWithContext(m, fromSongView, fromCtrlSpace)
 	}
 
 	return Tick(m)
@@ -1354,6 +1472,15 @@ func togglePlaybackWithConfig(m *model.Model, config PlaybackConfig) tea.Cmd {
 		return nil
 	}
 	return startPlaybackWithConfig(m, config)
+}
+
+// togglePlaybackWithConfigFromCtrlSpace provides toggle logic for Ctrl+Space
+func togglePlaybackWithConfigFromCtrlSpace(m *model.Model, config PlaybackConfig) tea.Cmd {
+	if m.IsPlaying {
+		stopPlayback(m)
+		return nil
+	}
+	return startPlaybackWithConfigFromCtrlSpace(m, config)
 }
 
 // Deep copy functionality for Ctrl+B

@@ -129,7 +129,7 @@ func TogglePlaybackFromLastSongRow(m *model.Model) tea.Cmd {
 		Row:           m.LastSongRow, // Start from last selected song row
 	}
 
-	return togglePlaybackWithConfig(m, config)
+	return togglePlaybackWithConfigFromCtrlSpace(m, config)
 }
 
 func Tick(m *model.Model) tea.Cmd {
