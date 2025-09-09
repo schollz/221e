@@ -141,8 +141,15 @@ func getMixerStatusMessage(m *model.Model) string {
 	track := m.CurrentMixerTrack
 	setLevel := m.TrackSetLevels[track]
 
-	statusMsg := fmt.Sprintf("Track %d: Set %.1fdB (Hex %02X)",
-		track+1, setLevel, dbToHex(setLevel))
+	var trackLabel string
+	if track == 8 {
+		trackLabel = "Input"
+	} else {
+		trackLabel = fmt.Sprintf("Track %d", track+1)
+	}
+
+	statusMsg := fmt.Sprintf("%s: Set %.1fdB (Hex %02X)",
+		trackLabel, setLevel, dbToHex(setLevel))
 	statusMsg += " | Left/Right: Select track │ Ctrl+Arrow: Adjust set level │ Shift+Up: Back to previous view"
 
 	return statusMsg
@@ -155,7 +162,15 @@ func RenderMixerView(m *model.Model) string {
 	for track := 0; track < 8; track++ {
 		columnHeader += fmt.Sprintf("  T%d", track+1)
 	}
-	mixerHeader := fmt.Sprintf("Track %d", m.CurrentMixerTrack+1)
+	// Add Input track (Track 9, index 8)
+	columnHeader += "  In"
+
+	var mixerHeader string
+	if m.CurrentMixerTrack == 8 {
+		mixerHeader = "Input"
+	} else {
+		mixerHeader = fmt.Sprintf("Track %d", m.CurrentMixerTrack+1)
+	}
 
 	return renderViewWithCommonPattern(m, columnHeader, mixerHeader, func(styles *ViewStyles) string {
 		var content strings.Builder
@@ -166,9 +181,9 @@ func RenderMixerView(m *model.Model) string {
 			barHeight = 10
 		}
 
-		// Create vertical bars for all tracks
-		trackBars := make([][]string, 8)
-		for track := 0; track < 8; track++ {
+		// Create vertical bars for all tracks (including Input track at index 8)
+		trackBars := make([][]string, 9)
+		for track := 0; track < 9; track++ {
 			isSelected := track == m.CurrentMixerTrack
 			trackBars[track] = createVerticalBar(m.TrackVolumes[track], m.TrackSetLevels[track], barHeight, isSelected)
 		}
@@ -180,6 +195,9 @@ func RenderMixerView(m *model.Model) string {
 				content.WriteString("  ") // 2 spaces before each track (like song view)
 				content.WriteString(trackBars[track][row])
 			}
+			// Add Input track (Track 9, index 8) with slightly different spacing
+			content.WriteString("  ") // 2 spaces before Input track
+			content.WriteString(trackBars[8][row])
 			content.WriteString("\n")
 		}
 
@@ -196,6 +214,15 @@ func RenderMixerView(m *model.Model) string {
 				content.WriteString(styles.Normal.Render(levelHex))
 			}
 		}
+		// Add Input track (Track 9, index 8) current level
+		content.WriteString("  ")
+		inputCurrentLevel := m.TrackVolumes[8]
+		inputLevelHex := fmt.Sprintf("%02X", dbToHex(inputCurrentLevel))
+		if m.CurrentMixerTrack == 8 {
+			content.WriteString(styles.Selected.Render(inputLevelHex))
+		} else {
+			content.WriteString(styles.Normal.Render(inputLevelHex))
+		}
 		content.WriteString("\n")
 
 		// Set level values row (hex codes)
@@ -210,6 +237,15 @@ func RenderMixerView(m *model.Model) string {
 			} else {
 				content.WriteString(styles.Label.Render(setHex))
 			}
+		}
+		// Add Input track (Track 9, index 8) set level
+		content.WriteString("  ")
+		inputSetLevel := m.TrackSetLevels[8]
+		inputSetHex := fmt.Sprintf("%02X", dbToHex(inputSetLevel))
+		if m.CurrentMixerTrack == 8 && m.CurrentMixerRow == 0 {
+			content.WriteString(styles.Selected.Render(inputSetHex))
+		} else {
+			content.WriteString(styles.Label.Render(inputSetHex))
 		}
 		content.WriteString("\n\n")
 

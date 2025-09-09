@@ -1724,8 +1724,8 @@ func IsArpeggioUnused(m *model.Model, arpeggioID int) bool {
 
 // ModifyMixerSetLevel adjusts the set level for the currently selected track in mixer view
 func ModifyMixerSetLevel(m *model.Model, delta float32) {
-	// Bounds check
-	if m.CurrentMixerTrack < 0 || m.CurrentMixerTrack >= 8 {
+	// Bounds check (support tracks 0-8, including Input track at index 8)
+	if m.CurrentMixerTrack < 0 || m.CurrentMixerTrack >= 9 {
 		return
 	}
 
@@ -1740,7 +1740,11 @@ func ModifyMixerSetLevel(m *model.Model, delta float32) {
 	}
 
 	m.TrackSetLevels[m.CurrentMixerTrack] = newValue
-	log.Printf("Modified mixer track %d set level: %.2f -> %.2f (delta: %.2f)", m.CurrentMixerTrack+1, oldValue, newValue, delta)
+	if m.CurrentMixerTrack == 8 {
+		log.Printf("Modified mixer Input track set level: %.2f -> %.2f (delta: %.2f)", oldValue, newValue, delta)
+	} else {
+		log.Printf("Modified mixer track %d set level: %.2f -> %.2f (delta: %.2f)", m.CurrentMixerTrack+1, oldValue, newValue, delta)
+	}
 
 	// Send OSC message for track set level
 	m.SendOSCTrackSetLevelMessage(m.CurrentMixerTrack)
