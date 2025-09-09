@@ -88,3 +88,26 @@ func TestHasRequiredExtensions(t *testing.T) {
 		assert.IsType(t, true, result)
 	})
 }
+
+func TestGetMiUGensURL(t *testing.T) {
+	t.Run("returns correct URL for platform", func(t *testing.T) {
+		url := getMiUGensURL()
+
+		switch runtime.GOOS {
+		case "linux":
+			assert.Contains(t, url, "mi-UGens-Linux.zip")
+		case "darwin":
+			assert.Contains(t, url, "mi-UGens-macOS.zip")
+		case "windows":
+			assert.Contains(t, url, "mi-UGens-Windows.zip")
+		default:
+			assert.Equal(t, "", url) // Unsupported platform
+		}
+
+		// If URL is not empty, should be a valid GitHub releases URL
+		if url != "" {
+			assert.Contains(t, url, "github.com/v7b1/mi-UGens/releases")
+			assert.Contains(t, url, "v0.0.8")
+		}
+	})
+}

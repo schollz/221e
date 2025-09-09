@@ -243,7 +243,7 @@ func isProcessRunning(processName string) bool {
 }
 
 func HasRequiredExtensions() bool {
-	extensions := []string{"Fverb.sc", "AnalogTape.sc"}
+	extensions := []string{"Fverb.sc", "AnalogTape.sc", "MiBraids.sc"}
 
 	for _, ext := range extensions {
 		if !hasExtension(ext) {
@@ -314,15 +314,6 @@ func fileExists(filepath string) bool {
 }
 
 func DownloadRequiredExtensions() error {
-	if HasRequiredExtensions() {
-		return nil // Extensions already exist
-	}
-
-	downloadURL := getPortedPluginsURL()
-	if downloadURL == "" {
-		return fmt.Errorf("unsupported platform: %s/%s", runtime.GOOS, runtime.GOARCH)
-	}
-
 	extensionDir := getLocalExtensionDir()
 	if extensionDir == "" {
 		return fmt.Errorf("could not determine local extension directory")
@@ -333,8 +324,40 @@ func DownloadRequiredExtensions() error {
 		return fmt.Errorf("failed to create extension directory: %v", err)
 	}
 
-	// Download and extract the zip file
-	return downloadAndExtract(downloadURL, extensionDir)
+	// Check for PortedPlugins extensions
+	if !hasExtension("Fverb.sc") || !hasExtension("AnalogTape.sc") {
+		fmt.Println("Downloading PortedPlugins extensions...")
+		downloadURL := getPortedPluginsURL()
+		if downloadURL == "" {
+			return fmt.Errorf("unsupported platform for PortedPlugins: %s/%s", runtime.GOOS, runtime.GOARCH)
+		}
+
+		if err := downloadAndExtract(downloadURL, extensionDir); err != nil {
+			return fmt.Errorf("failed to download PortedPlugins: %v", err)
+		}
+		fmt.Println("PortedPlugins downloaded successfully")
+	}
+
+	// Check for mi-UGens extensions
+	if !hasExtension("MiBraids.sc") {
+		fmt.Println("Downloading mi-UGens extensions...")
+		downloadURL := getMiUGensURL()
+		if downloadURL == "" {
+			return fmt.Errorf("unsupported platform for mi-UGens: %s/%s", runtime.GOOS, runtime.GOARCH)
+		}
+
+		if err := downloadAndExtract(downloadURL, extensionDir); err != nil {
+			return fmt.Errorf("failed to download mi-UGens: %v", err)
+		}
+		fmt.Println("mi-UGens downloaded successfully")
+	}
+
+	if HasRequiredExtensions() {
+		fmt.Println("All required extensions are now available")
+		return nil
+	}
+
+	return fmt.Errorf("failed to install all required extensions")
 }
 
 func getPortedPluginsURL() string {
@@ -351,6 +374,18 @@ func getPortedPluginsURL() string {
 		return "https://github.com/schollz/portedplugins/releases/download/v0.4.5/PortedPlugins-macOS.zip"
 	case "windows":
 		return "https://github.com/schollz/portedplugins/releases/download/v0.4.5/PortedPlugins-Windows.zip"
+	}
+	return ""
+}
+
+func getMiUGensURL() string {
+	switch runtime.GOOS {
+	case "linux":
+		return "https://github.com/v7b1/mi-UGens/releases/download/v0.0.8/mi-UGens-Linux.zip"
+	case "darwin":
+		return "https://github.com/v7b1/mi-UGens/releases/download/v0.0.8/mi-UGens-macOS.zip"
+	case "windows":
+		return "https://github.com/v7b1/mi-UGens/releases/download/v0.0.8/mi-UGens-Windows.zip"
 	}
 	return ""
 }
