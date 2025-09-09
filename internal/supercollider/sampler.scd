@@ -628,6 +628,9 @@ s.waitForBoot({
 		OSCFunc({ |msg|
 			var filename = msg[1].asString;
 			var doRecord = msg[2].asInteger;
+			var enabledTracks = msg[3].asInteger;
+			var isTrackEnabled = { arg trackNum; (enabledTracks.bitAnd((2**trackNum).asInteger)) > 0 };
+			[filename,doRecord,enabledTracks,isTrackEnabled].postln;
 			// stop all recordings
 			["stopping all recordings"].postln;
 			~synthRecord.values.do({ |syn,name|
@@ -644,7 +647,7 @@ s.waitForBoot({
 				// start a recording
 				var recordingBuffer=Buffer.alloc(Server.default,65536,2);
 				var pathname=filename;
-				["starting recording",filename].postln;
+				["starting recording",filename,"with track mask",enabledTracks.asBinaryString].postln;
 				recordingBuffer.write(pathname.standardizePath,PathName.new(pathname.standardizePath).extension,"int16",0,0,true);
 				~synthRecord.put(filename,Synth.tail(s,"diskout",[
 					\bufnum,recordingBuffer.bufnum,
@@ -655,21 +658,28 @@ s.waitForBoot({
 					recordingBuffer.free;
 				}));
 				NodeWatcher.register(~synthRecord.at(filename));
-				// now create recorders for each track
+				// create recorders only for enabled tracks (based on track mask)
 				8.do({ arg track;
-					var trackRecordingBuffer=Buffer.alloc(Server.default,65536,2);
-					var trackPathname=filename.asString.replace(".wav","_track"++track.asString++".wav");
-					["starting track recording",trackPathname].postln;
-					trackRecordingBuffer.write(trackPathname.standardizePath,PathName.new(trackPathname.standardizePath).extension,"int16",0,0,true);
-					~synthRecord.put("track"++track.asString,Synth.tail(s,"diskout",[
-						\bufnum,trackRecordingBuffer.bufnum,
-						\inbus,~busTrack[track],
-						\gate,1,
-					]).onFree({
-						[trackRecordingBuffer,"freed"].postln;
-						trackRecordingBuffer.free;
-					}));
-					NodeWatcher.register(~synthRecord.at("track"++track.asString));
+					var trackBit = 2.pow(track);
+					var enabled = isTrackEnabled.(track);
+					["track",track,"bit",trackBit,"enabled",enabled].postln;
+					if (enabled, {
+						var trackRecordingBuffer=Buffer.alloc(Server.default,65536,2);
+						var trackPathname=filename.asString.replace(".wav","_track"++track.asString++".wav");
+						["starting track recording for track",track,trackPathname].postln;
+						trackRecordingBuffer.write(trackPathname.standardizePath,PathName.new(trackPathname.standardizePath).extension,"int16",0,0,true);
+						~synthRecord.put("track"++track.asString,Synth.tail(s,"diskout",[
+							\bufnum,trackRecordingBuffer.bufnum,
+							\inbus,~busTrack[track],
+							\gate,1,
+						]).onFree({
+							[trackRecordingBuffer,"freed"].postln;
+							trackRecordingBuffer.free;
+						}));
+						NodeWatcher.register(~synthRecord.at("track"++track.asString));
+					}, {
+						["skipping track",track,"(not enabled in mask)"].postln;
+					});
 				});
 			});
 		},'/record');

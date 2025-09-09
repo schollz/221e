@@ -1603,7 +1603,7 @@ func (m *Model) SendOSCTrackSetLevelMessage(trackNum int) {
 	m.sendOSCMessage(config)
 }
 
-func (m *Model) SendOSCRecordMessage(filename string, recording bool) {
+func (m *Model) SendOSCRecordMessage(filename string, recording bool, trackMask uint8) {
 	recordingInt := int32(0)
 	if recording {
 		recordingInt = 1
@@ -1611,9 +1611,9 @@ func (m *Model) SendOSCRecordMessage(filename string, recording bool) {
 
 	config := OSCMessageConfig{
 		Address:    "/record",
-		Parameters: []interface{}{filename, recordingInt},
-		LogFormat:  "OSC recording message sent: /record '%s' %d",
-		LogArgs:    []interface{}{filename, int(recordingInt)},
+		Parameters: []interface{}{filename, recordingInt, int32(trackMask)},
+		LogFormat:  "OSC recording message sent: /record '%s' %d %d",
+		LogArgs:    []interface{}{filename, int(recordingInt), int(trackMask)},
 	}
 
 	m.sendOSCMessage(config)
@@ -1759,6 +1759,42 @@ func (m *Model) skipInvalidDTRowsForTrack(track int) bool {
 		dtValue := (*phrasesData)[phraseNum][row][types.ColDeltaTime]
 		if dtValue >= 1 {
 			m.SongPlaybackRowInPhrase[track] = row
+			return true
+		}
+	}
+	return false
+}
+
+// GetRecordingTrackMask determines which tracks should be recorded based on current view and playback state
+func (m *Model) GetRecordingTrackMask(fromSongView bool, fromCtrlSpace bool) uint8 {
+	var trackMask uint8 = 0
+
+	if fromCtrlSpace || (fromSongView && m.ViewMode == types.SongView) {
+		// Ctrl+Space or Space in Song view: record all tracks that have data
+		for track := 0; track < 8; track++ {
+			if m.HasTrackData(track) {
+				trackMask |= (1 << track)
+			}
+		}
+	} else {
+		// Space in Chain/Phrase view: record only current track
+		if m.CurrentTrack >= 0 && m.CurrentTrack < 8 {
+			trackMask = 1 << m.CurrentTrack
+		}
+	}
+
+	return trackMask
+}
+
+// HasTrackData checks if a track has any data (chains/phrases) in song view
+func (m *Model) HasTrackData(track int) bool {
+	if track < 0 || track >= 8 {
+		return false
+	}
+
+	// Check if track has any chains in song view
+	for row := 0; row < 16; row++ {
+		if m.SongData[track][row] != -1 {
 			return true
 		}
 	}
