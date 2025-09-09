@@ -116,6 +116,9 @@ func deltaHandler(baseDelta float32, coarseMultiplier float32) float32 {
 
 func ModifyValue(m *model.Model, delta int) {
 	if m.ViewMode == types.ChainView {
+		// Capture undo state before modifying chain data
+		m.PushUndoState("chain", fmt.Sprintf("Modify chain %02X row %02X", m.CurrentChain, m.CurrentRow))
+
 		// Chain view now only has phrase editing
 		chainsData := m.GetCurrentChainsData()
 		currentValue := (*chainsData)[m.CurrentChain][m.CurrentRow]
@@ -141,6 +144,9 @@ func ModifyValue(m *model.Model, delta int) {
 	}
 
 	// Phrase view: modify cell under cursor
+	// Capture undo state before modifying phrase data
+	m.PushUndoState("phrase", fmt.Sprintf("Modify phrase %02X row %02X col %d", m.CurrentPhrase, m.CurrentRow, m.CurrentCol))
+
 	// Use centralized column mapping system
 	columnMapping := m.GetColumnMapping(m.CurrentCol)
 	if columnMapping == nil || !columnMapping.IsEditable {
@@ -1115,6 +1121,9 @@ func ModifySongValue(m *model.Model, delta int) {
 	if track < 0 || track >= 8 || row < 0 || row >= 16 {
 		return
 	}
+
+	// Capture undo state before modifying song data
+	m.PushUndoState("song", fmt.Sprintf("Modify song track %d row %02X", track, row))
 
 	currentValue := m.SongData[track][row]
 	var newValue int

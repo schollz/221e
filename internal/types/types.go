@@ -448,6 +448,32 @@ type ClipboardData struct {
 	IsFreshDeepCopy bool
 }
 
+// UndoState represents a snapshot of the application state for undo functionality
+type UndoState struct {
+	// View state
+	ViewMode      ViewMode `json:"viewMode"`
+	CurrentRow    int      `json:"currentRow"`
+	CurrentCol    int      `json:"currentCol"`
+	CurrentPhrase int      `json:"currentPhrase"`
+	CurrentChain  int      `json:"currentChain"`
+	CurrentTrack  int      `json:"currentTrack"`
+	ScrollOffset  int      `json:"scrollOffset"`
+
+	// Data snapshots - only store what changed
+	SongData              *[8][16]int              `json:"songData,omitempty"`
+	ChainsData            *[][]int                 `json:"chainsData,omitempty"`
+	InstrumentChainsData  *[][]int                 `json:"instrumentChainsData,omitempty"`
+	SamplerChainsData     *[][]int                 `json:"samplerChainsData,omitempty"`
+	PhrasesData           *[255][][]int            `json:"phrasesData,omitempty"`
+	InstrumentPhrasesData *[255][][]int            `json:"instrumentPhrasesData,omitempty"`
+	SamplerPhrasesData    *[255][][]int            `json:"samplerPhrasesData,omitempty"`
+	SamplerPhrasesFiles   *[]string                `json:"samplerPhrasesFiles,omitempty"`
+
+	// Metadata for targeted restoration
+	ChangedDataType string `json:"changedDataType"` // "song", "chain", "phrase", "view"
+	Description     string `json:"description"`     // Human-readable description of the change
+}
+
 type SaveData struct {
 	ViewMode      ViewMode     `json:"viewMode"`
 	CurrentRow    int          `json:"currentRow"`

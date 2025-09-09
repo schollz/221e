@@ -247,6 +247,9 @@ func HandleKeyInput(m *model.Model, msg tea.KeyMsg) tea.Cmd {
 	case "ctrl+r":
 		return handleCtrlR(m)
 
+	case "ctrl+z":
+		return handleCtrlZ(m)
+
 	case "ctrl+f":
 		return handleCtrlF(m)
 
@@ -1255,17 +1258,23 @@ func handleCtrlSpace(m *model.Model) tea.Cmd {
 
 func handleBackspace(m *model.Model) tea.Cmd {
 	if m.ViewMode == types.SongView {
+		// Capture undo state before clearing song data
+		m.PushUndoState("song", fmt.Sprintf("Clear song track %d row %02X", m.CurrentCol, m.CurrentRow))
 		// Clear chain ID in song view
 		m.SongData[m.CurrentCol][m.CurrentRow] = -1
 		log.Printf("Cleared song track %d row %02X chain", m.CurrentCol, m.CurrentRow)
 		storage.AutoSave(m)
 	} else if m.ViewMode == types.ChainView {
+		// Capture undo state before clearing chain data
+		m.PushUndoState("chain", fmt.Sprintf("Clear chain %d row %02X", m.CurrentChain, m.CurrentRow))
 		// Clear phrase number in chain view (works from any column)
 		chainsData := m.GetCurrentChainsData()
 		(*chainsData)[m.CurrentChain][m.CurrentRow] = -1
 		log.Printf("Cleared chain %d phrase", m.CurrentRow)
 		storage.AutoSave(m)
 	} else if m.ViewMode == types.PhraseView {
+		// Capture undo state before clearing phrase data
+		m.PushUndoState("phrase", fmt.Sprintf("Clear phrase %02X row %02X col %d", m.CurrentPhrase, m.CurrentRow, m.CurrentCol))
 		// Clear the current cell in phrase view
 		phrasesData := m.GetCurrentPhrasesData()
 
@@ -1311,12 +1320,16 @@ func handleBackspace(m *model.Model) tea.Cmd {
 
 func handleCtrlH(m *model.Model) tea.Cmd {
 	if m.ViewMode == types.ChainView {
+		// Capture undo state before deleting chain row
+		m.PushUndoState("chain", fmt.Sprintf("Delete chain %d row %02X", m.CurrentChain, m.CurrentRow))
 		// Delete entire chain row (clear phrase, keep chain number)
 		chainsData := m.GetCurrentChainsData()
 		(*chainsData)[m.CurrentChain][m.CurrentRow] = -1
 		log.Printf("Deleted chain %d row (cleared phrase)", m.CurrentRow)
 		storage.AutoSave(m)
 	} else if m.ViewMode == types.PhraseView {
+		// Capture undo state before deleting phrase row
+		m.PushUndoState("phrase", fmt.Sprintf("Delete phrase %02X row %02X", m.CurrentPhrase, m.CurrentRow))
 		// Delete entire phrase row (clear all columns)
 		phrasesData := m.GetCurrentPhrasesData()
 		phraseViewType := m.GetPhraseViewType()
@@ -1419,5 +1432,16 @@ func handleM(m *model.Model) tea.Cmd {
 		return handleShiftDown(m)
 	}
 	// For other views (FileView, SettingsView, etc.), do nothing
+	return nil
+}
+
+func handleCtrlZ(m *model.Model) tea.Cmd {
+	// Perform undo operation
+	if m.PopUndoState() {
+		storage.AutoSave(m)
+		log.Printf("Undo performed successfully")
+	} else {
+		log.Printf("No undo history available")
+	}
 	return nil
 }

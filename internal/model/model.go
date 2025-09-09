@@ -129,6 +129,9 @@ type Model struct {
 	arpeggioContexts     map[int32]context.CancelFunc // Per-track cancellation functions
 	arpeggioCurrentNotes map[int32][]float32          // Currently playing arpeggio notes for each track
 	arpeggioMutex        sync.Mutex                   // Mutex for safe access to arpeggio tracking
+	// Undo functionality
+	UndoHistory    []types.UndoState `json:"undoHistory"`    // Stack of previous states for undo
+	UndoHistoryMax int               `json:"undoHistoryMax"` // Maximum number of undo states to keep
 }
 
 // Methods for modifying data structures
@@ -571,6 +574,9 @@ func NewModel(oscPort int, saveFolder string) *Model {
 		RecordingEnabled:     false,
 		RecordingActive:      false,
 		CurrentRecordingFile: "",
+		// Initialize undo functionality
+		UndoHistory:    make([]types.UndoState, 0),
+		UndoHistoryMax: 50, // Keep last 50 undo states
 	}
 
 	// Initialize mixer state with defaults
@@ -1799,4 +1805,113 @@ func (m *Model) HasTrackData(track int) bool {
 		}
 	}
 	return false
+}
+
+// PushUndoState captures the current state and adds it to the undo history
+func (m *Model) PushUndoState(changedDataType, description string) {
+	// Create a copy of the current state
+	undoState := types.UndoState{
+		ViewMode:        m.ViewMode,
+		CurrentRow:      m.CurrentRow,
+		CurrentCol:      m.CurrentCol,
+		CurrentPhrase:   m.CurrentPhrase,
+		CurrentChain:    m.CurrentChain,
+		CurrentTrack:    m.CurrentTrack,
+		ScrollOffset:    m.ScrollOffset,
+		ChangedDataType: changedDataType,
+		Description:     description,
+	}
+
+	// Only capture data snapshots based on what's being changed to save memory
+	switch changedDataType {
+	case "song":
+		songCopy := m.SongData
+		undoState.SongData = &songCopy
+	case "chain":
+		if m.GetPhraseViewType() == types.InstrumentPhraseView {
+			chainsCopy := make([][]int, len(m.InstrumentChainsData))
+			for i, chain := range m.InstrumentChainsData {
+				chainsCopy[i] = make([]int, len(chain))
+				copy(chainsCopy[i], chain)
+			}
+			undoState.InstrumentChainsData = &chainsCopy
+		} else {
+			chainsCopy := make([][]int, len(m.SamplerChainsData))
+			for i, chain := range m.SamplerChainsData {
+				chainsCopy[i] = make([]int, len(chain))
+				copy(chainsCopy[i], chain)
+			}
+			undoState.SamplerChainsData = &chainsCopy
+		}
+	case "phrase":
+		if m.GetPhraseViewType() == types.InstrumentPhraseView {
+			phrasesCopy := m.InstrumentPhrasesData
+			undoState.InstrumentPhrasesData = &phrasesCopy
+		} else {
+			phrasesCopy := m.SamplerPhrasesData
+			undoState.SamplerPhrasesData = &phrasesCopy
+			filesCopy := make([]string, len(m.SamplerPhrasesFiles))
+			copy(filesCopy, m.SamplerPhrasesFiles)
+			undoState.SamplerPhrasesFiles = &filesCopy
+		}
+	}
+
+	// Add to history
+	m.UndoHistory = append(m.UndoHistory, undoState)
+
+	// Limit history size
+	if len(m.UndoHistory) > m.UndoHistoryMax {
+		m.UndoHistory = m.UndoHistory[1:] // Remove oldest entry
+	}
+
+	log.Printf("Pushed undo state: %s - %s (history size: %d)", changedDataType, description, len(m.UndoHistory))
+}
+
+// PopUndoState restores the most recent state from the undo history
+func (m *Model) PopUndoState() bool {
+	if len(m.UndoHistory) == 0 {
+		log.Printf("No undo history available")
+		return false
+	}
+
+	// Get the most recent state
+	undoState := m.UndoHistory[len(m.UndoHistory)-1]
+	m.UndoHistory = m.UndoHistory[:len(m.UndoHistory)-1] // Remove from history
+
+	// Restore view state
+	m.ViewMode = undoState.ViewMode
+	m.CurrentRow = undoState.CurrentRow
+	m.CurrentCol = undoState.CurrentCol
+	m.CurrentPhrase = undoState.CurrentPhrase
+	m.CurrentChain = undoState.CurrentChain
+	m.CurrentTrack = undoState.CurrentTrack
+	m.ScrollOffset = undoState.ScrollOffset
+
+	// Restore data based on what was changed
+	if undoState.SongData != nil {
+		m.SongData = *undoState.SongData
+	}
+	if undoState.InstrumentChainsData != nil {
+		m.InstrumentChainsData = *undoState.InstrumentChainsData
+	}
+	if undoState.SamplerChainsData != nil {
+		m.SamplerChainsData = *undoState.SamplerChainsData
+	}
+	if undoState.InstrumentPhrasesData != nil {
+		m.InstrumentPhrasesData = *undoState.InstrumentPhrasesData
+	}
+	if undoState.SamplerPhrasesData != nil {
+		m.SamplerPhrasesData = *undoState.SamplerPhrasesData
+	}
+	if undoState.SamplerPhrasesFiles != nil {
+		m.SamplerPhrasesFiles = *undoState.SamplerPhrasesFiles
+	}
+
+	log.Printf("Restored undo state: %s - %s (remaining history: %d)", undoState.ChangedDataType, undoState.Description, len(m.UndoHistory))
+	return true
+}
+
+// CanUndo returns true if there are undo states available
+func (m *Model) CanUndo() bool {
+	return len(m.UndoHistory) > 0
 }

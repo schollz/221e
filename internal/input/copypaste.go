@@ -226,6 +226,8 @@ func PasteFromClipboard(m *model.Model) {
 
 func PasteCellFromClipboard(m *model.Model) {
 	if m.ViewMode == types.SongView {
+		// Capture undo state before pasting to song
+		m.PushUndoState("song", fmt.Sprintf("Paste to song track %d row %02X", m.CurrentCol, m.CurrentRow))
 		// Paste to song view (chain ID)
 		if m.Clipboard.CellType == types.HexCell {
 			m.SongData[m.CurrentCol][m.CurrentRow] = m.Clipboard.Value
@@ -234,6 +236,8 @@ func PasteCellFromClipboard(m *model.Model) {
 			log.Printf("Cannot paste: wrong cell type for song view")
 		}
 	} else if m.ViewMode == types.ChainView {
+		// Capture undo state before pasting to chain
+		m.PushUndoState("chain", fmt.Sprintf("Paste to chain %02X row %02X", m.CurrentChain, m.CurrentRow))
 		// Paste to chain view (phrase column only)
 		if m.Clipboard.CellType == types.HexCell {
 			chainsData := m.GetCurrentChainsData()
@@ -243,6 +247,8 @@ func PasteCellFromClipboard(m *model.Model) {
 			log.Printf("Cannot paste: wrong cell type or position")
 		}
 	} else if m.ViewMode == types.PhraseView {
+		// Capture undo state before pasting to phrase
+		m.PushUndoState("phrase", fmt.Sprintf("Paste to phrase %02X row %02X col %d", m.CurrentPhrase, m.CurrentRow, m.CurrentCol))
 		// Paste to phrase view
 		phrasesData := m.GetCurrentPhrasesData()
 
@@ -366,11 +372,15 @@ func PasteCellFromClipboard(m *model.Model) {
 
 func PasteRowFromClipboard(m *model.Model) {
 	if m.ViewMode == types.ChainView && m.Clipboard.SourceView == types.ChainView {
+		// Capture undo state before pasting row to chain
+		m.PushUndoState("chain", fmt.Sprintf("Paste row to chain %02X row %02X", m.CurrentChain, m.CurrentRow))
 		// Paste chain row to chain row
 		// Don't overwrite chain number (column 0)
 		m.ChainsData[m.CurrentChain][m.CurrentRow] = m.Clipboard.RowData[m.CurrentRow]
 		log.Printf("Pasted chain row to row %d", m.CurrentRow)
 	} else if m.ViewMode == types.PhraseView && m.Clipboard.SourceView == types.PhraseView {
+		// Capture undo state before pasting row to phrase
+		m.PushUndoState("phrase", fmt.Sprintf("Paste row to phrase %02X row %02X", m.CurrentPhrase, m.CurrentRow))
 		// Paste phrase row to phrase row
 		phrasesData := m.GetCurrentPhrasesData()
 		for i, value := range m.Clipboard.RowData {
@@ -416,6 +426,8 @@ func PasteLastEditedRow(m *model.Model) {
 			log.Printf("Chain row %d is not empty, skipping paste", m.CurrentRow)
 			return
 		}
+		// Capture undo state before pasting last edited row to chain
+		m.PushUndoState("chain", fmt.Sprintf("Paste last edited row to chain row %02X", m.CurrentRow))
 		// Paste chain data
 		m.ChainsData[m.CurrentRow][1] = m.ChainsData[m.LastEditRow][1]
 		log.Printf("Pasted chain row from %d to %d", m.LastEditRow, m.CurrentRow)
@@ -427,6 +439,9 @@ func PasteLastEditedRow(m *model.Model) {
 			log.Printf("Phrase row %d is not empty, skipping paste", m.CurrentRow)
 			return
 		}
+
+		// Capture undo state before pasting last edited row to phrase
+		m.PushUndoState("phrase", fmt.Sprintf("Paste last edited row to phrase %02X row %02X", m.CurrentPhrase, m.CurrentRow))
 
 		// Copy all fields from last edited row (including filename index)
 		for i := 0; i < int(types.ColCount); i++ {
