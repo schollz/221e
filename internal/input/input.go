@@ -927,7 +927,7 @@ func handleRight(m *model.Model) tea.Cmd {
 			storage.AutoSave(m)
 		}
 	} else if m.ViewMode == types.MixerView {
-		if m.CurrentMixerTrack < 7 { // Select next track (0-7)
+		if m.CurrentMixerTrack < 8 { // Select next track (0-8, including Input track)
 			m.CurrentMixerTrack = m.CurrentMixerTrack + 1
 			storage.AutoSave(m)
 		}

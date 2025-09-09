@@ -129,7 +129,12 @@ func main() {
 			tm.model.TrackVolumes[i] = msg.Arguments[i].(float32)
 		}
 	})
-	// Start OSC server early
+	// Build program
+	tm = initialModel(oscPort, saveFile, d)
+
+	p := tea.NewProgram(tm, tea.WithAltScreen())
+
+	// Start OSC server after p is created but before p.Run()
 	server := &osc.Server{Addr: fmt.Sprintf(":%d", oscPort+1), Dispatcher: d}
 	go func() {
 		log.Printf("Starting OSC server on port %d", oscPort+1)
@@ -137,11 +142,6 @@ func main() {
 			log.Printf("Error starting OSC server: %v", err)
 		}
 	}()
-
-	// Build program
-	tm = initialModel(oscPort, saveFile, d)
-
-	p := tea.NewProgram(tm, tea.WithAltScreen())
 
 	// Start SuperCollider in the background so it doesn't block the splash
 	// Always check JACK status, but only exit if --skip-jack-check is not set
