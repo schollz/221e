@@ -97,6 +97,7 @@ type Model struct {
 	// View navigation state
 	LastChainRow  int // Last selected row in chain view
 	LastPhraseRow int // Last selected row in phrase view
+	LastPhraseCol int // Last selected column in phrase view
 	LastSongRow   int // Last selected row in song view
 	LastSongTrack int // Last selected track in song view
 
@@ -563,6 +564,7 @@ func NewModel(oscPort int, saveFolder string) *Model {
 		CurrentTrack:  0,
 		LastChainRow:  0,
 		LastPhraseRow: 0,
+		LastPhraseCol: 0,
 		LastSongRow:   0,
 		LastSongTrack: 0,
 		// Set save folder

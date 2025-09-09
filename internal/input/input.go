@@ -392,6 +392,7 @@ func handleShiftRight(m *model.Model) tea.Cmd {
 			}
 			// Save current phrase view position
 			m.LastPhraseRow = m.CurrentRow
+			m.LastPhraseCol = m.CurrentCol
 			m.MidiEditingIndex = midiIndex
 			m.ViewMode = types.MidiView
 			m.CurrentRow = 0 // Start at first setting
@@ -411,6 +412,7 @@ func handleShiftRight(m *model.Model) tea.Cmd {
 			}
 			// Save current phrase view position
 			m.LastPhraseRow = m.CurrentRow
+			m.LastPhraseCol = m.CurrentCol
 			m.SoundMakerEditingIndex = soundMakerIndex
 			m.ViewMode = types.SoundMakerView
 			m.CurrentRow = 0 // Start at first setting
@@ -420,9 +422,43 @@ func handleShiftRight(m *model.Model) tea.Cmd {
 			return nil
 		}
 
-		// Check if we're in Instrument view - file selection doesn't apply
+		// Check if we're in Instrument view - implement fallback navigation for non-navigable columns
 		if m.GetPhraseViewType() == types.InstrumentPhraseView {
-			return nil // Shift+Right does nothing in Instrument view
+			// For columns that don't have their own Shift+Right navigation (all except MI and SO),
+			// check if MI or SO columns have effective (sticky) values and navigate to those views
+			if m.CurrentCol != int(types.InstrumentColMI) && m.CurrentCol != int(types.InstrumentColSO) {
+				phrasesData := m.GetCurrentPhrasesData()
+
+				// Find effective (sticky) MI and SO values by looking backwards from current row
+				effectiveSoundMakerIndex := getEffectiveValue(phrasesData, m.CurrentPhrase, m.CurrentRow, types.ColSoundMaker)
+				effectiveMidiIndex := getEffectiveValue(phrasesData, m.CurrentPhrase, m.CurrentRow, types.ColMidi)
+
+				// If both are not null, prefer SoundMaker view
+				if effectiveSoundMakerIndex != -1 {
+					// Navigate to SoundMaker view
+					m.LastPhraseRow = m.CurrentRow
+					m.LastPhraseCol = m.CurrentCol // Save original column for fallback navigation
+					m.SoundMakerEditingIndex = effectiveSoundMakerIndex
+					m.ViewMode = types.SoundMakerView
+					m.CurrentRow = 0 // Start at first setting
+					m.CurrentCol = 0 // Start at Name column
+					m.ScrollOffset = 0
+					storage.AutoSave(m)
+					return nil
+				} else if effectiveMidiIndex != -1 {
+					// Navigate to MIDI view
+					m.LastPhraseRow = m.CurrentRow
+					m.LastPhraseCol = m.CurrentCol // Save original column for fallback navigation
+					m.MidiEditingIndex = effectiveMidiIndex
+					m.ViewMode = types.MidiView
+					m.CurrentRow = 0 // Start at first setting
+					m.CurrentCol = 0 // Start at Device column
+					m.ScrollOffset = 0
+					storage.AutoSave(m)
+					return nil
+				}
+			}
+			return nil // No navigation for MI/SO columns or if no valid targets
 		}
 
 		// Navigate to file view from any other column in phrase view
@@ -642,25 +678,11 @@ func handleShiftLeft(m *model.Model) tea.Cmd {
 		}
 		switchToViewWithVisibilityCheck(m, phraseViewConfig(m.LastPhraseRow, arColumn))
 	} else if m.ViewMode == types.MidiView {
-		// Navigate back to phrase view - find the UI column for MI
-		var miColumn int
-		phraseViewType := m.GetPhraseViewType()
-		if phraseViewType == types.InstrumentPhraseView {
-			miColumn = int(types.InstrumentColMI) // MI column in instrument view
-		} else {
-			miColumn = 1 // MI is not accessible in sampler view, default to P column
-		}
-		switchToViewWithVisibilityCheck(m, phraseViewConfig(m.LastPhraseRow, miColumn))
+		// Navigate back to phrase view - use saved column position
+		switchToViewWithVisibilityCheck(m, phraseViewConfig(m.LastPhraseRow, m.LastPhraseCol))
 	} else if m.ViewMode == types.SoundMakerView {
-		// Navigate back to phrase view - find the UI column for SO
-		var soColumn int
-		phraseViewType := m.GetPhraseViewType()
-		if phraseViewType == types.InstrumentPhraseView {
-			soColumn = int(types.InstrumentColSO) // SO column in instrument view
-		} else {
-			soColumn = 1 // SO is not accessible in sampler view, default to P column
-		}
-		switchToViewWithVisibilityCheck(m, phraseViewConfig(m.LastPhraseRow, soColumn))
+		// Navigate back to phrase view - use saved column position
+		switchToViewWithVisibilityCheck(m, phraseViewConfig(m.LastPhraseRow, m.LastPhraseCol))
 	}
 	return nil
 }
@@ -1429,4 +1451,17 @@ func handleM(m *model.Model) tea.Cmd {
 	}
 	// For other views (FileView, SettingsView, etc.), do nothing
 	return nil
+}
+
+// getEffectiveValue finds the effective (sticky) value for a given column by looking backwards from the current row.
+// This implements sticky behavior where values persist until explicitly changed.
+func getEffectiveValue(phrasesData *[255][][]int, phrase int, currentRow int, column types.PhraseColumn) int {
+	// Start from current row and work backwards
+	for row := currentRow; row >= 0; row-- {
+		value := (*phrasesData)[phrase][row][column]
+		if value != -1 {
+			return value // Found a non-null value
+		}
+	}
+	return -1 // No effective value found
 }

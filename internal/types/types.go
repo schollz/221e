@@ -473,6 +473,7 @@ type SaveData struct {
 	FileMetadata          map[string]FileMetadata `json:"fileMetadata"`
 	LastChainRow          int                     `json:"lastChainRow"`
 	LastPhraseRow         int                     `json:"lastPhraseRow"`
+	LastPhraseCol         int                     `json:"lastPhraseCol"`
 	RecordingEnabled      bool                    `json:"recordingEnabled"`
 	RetriggerSettings     [255]RetriggerSettings  `json:"retriggerSettings"`
 	TimestrechSettings    [255]TimestrechSettings `json:"timestrechSettings"`
