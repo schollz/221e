@@ -14,26 +14,31 @@ import (
 func TestDoSave(t *testing.T) {
 	t.Run("successful save", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		saveFile := filepath.Join(tmpDir, "test_save.json")
+		saveFolder := filepath.Join(tmpDir, "test_save")
 
-		m := model.NewModel(0, saveFile)
+		m := model.NewModel(0, saveFolder)
 		m.BPM = 140
 		m.CurrentRow = 5
 
 		DoSave(m)
 
-		// Check that file was created
-		_, err := os.Stat(saveFile)
+		// Check that save folder was created
+		_, err := os.Stat(saveFolder)
 		assert.NoError(t, err)
 
-		// Check that file has content
-		data, err := os.ReadFile(saveFile)
+		// Check that data.json.gz was created
+		dataFile := filepath.Join(saveFolder, "data.json.gz")
+		_, err = os.Stat(dataFile)
+		assert.NoError(t, err)
+
+		// Check that data file has content
+		data, err := os.ReadFile(dataFile)
 		assert.NoError(t, err)
 		assert.True(t, len(data) > 0)
 	})
 
 	t.Run("save to invalid path", func(t *testing.T) {
-		m := model.NewModel(0, "/invalid/path/that/does/not/exist/save.json")
+		m := model.NewModel(0, "/invalid/path/that/does/not/exist/save")
 
 		// Should not panic, just log error
 		DoSave(m)
@@ -43,18 +48,18 @@ func TestDoSave(t *testing.T) {
 func TestLoadState(t *testing.T) {
 	t.Run("load existing save file", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		saveFile := filepath.Join(tmpDir, "test_load.json")
+		saveFolder := filepath.Join(tmpDir, "test_load")
 
 		// Create and save a model with specific state
-		m1 := model.NewModel(0, saveFile)
+		m1 := model.NewModel(0, saveFolder)
 		m1.BPM = 140
 		m1.CurrentRow = 10
 		m1.ViewMode = types.ChainView
 		DoSave(m1)
 
 		// Create new model and load state
-		m2 := model.NewModel(0, saveFile)
-		err := LoadState(m2, 0, saveFile)
+		m2 := model.NewModel(0, saveFolder)
+		err := LoadState(m2, 0, saveFolder)
 
 		assert.NoError(t, err)
 		assert.Equal(t, float32(140), m2.BPM)
@@ -64,23 +69,23 @@ func TestLoadState(t *testing.T) {
 
 	t.Run("load nonexistent file", func(t *testing.T) {
 		m := model.NewModel(0, "")
-		err := LoadState(m, 0, "/path/that/does/not/exist.json")
+		err := LoadState(m, 0, "/path/that/does/not/exist")
 
 		assert.Error(t, err)
 	})
 
 	t.Run("force return to phrase view from non-main views", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		saveFile := filepath.Join(tmpDir, "test_force_view.json")
+		saveFolder := filepath.Join(tmpDir, "test_force_view")
 
 		// Create and save a model in a non-main view
-		m1 := model.NewModel(0, saveFile)
+		m1 := model.NewModel(0, saveFolder)
 		m1.ViewMode = types.FileView // This should be forced to PhraseView
 		DoSave(m1)
 
 		// Load state
-		m2 := model.NewModel(0, saveFile)
-		err := LoadState(m2, 0, saveFile)
+		m2 := model.NewModel(0, saveFolder)
+		err := LoadState(m2, 0, saveFolder)
 
 		assert.NoError(t, err)
 		assert.Equal(t, types.PhraseView, m2.ViewMode)
@@ -135,9 +140,9 @@ func TestLoadFiles(t *testing.T) {
 func TestAutoSave(t *testing.T) {
 	t.Run("autosave debouncing", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		saveFile := filepath.Join(tmpDir, "autosave_test.json")
+		saveFolder := filepath.Join(tmpDir, "autosave_test")
 
-		m := model.NewModel(0, saveFile)
+		m := model.NewModel(0, saveFolder)
 		m.BPM = 150
 
 		// Call AutoSave multiple times quickly
@@ -146,25 +151,26 @@ func TestAutoSave(t *testing.T) {
 		AutoSave(m)
 
 		// Should not save immediately
-		_, err := os.Stat(saveFile)
+		dataFile := filepath.Join(saveFolder, "data.json.gz")
+		_, err := os.Stat(dataFile)
 		assert.True(t, os.IsNotExist(err))
 
 		// Wait for debounce timeout plus a bit more
 		time.Sleep(1200 * time.Millisecond)
 
 		// Should have saved by now
-		_, err = os.Stat(saveFile)
+		_, err = os.Stat(dataFile)
 		assert.NoError(t, err)
 	})
 }
 
 func BenchmarkDoSave(b *testing.B) {
-	// Create a temporary file for testing
+	// Create a temporary folder for testing
 	tmpDir := b.TempDir()
-	saveFile := filepath.Join(tmpDir, "test_save.json")
+	saveFolder := filepath.Join(tmpDir, "test_save")
 
 	// Create a model with default data
-	m := model.NewModel(0, saveFile) // OSC port 0 to disable OSC
+	m := model.NewModel(0, saveFolder) // OSC port 0 to disable OSC
 
 	// Run the benchmark
 	b.ResetTimer()
@@ -174,25 +180,26 @@ func BenchmarkDoSave(b *testing.B) {
 }
 
 func BenchmarkLoadState(b *testing.B) {
-	// Create a temporary file for testing
+	// Create a temporary folder for testing
 	tmpDir := b.TempDir()
-	saveFile := filepath.Join(tmpDir, "test_load.json")
+	saveFolder := filepath.Join(tmpDir, "test_load")
 
 	// Create a model with default data and save it once
-	m := model.NewModel(0, saveFile) // OSC port 0 to disable OSC
+	m := model.NewModel(0, saveFolder) // OSC port 0 to disable OSC
 	DoSave(m)
 
-	// Verify the save file exists
-	if _, err := os.Stat(saveFile); os.IsNotExist(err) {
-		b.Fatal("Save file was not created")
+	// Verify the save folder and data file exist
+	dataFile := filepath.Join(saveFolder, "data.json.gz")
+	if _, err := os.Stat(dataFile); os.IsNotExist(err) {
+		b.Fatal("Save data file was not created")
 	}
 
 	// Run the benchmark
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		// Create a fresh model for each load operation
-		testModel := model.NewModel(0, saveFile)
-		err := LoadState(testModel, 0, saveFile)
+		testModel := model.NewModel(0, saveFolder)
+		err := LoadState(testModel, 0, saveFolder)
 		if err != nil {
 			b.Fatalf("LoadState failed: %v", err)
 		}
