@@ -264,8 +264,75 @@ func PasteCellFromClipboard(m *model.Model) {
 			}
 
 			if canPaste {
-				(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = m.Clipboard.Value
-				log.Printf("Pasted to phrase cell: %d", m.Clipboard.Value)
+				// Special handling for retrigger column - implement deep copying
+				if colIndex == int(types.ColRetrigger) && m.Clipboard.Value >= 0 && m.Clipboard.Value < 255 {
+					// Check if this is marked for deep copy on paste (Ctrl+D)
+					if m.Clipboard.IsFreshDeepCopy {
+						// Create the deep copy now (on paste)
+						newRetriggerIndex := FindNextUnusedRetrigger(m, m.Clipboard.Value)
+						if newRetriggerIndex != -1 {
+							// Deep copy the retrigger settings
+							m.RetriggerSettings[newRetriggerIndex] = m.RetriggerSettings[m.Clipboard.Value]
+							// Update the phrase data with the new retrigger index
+							(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newRetriggerIndex
+							log.Printf("Deep copied retrigger settings %02X to %02X and pasted to phrase cell", m.Clipboard.Value, newRetriggerIndex)
+						} else {
+							// No unused retrigger slots available, just copy the reference
+							(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = m.Clipboard.Value
+							log.Printf("Warning: No unused retrigger slots available, pasted reference to retrigger %02X", m.Clipboard.Value)
+						}
+					} else {
+						// Regular copy (Ctrl+C) - also create deep copy for backward compatibility
+						newRetriggerIndex := FindNextUnusedRetrigger(m, m.Clipboard.Value)
+						if newRetriggerIndex != -1 {
+							// Deep copy the retrigger settings
+							m.RetriggerSettings[newRetriggerIndex] = m.RetriggerSettings[m.Clipboard.Value]
+							// Update the phrase data with the new retrigger index
+							(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newRetriggerIndex
+							log.Printf("Deep copied retrigger settings %02X to %02X and pasted to phrase cell", m.Clipboard.Value, newRetriggerIndex)
+						} else {
+							// No unused retrigger slots available, just copy the reference
+							(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = m.Clipboard.Value
+							log.Printf("Warning: No unused retrigger slots available, pasted reference to retrigger %02X", m.Clipboard.Value)
+						}
+					}
+				} else if colIndex == int(types.ColArpeggio) && m.Clipboard.Value >= 0 && m.Clipboard.Value < 255 {
+					// Special handling for arpeggio column - implement deep copying
+					// Check if this is marked for deep copy on paste (Ctrl+D)
+					if m.Clipboard.IsFreshDeepCopy {
+						// Create the deep copy now (on paste)
+						newArpeggioIndex := FindNextUnusedArpeggio(m, m.Clipboard.Value)
+						if newArpeggioIndex != -1 {
+							// Deep copy the arpeggio settings
+							m.ArpeggioSettings[newArpeggioIndex] = m.ArpeggioSettings[m.Clipboard.Value]
+							// Update the phrase data with the new arpeggio index
+							(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newArpeggioIndex
+							log.Printf("Deep copied arpeggio settings %02X to %02X and pasted to phrase cell", m.Clipboard.Value, newArpeggioIndex)
+						} else {
+							// No unused arpeggio slots available, just copy the reference
+							(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = m.Clipboard.Value
+							log.Printf("Warning: No unused arpeggio slots available, pasted reference to arpeggio %02X", m.Clipboard.Value)
+						}
+					} else {
+						// Regular copy (Ctrl+C) - also create deep copy for backward compatibility
+						newArpeggioIndex := FindNextUnusedArpeggio(m, m.Clipboard.Value)
+						if newArpeggioIndex != -1 {
+							// Deep copy the arpeggio settings
+							m.ArpeggioSettings[newArpeggioIndex] = m.ArpeggioSettings[m.Clipboard.Value]
+							// Update the phrase data with the new arpeggio index
+							(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newArpeggioIndex
+							log.Printf("Deep copied arpeggio settings %02X to %02X and pasted to phrase cell", m.Clipboard.Value, newArpeggioIndex)
+						} else {
+							// No unused arpeggio slots available, just copy the reference
+							(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = m.Clipboard.Value
+							log.Printf("Warning: No unused arpeggio slots available, pasted reference to arpeggio %02X", m.Clipboard.Value)
+						}
+					}
+				} else {
+					// Normal paste for all other columns
+					(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = m.Clipboard.Value
+					log.Printf("Pasted to phrase cell: %d", m.Clipboard.Value)
+				}
 				// Track this row as the last edited row
 				m.LastEditRow = m.CurrentRow
 			} else {

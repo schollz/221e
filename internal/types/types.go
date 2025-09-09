@@ -444,6 +444,8 @@ type ClipboardData struct {
 	// Common
 	Mode    ClipboardMode
 	HasData bool
+	// Flag to indicate this value is a fresh deep copy that shouldn't be deep copied again
+	IsFreshDeepCopy bool
 }
 
 type SaveData struct {

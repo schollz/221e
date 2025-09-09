@@ -1490,7 +1490,15 @@ func DeepCopyToClipboard(m *model.Model) {
 	} else if m.ViewMode == types.ChainView {
 		DeepCopyPhraseToClipboard(m)
 	} else if m.ViewMode == types.PhraseView {
-		DeepCopyCurrentPhraseToClipboard(m)
+		// Check if we're in specific columns that support individual deep copy
+		columnMapping := m.GetColumnMapping(m.CurrentCol)
+		if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColRetrigger) {
+			DeepCopyRetriggerToClipboard(m)
+		} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColArpeggio) {
+			DeepCopyArpeggioToClipboard(m)
+		} else {
+			DeepCopyCurrentPhraseToClipboard(m)
+		}
 	} else {
 		log.Printf("Deep copy not supported in this view")
 	}
@@ -1719,6 +1727,70 @@ func DeepCopyCurrentPhraseToClipboard(m *model.Model) {
 	m.Clipboard = clipboard
 
 	log.Printf("Deep copied phrase %02X to phrase %02X", sourcePhraseID, destPhraseID)
+}
+
+func DeepCopyRetriggerToClipboard(m *model.Model) {
+	// Get the retrigger index from the current cell
+	phrasesData := m.GetCurrentPhrasesData()
+	sourceRetriggerIndex := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColRetrigger]
+
+	if sourceRetriggerIndex == -1 {
+		log.Printf("Cannot deep copy retrigger: no retrigger set in current cell")
+		return
+	}
+
+	if sourceRetriggerIndex < 0 || sourceRetriggerIndex >= 255 {
+		log.Printf("Cannot deep copy retrigger: invalid retrigger index %d", sourceRetriggerIndex)
+		return
+	}
+
+	// Put the ORIGINAL retrigger index in clipboard, but mark it for deep copy on paste
+	clipboard := types.ClipboardData{
+		Value:           sourceRetriggerIndex, // Keep original reference
+		CellType:        types.HexCell,
+		Mode:            types.CellMode,
+		HasData:         true,
+		HighlightRow:    m.CurrentRow,
+		HighlightCol:    m.CurrentCol,
+		HighlightPhrase: m.CurrentPhrase,
+		HighlightView:   types.PhraseView,
+		IsFreshDeepCopy: true, // Mark for deep copy on paste
+	}
+	m.Clipboard = clipboard
+
+	log.Printf("Marked retrigger %02X for deep copy on paste", sourceRetriggerIndex)
+}
+
+func DeepCopyArpeggioToClipboard(m *model.Model) {
+	// Get the arpeggio index from the current cell
+	phrasesData := m.GetCurrentPhrasesData()
+	sourceArpeggioIndex := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColArpeggio]
+
+	if sourceArpeggioIndex == -1 {
+		log.Printf("Cannot deep copy arpeggio: no arpeggio set in current cell")
+		return
+	}
+
+	if sourceArpeggioIndex < 0 || sourceArpeggioIndex >= 255 {
+		log.Printf("Cannot deep copy arpeggio: invalid arpeggio index %d", sourceArpeggioIndex)
+		return
+	}
+
+	// Put the ORIGINAL arpeggio index in clipboard, but mark it for deep copy on paste
+	clipboard := types.ClipboardData{
+		Value:           sourceArpeggioIndex, // Keep original reference
+		CellType:        types.HexCell,
+		Mode:            types.CellMode,
+		HasData:         true,
+		HighlightRow:    m.CurrentRow,
+		HighlightCol:    m.CurrentCol,
+		HighlightPhrase: m.CurrentPhrase,
+		HighlightView:   types.PhraseView,
+		IsFreshDeepCopy: true, // Mark for deep copy on paste
+	}
+	m.Clipboard = clipboard
+
+	log.Printf("Marked arpeggio %02X for deep copy on paste", sourceArpeggioIndex)
 }
 
 func FindNextUnusedChain(m *model.Model, startingFrom int) int {
@@ -2121,4 +2193,55 @@ func GetDTStatusMessage(dtValue int) string {
 	} else {
 		return fmt.Sprintf("Delta Time: %02X (%d ticks, row played)", dtValue, dtValue)
 	}
+}
+
+// FindNextUnusedRetrigger finds the next unused retrigger slot starting from a given index
+func FindNextUnusedRetrigger(m *model.Model, startingFrom int) int {
+	// Bounds check input
+	if startingFrom < 0 || startingFrom >= 255 {
+		return -1
+	}
+
+	// Search from startingFrom+1 to 254, then wrap to 0 to startingFrom-1
+	for offset := 1; offset < 255; offset++ {
+		retriggerID := (startingFrom + offset) % 255
+		if retriggerID >= 0 && retriggerID < 255 && IsRetriggerUnused(m, retriggerID) {
+			return retriggerID
+		}
+	}
+	return -1 // No unused retrigger found
+}
+
+// IsRetriggerUnused checks if a retrigger slot is unused (not referenced in any phrase and has default settings)
+func IsRetriggerUnused(m *model.Model, retriggerID int) bool {
+	// Bounds check first
+	if retriggerID < 0 || retriggerID >= 255 {
+		return false
+	}
+
+	// Check if retrigger is referenced in any phrase data
+	for phrase := 0; phrase < 255; phrase++ {
+		for row := 0; row < 255; row++ {
+			// Check both sampler and instrument phrases
+			if m.SamplerPhrasesData[phrase][row][types.ColRetrigger] == retriggerID ||
+				m.InstrumentPhrasesData[phrase][row][types.ColRetrigger] == retriggerID {
+				return false
+			}
+		}
+	}
+
+	// Check if retrigger has any non-default settings
+	settings := m.RetriggerSettings[retriggerID]
+	if settings.Times != 0 ||
+		settings.Start != 0.0 ||
+		settings.End != 0.0 ||
+		settings.Beats != 0 ||
+		settings.VolumeDB != 0.0 ||
+		settings.PitchChange != 0.0 ||
+		settings.FinalPitchToStart != 0 ||
+		settings.FinalVolumeToStart != 0 {
+		return false
+	}
+
+	return true
 }
