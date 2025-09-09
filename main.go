@@ -32,7 +32,7 @@ func main() {
 	var saveFile string
 	var debugLog string
 	flag.IntVar(&oscPort, "osc-port", 57120, "OSC port for sending playback messages")
-	flag.StringVar(&saveFile, "save-file", "2n.json.gz", "Save file to load from or create")
+	flag.StringVar(&saveFile, "save-file", "save.json.gz", "Save file to load from or create")
 	flag.BoolVar(&skipJackCheck, "skip-jack-check", false, "Skip checking for JACK server (for testing only)")
 	flag.StringVar(&debugLog, "debug", "", "If set, write debug logs to this file; empty disables logging")
 
