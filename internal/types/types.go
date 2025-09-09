@@ -582,14 +582,16 @@ type InstrumentParameterDef struct {
 }
 
 type InstrumentDefinition struct {
-	Name       string                   `json:"name"`       // Instrument name (e.g. "DX7", "Polyperc")
-	Parameters []InstrumentParameterDef `json:"parameters"` // Parameter definitions
+	Name        string                   `json:"name"`        // Instrument name (e.g. "DX7", "Polyperc")
+	Description string                   `json:"description"` // Short description of the instrument
+	Parameters  []InstrumentParameterDef `json:"parameters"`  // Parameter definitions
 }
 
 // Global registry of all instrument definitions
 var InstrumentRegistry = map[string]InstrumentDefinition{
 	"DX7": {
-		Name: "DX7",
+		Name:        "DX7",
+		Description: "Classic FM synthesizer",
 		Parameters: []InstrumentParameterDef{
 			{
 				Key: "preset", DisplayName: "Preset", Type: ParameterTypeInt,
@@ -598,7 +600,8 @@ var InstrumentRegistry = map[string]InstrumentDefinition{
 		},
 	},
 	"Polyperc": {
-		Name: "Polyperc",
+		Name:        "Polyperc",
+		Description: "Polyphonic percussion synthesizer",
 		Parameters: []InstrumentParameterDef{
 			{
 				Key: "A", DisplayName: "A", Type: ParameterTypeHex,
@@ -618,24 +621,37 @@ var InstrumentRegistry = map[string]InstrumentDefinition{
 			},
 		},
 	},
-	"Infinite Pad": {
-		Name: "Infinite Pad",
+	"MiBraids": {
+		Name:        "MiBraids",
+		Description: "MiBraids is a digital macro oscillator that offers an atlas of waveform generation techniques.",
 		Parameters: []InstrumentParameterDef{
 			{
-				Key: "A", DisplayName: "A", Type: ParameterTypeHex,
-				MinValue: 0, MaxValue: 254, DefaultValue: -1, Column: 0, Order: 0,
+				Key: "timbre", DisplayName: "Timbre", Type: ParameterTypeFloat,
+				MinValue: 0, MaxValue: 1000, DefaultValue: -1, Column: 0, Order: 0,
 			},
 			{
-				Key: "B", DisplayName: "B", Type: ParameterTypeHex,
-				MinValue: 0, MaxValue: 254, DefaultValue: -1, Column: 0, Order: 1,
+				Key: "color", DisplayName: "Color", Type: ParameterTypeFloat,
+				MinValue: 0, MaxValue: 1000, DefaultValue: -1, Column: 0, Order: 1,
 			},
 			{
-				Key: "C", DisplayName: "C", Type: ParameterTypeHex,
-				MinValue: 0, MaxValue: 254, DefaultValue: -1, Column: 1, Order: 0,
+				Key: "model", DisplayName: "Model", Type: ParameterTypeInt,
+				MinValue: 0, MaxValue: 47, DefaultValue: -1, Column: 0, Order: 2,
 			},
 			{
-				Key: "D", DisplayName: "D", Type: ParameterTypeHex,
-				MinValue: 0, MaxValue: 254, DefaultValue: -1, Column: 1, Order: 1,
+				Key: "resamp", DisplayName: "Resamp", Type: ParameterTypeInt,
+				MinValue: 0, MaxValue: 2, DefaultValue: -1, Column: 1, Order: 0,
+			},
+			{
+				Key: "decim", DisplayName: "Decim", Type: ParameterTypeInt,
+				MinValue: 1, MaxValue: 32, DefaultValue: -1, Column: 1, Order: 1,
+			},
+			{
+				Key: "bits", DisplayName: "Bits", Type: ParameterTypeInt,
+				MinValue: 0, MaxValue: 6, DefaultValue: -1, Column: 1, Order: 2,
+			},
+			{
+				Key: "ws", DisplayName: "WS", Type: ParameterTypeFloat,
+				MinValue: 0, MaxValue: 1000, DefaultValue: -1, Column: 1, Order: 3,
 			},
 		},
 	},
@@ -687,6 +703,26 @@ func (def InstrumentDefinition) GetParametersSortedByColumn() (col0 []Instrument
 	}
 
 	return col0, col1
+}
+
+// MiBraids model names for display
+var MiBraidsModelNames = []string{
+	"CSAW", "MORPH", "SAW_SQUARE", "SINE_TRIANGLE", "BUZZ", "SQUARE_SUB", "SAW_SUB", "SQUARE_SYNC",
+	"SAW_SYNC", "TRIPLE_SAW", "TRIPLE_SQUARE", "TRIPLE_TRIANGLE", "TRIPLE_SINE", "TRIPLE_RING_MOD",
+	"SAW_SWARM", "SAW_COMB", "TOY", "DIGITAL_FILTER_LP", "DIGITAL_FILTER_PK", "DIGITAL_FILTER_BP",
+	"DIGITAL_FILTER_HP", "VOSIM", "VOWEL", "VOWEL_FOF", "HARMONICS", "FM", "FEEDBACK_FM",
+	"CHAOTIC_FEEDBACK_FM", "PLUCKED", "BOWED", "BLOWN", "FLUTED", "STRUCK_BELL", "STRUCK_DRUM",
+	"KICK", "CYMBAL", "SNARE", "WAVETABLES", "WAVE_MAP", "WAVE_LINE", "WAVE_PARAPHONIC",
+	"FILTERED_NOISE", "TWIN_PEAKS_NOISE", "CLOCKED_NOISE", "GRANULAR_CLOUD", "PARTICLE_NOISE",
+	"DIGITAL_MODULATION", "QUESTION_MARK",
+}
+
+// GetMiBraidsModelName returns the name for a given model index
+func GetMiBraidsModelName(index int) string {
+	if index >= 0 && index < len(MiBraidsModelNames) {
+		return MiBraidsModelNames[index]
+	}
+	return "UNKNOWN"
 }
 
 // Helper functions for SoundMakerSettings with the new parameter framework

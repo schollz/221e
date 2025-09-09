@@ -193,7 +193,7 @@ func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
 		}
 
 		// Use the available SoundMaker names
-		soundMakers := []string{"None", "Polyperc", "Infinite Pad", "DX7"}
+		soundMakers := []string{"None", "Polyperc", "DX7", "MiBraids"}
 
 		// Find current index
 		currentIndex := -1
@@ -227,13 +227,10 @@ func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
 	} else {
 		// Handle parameter modification using the instrument framework
 		if def, exists := types.GetInstrumentDefinition(settings.Name); exists {
-			col0, col1 := def.GetParametersSortedByColumn()
-			allParams := append(col0, col1...)
-
 			// Parameter rows start at row 1
 			paramIndex := m.CurrentRow - 1
-			if paramIndex >= 0 && paramIndex < len(allParams) {
-				param := allParams[paramIndex]
+			if paramIndex >= 0 && paramIndex < len(def.Parameters) {
+				param := def.Parameters[paramIndex]
 				oldValue := settings.GetParameterValue(param.Key)
 
 				// Calculate delta based on parameter type and input

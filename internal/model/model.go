@@ -1210,8 +1210,9 @@ func (m *Model) sendOSCInstrumentMessage(params InstrumentOSCParams) {
 							normalizedValue := float32(value) / 254.0
 							msg.Append(normalizedValue)
 						} else if param.Type == types.ParameterTypeFloat {
-							// Send float values as-is
-							msg.Append(float32(value))
+							// Normalize float values (0-1000) to float (0.0-1.0)
+							normalizedValue := float32(value) / 1000.0
+							msg.Append(normalizedValue)
 						} else {
 							// ParameterTypeInt - send as int32
 							msg.Append(int32(value))

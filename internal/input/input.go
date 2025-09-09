@@ -788,9 +788,15 @@ func handleDown(m *model.Model) tea.Cmd {
 			}
 		}
 	} else if m.ViewMode == types.SoundMakerView {
-		// Calculate maximum row: 5 settings rows + available SoundMakers
-		availableSoundMakers := []string{"Polyperc", "Infinite Pad"}
-		maxRow := 4 + len(availableSoundMakers) // Name(0), A(1), B(2), C(3), D(4), then SoundMakers starting at row 5
+		// Calculate maximum row based on current instrument parameters
+		settings := m.SoundMakerSettings[m.SoundMakerEditingIndex]
+		var maxRow int
+		if def, exists := types.GetInstrumentDefinition(settings.Name); exists {
+			// Name row (0) + parameter rows (1 to len(Parameters))
+			maxRow = len(def.Parameters) // Last valid row index
+		} else {
+			maxRow = 0 // Only name row if no definition
+		}
 		if m.CurrentRow < maxRow {
 			m.CurrentRow = m.CurrentRow + 1
 			visibleRows := m.GetVisibleRows()
