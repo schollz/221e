@@ -132,7 +132,7 @@ func DoSave(m *model.Model) {
 func LoadState(m *model.Model, oscPort int, saveFolder string) error {
 	// Construct path to data.json.gz inside save folder
 	dataFilePath := filepath.Join(saveFolder, "data.json.gz")
-	
+
 	// Open the gzipped save file
 	file, err := os.Open(dataFilePath)
 	if err != nil {

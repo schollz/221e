@@ -413,13 +413,9 @@ type MidiSettings struct {
 }
 
 type SoundMakerSettings struct {
-	Name      string `json:"name"`      // SoundMaker name ("Polyperc", "Infinite Pad", "DX7", etc.)
-	A         int    `json:"a"`         // Parameter A (00-FE, -1 for "--") - used for Polyperc, Infinite Pad
-	B         int    `json:"b"`         // Parameter B (00-FE, -1 for "--") - used for Polyperc, Infinite Pad
-	C         int    `json:"c"`         // Parameter C (00-FE, -1 for "--") - used for Polyperc, Infinite Pad
-	D         int    `json:"d"`         // Parameter D (00-FE, -1 for "--") - used for Polyperc, Infinite Pad
-	Preset    int    `json:"preset"`    // Preset number (0-len(patches)-1, -1 for "--") - used for DX7
-	PatchName string `json:"patchName"` // Patch name (used for DX7 when setting by name)
+	Name       string         `json:"name"`       // SoundMaker name ("Polyperc", "Infinite Pad", "DX7", etc.)
+	Parameters map[string]int `json:"parameters"` // Key-value pairs for parameters (e.g. "preset": 5, "A": 128)
+	PatchName  string         `json:"patchName"`  // Patch name (used for DX7 when setting by name)
 }
 
 type ClipboardData struct {
@@ -562,5 +558,178 @@ func GetVirtualDefault(col PhraseColumn) *VirtualDefaultConfig {
 		return &VirtualDefaultConfig{DefaultValue: 0xFE} // 0xFE = 20kHz (no filtering)
 	default:
 		return nil
+	}
+}
+
+// Instrument Parameter Framework
+type InstrumentParameterType int
+
+const (
+	ParameterTypeHex   InstrumentParameterType = iota // 0x00-0xFE hex values (default)
+	ParameterTypeInt                                  // Integer values with custom range
+	ParameterTypeFloat                                // Float values with custom range
+)
+
+type InstrumentParameterDef struct {
+	Key          string                  `json:"key"`          // Key for OSC sending (e.g. "preset", "cutoff")
+	DisplayName  string                  `json:"displayName"`  // Name shown in UI (e.g. "Preset", "Cutoff")
+	Type         InstrumentParameterType `json:"type"`         // Data type
+	MinValue     int                     `json:"minValue"`     // Minimum value
+	MaxValue     int                     `json:"maxValue"`     // Maximum value
+	DefaultValue int                     `json:"defaultValue"` // Default value (-1 for "--")
+	Column       int                     `json:"column"`       // Which column to display in (0 or 1)
+	Order        int                     `json:"order"`        // Order within the column
+}
+
+type InstrumentDefinition struct {
+	Name       string                   `json:"name"`       // Instrument name (e.g. "DX7", "Polyperc")
+	Parameters []InstrumentParameterDef `json:"parameters"` // Parameter definitions
+}
+
+// Global registry of all instrument definitions
+var InstrumentRegistry = map[string]InstrumentDefinition{
+	"DX7": {
+		Name: "DX7",
+		Parameters: []InstrumentParameterDef{
+			{
+				Key: "preset", DisplayName: "Preset", Type: ParameterTypeInt,
+				MinValue: 0, MaxValue: 1000, DefaultValue: -1, Column: 0, Order: 0,
+			},
+		},
+	},
+	"Polyperc": {
+		Name: "Polyperc",
+		Parameters: []InstrumentParameterDef{
+			{
+				Key: "A", DisplayName: "A", Type: ParameterTypeHex,
+				MinValue: 0, MaxValue: 254, DefaultValue: -1, Column: 0, Order: 0,
+			},
+			{
+				Key: "B", DisplayName: "B", Type: ParameterTypeHex,
+				MinValue: 0, MaxValue: 254, DefaultValue: -1, Column: 0, Order: 1,
+			},
+			{
+				Key: "C", DisplayName: "C", Type: ParameterTypeHex,
+				MinValue: 0, MaxValue: 254, DefaultValue: -1, Column: 1, Order: 0,
+			},
+			{
+				Key: "D", DisplayName: "D", Type: ParameterTypeHex,
+				MinValue: 0, MaxValue: 254, DefaultValue: -1, Column: 1, Order: 1,
+			},
+		},
+	},
+	"Infinite Pad": {
+		Name: "Infinite Pad",
+		Parameters: []InstrumentParameterDef{
+			{
+				Key: "A", DisplayName: "A", Type: ParameterTypeHex,
+				MinValue: 0, MaxValue: 254, DefaultValue: -1, Column: 0, Order: 0,
+			},
+			{
+				Key: "B", DisplayName: "B", Type: ParameterTypeHex,
+				MinValue: 0, MaxValue: 254, DefaultValue: -1, Column: 0, Order: 1,
+			},
+			{
+				Key: "C", DisplayName: "C", Type: ParameterTypeHex,
+				MinValue: 0, MaxValue: 254, DefaultValue: -1, Column: 1, Order: 0,
+			},
+			{
+				Key: "D", DisplayName: "D", Type: ParameterTypeHex,
+				MinValue: 0, MaxValue: 254, DefaultValue: -1, Column: 1, Order: 1,
+			},
+		},
+	},
+}
+
+// Helper functions for the instrument framework
+
+// GetInstrumentDefinition returns the definition for a given instrument name
+func GetInstrumentDefinition(name string) (InstrumentDefinition, bool) {
+	def, exists := InstrumentRegistry[name]
+	return def, exists
+}
+
+// GetInstrumentParameterByKey returns a specific parameter definition by key
+func (def InstrumentDefinition) GetParameterByKey(key string) (InstrumentParameterDef, bool) {
+	for _, param := range def.Parameters {
+		if param.Key == key {
+			return param, true
+		}
+	}
+	return InstrumentParameterDef{}, false
+}
+
+// GetParametersSortedByColumn returns parameters sorted by column and order
+func (def InstrumentDefinition) GetParametersSortedByColumn() (col0 []InstrumentParameterDef, col1 []InstrumentParameterDef) {
+	for _, param := range def.Parameters {
+		if param.Column == 0 {
+			col0 = append(col0, param)
+		} else {
+			col1 = append(col1, param)
+		}
+	}
+
+	// Sort by order within each column
+	for i := 0; i < len(col0)-1; i++ {
+		for j := i + 1; j < len(col0); j++ {
+			if col0[i].Order > col0[j].Order {
+				col0[i], col0[j] = col0[j], col0[i]
+			}
+		}
+	}
+
+	for i := 0; i < len(col1)-1; i++ {
+		for j := i + 1; j < len(col1); j++ {
+			if col1[i].Order > col1[j].Order {
+				col1[i], col1[j] = col1[j], col1[i]
+			}
+		}
+	}
+
+	return col0, col1
+}
+
+// Helper functions for SoundMakerSettings with the new parameter framework
+
+// GetParameterValue gets a parameter value with fallback to default
+func (settings *SoundMakerSettings) GetParameterValue(key string) int {
+	if settings.Parameters == nil {
+		return -1
+	}
+
+	if value, exists := settings.Parameters[key]; exists {
+		return value
+	}
+
+	// Return default value from instrument definition if available
+	if def, exists := GetInstrumentDefinition(settings.Name); exists {
+		if param, found := def.GetParameterByKey(key); found {
+			return param.DefaultValue
+		}
+	}
+
+	return -1
+}
+
+// SetParameterValue sets a parameter value
+func (settings *SoundMakerSettings) SetParameterValue(key string, value int) {
+	if settings.Parameters == nil {
+		settings.Parameters = make(map[string]int)
+	}
+	settings.Parameters[key] = value
+}
+
+// InitializeParameters ensures all parameters exist with default values
+func (settings *SoundMakerSettings) InitializeParameters() {
+	if def, exists := GetInstrumentDefinition(settings.Name); exists {
+		if settings.Parameters == nil {
+			settings.Parameters = make(map[string]int)
+		}
+
+		for _, param := range def.Parameters {
+			if _, exists := settings.Parameters[param.Key]; !exists {
+				settings.Parameters[param.Key] = param.DefaultValue
+			}
+		}
 	}
 }

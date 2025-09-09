@@ -183,7 +183,7 @@ func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
 	// Get current settings
 	settings := &m.SoundMakerSettings[m.SoundMakerEditingIndex]
 
-	if m.CurrentRow == int(types.SoundMakerRowName) { // Name row
+	if m.CurrentRow == 0 { // Name row
 		// Name cycles through available SoundMakers
 		var delta int
 		if baseDelta > 0 {
@@ -219,180 +219,108 @@ func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
 
 		oldName := settings.Name
 		settings.Name = soundMakers[newIndex]
+
+		// Initialize parameters for the new instrument
+		settings.InitializeParameters()
+
 		log.Printf("Modified SoundMaker %02X Name: %s -> %s", m.SoundMakerEditingIndex, oldName, settings.Name)
-	} else if m.CurrentRow == int(types.SoundMakerRowParamA) { // Parameter row (A or Preset depending on SoundMaker)
-		if settings.Name == "DX7" {
-			// For DX7, handle Preset parameter (0-1000)
-			var delta int
-			if baseDelta >= 1.0 || baseDelta <= -1.0 {
-				// Coarse control: Ctrl+Up/Down = ±50
-				if baseDelta > 0 {
-					delta = 50
-				} else {
-					delta = -50
-				}
-			} else {
-				// Fine control: Ctrl+Left/Right = ±1
-				if baseDelta > 0 {
-					delta = 1
-				} else {
-					delta = -1
-				}
-			}
+	} else {
+		// Handle parameter modification using the instrument framework
+		if def, exists := types.GetInstrumentDefinition(settings.Name); exists {
+			col0, col1 := def.GetParametersSortedByColumn()
+			allParams := append(col0, col1...)
 
-			oldValue := settings.Preset
-			var newValue int
+			// Parameter rows start at row 1
+			paramIndex := m.CurrentRow - 1
+			if paramIndex >= 0 && paramIndex < len(allParams) {
+				param := allParams[paramIndex]
+				oldValue := settings.GetParameterValue(param.Key)
 
-			if settings.Preset == -1 {
-				// If currently "--", start from 0 or maxPatch
-				maxPatch := supercollider.GetDX7PatchCount() - 1
-				if delta > 0 {
-					newValue = 0
+				// Calculate delta based on parameter type and input
+				var delta int
+				if param.Type == types.ParameterTypeInt {
+					// For DX7 preset, use larger steps
+					if baseDelta >= 1.0 || baseDelta <= -1.0 {
+						// Coarse control
+						if baseDelta > 0 {
+							delta = 50
+						} else {
+							delta = -50
+						}
+					} else {
+						// Fine control
+						if baseDelta > 0 {
+							delta = 1
+						} else {
+							delta = -1
+						}
+					}
 				} else {
-					newValue = maxPatch
+					// For hex values, use standard steps
+					if baseDelta >= 1.0 || baseDelta <= -1.0 {
+						// Coarse control
+						if baseDelta > 0 {
+							delta = 16
+						} else {
+							delta = -16
+						}
+					} else {
+						// Fine control
+						if baseDelta > 0 {
+							delta = 1
+						} else {
+							delta = -1
+						}
+					}
 				}
-			} else {
-				maxPatch := supercollider.GetDX7PatchCount() - 1
-				newValue = settings.Preset + delta
-				// Wrap around: 0-maxPatch or -- (-1)
-				if newValue > maxPatch {
-					newValue = -1 // Wrap to "--"
-				} else if newValue < -1 {
-					newValue = maxPatch // Wrap to maxPatch
-				}
-			}
 
-			settings.Preset = newValue
-			// Update patch name when preset changes
-			if newValue >= 0 {
-				if patchName, err := supercollider.GetDX7PatchName(newValue); err == nil {
-					settings.PatchName = patchName
-				}
-			} else {
-				settings.PatchName = ""
-			}
-			if newValue == -1 {
-				log.Printf("Modified SoundMaker %02X Preset: %d -> -- (delta: %d)", m.SoundMakerEditingIndex, oldValue, delta)
-			} else {
+				var newValue int
 				if oldValue == -1 {
-					log.Printf("Modified SoundMaker %02X Preset: -- -> %d (delta: %d)", m.SoundMakerEditingIndex, newValue, delta)
+					// If currently "--", start from min or max
+					if delta > 0 {
+						newValue = param.MinValue
+					} else {
+						newValue = param.MaxValue
+					}
 				} else {
-					log.Printf("Modified SoundMaker %02X Preset: %d -> %d (delta: %d)", m.SoundMakerEditingIndex, oldValue, newValue, delta)
+					newValue = oldValue + delta
+					// Handle wrapping
+					if newValue > param.MaxValue {
+						newValue = -1 // Wrap to "--"
+					} else if newValue < -1 {
+						newValue = param.MaxValue // Wrap to max
+					} else if newValue < param.MinValue {
+						newValue = -1 // Go to "--" if below min
+					}
 				}
-			}
-		} else {
-			// For other SoundMakers, handle Parameter A (00-FE)
-			var delta int
-			if baseDelta >= 1.0 || baseDelta <= -1.0 {
-				// Coarse control: Ctrl+Up/Down = ±16
-				if baseDelta > 0 {
-					delta = 16
+
+				// Set the new value
+				settings.SetParameterValue(param.Key, newValue)
+
+				// Special handling for DX7 patch name updates
+				if param.Key == "preset" && settings.Name == "DX7" {
+					if newValue >= 0 {
+						if patchName, err := supercollider.GetDX7PatchName(newValue); err == nil {
+							settings.PatchName = patchName
+						}
+					} else {
+						settings.PatchName = ""
+					}
+				}
+
+				// Log the change
+				if newValue == -1 {
+					if oldValue == -1 {
+						log.Printf("Modified SoundMaker %02X %s: -- -> -- (delta: %d)", m.SoundMakerEditingIndex, param.DisplayName, delta)
+					} else {
+						log.Printf("Modified SoundMaker %02X %s: %d -> -- (delta: %d)", m.SoundMakerEditingIndex, param.DisplayName, oldValue, delta)
+					}
 				} else {
-					delta = -16
-				}
-			} else {
-				// Fine control: Ctrl+Left/Right = ±1
-				if baseDelta > 0 {
-					delta = 1
-				} else {
-					delta = -1
-				}
-			}
-
-			oldValue := settings.A
-			var newValue int
-
-			if settings.A == -1 {
-				// If currently "--", start from 00
-				if delta > 0 {
-					newValue = 0
-				} else {
-					newValue = 254 // FE
-				}
-			} else {
-				newValue = settings.A + delta
-				// Wrap around: 00-FE (0-254) or -- (-1)
-				if newValue > 254 {
-					newValue = -1 // Wrap to "--"
-				} else if newValue < -1 {
-					newValue = 254 // Wrap to FE
-				}
-			}
-
-			settings.A = newValue
-			if newValue == -1 {
-				log.Printf("Modified SoundMaker %02X Parameter A: %02X -> -- (delta: %d)", m.SoundMakerEditingIndex, oldValue, delta)
-			} else {
-				if oldValue == -1 {
-					log.Printf("Modified SoundMaker %02X Parameter A: -- -> %02X (delta: %d)", m.SoundMakerEditingIndex, newValue, delta)
-				} else {
-					log.Printf("Modified SoundMaker %02X Parameter A: %02X -> %02X (delta: %d)", m.SoundMakerEditingIndex, oldValue, newValue, delta)
-				}
-			}
-		}
-	} else if m.CurrentRow >= int(types.SoundMakerRowParamB) && m.CurrentRow <= int(types.SoundMakerRowParamD) && settings.Name != "DX7" { // Parameters B, C, D (only for non-DX7)
-		// Parameters cycle through 00-FE or -- (which is -1)
-		var delta int
-		if baseDelta >= 1.0 || baseDelta <= -1.0 {
-			// Coarse control: Ctrl+Up/Down = ±16
-			if baseDelta > 0 {
-				delta = 16
-			} else {
-				delta = -16
-			}
-		} else {
-			// Fine control: Ctrl+Left/Right = ±1
-			if baseDelta > 0 {
-				delta = 1
-			} else {
-				delta = -1
-			}
-		}
-
-		// Get the current parameter value
-		var currentValue *int
-		var paramName string
-		switch types.SoundMakerRow(m.CurrentRow) {
-		case types.SoundMakerRowParamB: // Parameter B
-			currentValue = &settings.B
-			paramName = "B"
-		case types.SoundMakerRowParamC: // Parameter C
-			currentValue = &settings.C
-			paramName = "C"
-		case types.SoundMakerRowParamD: // Parameter D
-			currentValue = &settings.D
-			paramName = "D"
-		}
-
-		if currentValue != nil {
-			oldValue := *currentValue
-			var newValue int
-
-			if *currentValue == -1 {
-				// If currently "--", start from 00
-				if delta > 0 {
-					newValue = 0
-				} else {
-					newValue = 254 // FE
-				}
-			} else {
-				newValue = *currentValue + delta
-				// Wrap around: 00-FE (0-254) or -- (-1)
-				if newValue > 254 {
-					newValue = -1 // Wrap to "--"
-				} else if newValue < -1 {
-					newValue = 254 // Wrap to FE
-				}
-			}
-
-			*currentValue = newValue
-			if newValue == -1 {
-				log.Printf("Modified SoundMaker %02X Parameter %s: %02X -> -- (delta: %d)", m.SoundMakerEditingIndex, paramName, oldValue, delta)
-			} else {
-				if oldValue == -1 {
-					log.Printf("Modified SoundMaker %02X Parameter %s: -- -> %02X (delta: %d)", m.SoundMakerEditingIndex, paramName, newValue, delta)
-				} else {
-					log.Printf("Modified SoundMaker %02X Parameter %s: %02X -> %02X (delta: %d)", m.SoundMakerEditingIndex, paramName, oldValue, newValue, delta)
+					if oldValue == -1 {
+						log.Printf("Modified SoundMaker %02X %s: -- -> %d (delta: %d)", m.SoundMakerEditingIndex, param.DisplayName, newValue, delta)
+					} else {
+						log.Printf("Modified SoundMaker %02X %s: %d -> %d (delta: %d)", m.SoundMakerEditingIndex, param.DisplayName, oldValue, newValue, delta)
+					}
 				}
 			}
 		}

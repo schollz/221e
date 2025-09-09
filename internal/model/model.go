@@ -746,14 +746,14 @@ func (m *Model) initializeDefaultData() {
 
 	// Initialize SoundMaker settings with defaults
 	for i := 0; i < 255; i++ {
-		m.SoundMakerSettings[i] = types.SoundMakerSettings{
-			Name:   "None", // Default to "None"
-			A:      -1,     // Default: "--"
-			B:      -1,     // Default: "--"
-			C:      -1,     // Default: "--"
-			D:      -1,     // Default: "--"
-			Preset: -1,     // Default: "--"
+		settings := types.SoundMakerSettings{
+			Name:       "None", // Default to "None"
+			Parameters: make(map[string]int),
+			PatchName:  "",
 		}
+		// Initialize parameters for the default "None" instrument (no parameters)
+		settings.InitializeParameters()
+		m.SoundMakerSettings[i] = settings
 	}
 
 	// Initialize song data (8 tracks × 16 rows, all empty initially)
@@ -1175,19 +1175,11 @@ func (m *Model) sendOSCInstrumentMessage(params InstrumentOSCParams) {
 		msg.Append("effectReverb")
 		msg.Append(float32(params.EffectReverb))
 
-		// Add SoundMaker information
+		// Add SoundMaker information using the new parameter framework
 		if params.SoundMakerIndex == -1 {
 			// No SoundMaker selected
 			msg.Append("soundMakerName")
 			msg.Append("none")
-			msg.Append("valueA")
-			msg.Append(float32(0.0))
-			msg.Append("valueB")
-			msg.Append(float32(0.0))
-			msg.Append("valueC")
-			msg.Append(float32(0.0))
-			msg.Append("valueD")
-			msg.Append(float32(0.0))
 		} else {
 			// SoundMaker selected, get name and parameters
 			soundMakerSettings := m.SoundMakerSettings[params.SoundMakerIndex]
@@ -1195,63 +1187,40 @@ func (m *Model) sendOSCInstrumentMessage(params InstrumentOSCParams) {
 			msg.Append("soundMakerName")
 			msg.Append(soundMakerSettings.Name)
 
-			if soundMakerSettings.Name == "DX7" {
-				// For DX7, send preset value instead of A, B, C, D
-				var presetValue int32
-				if soundMakerSettings.Preset == -1 {
-					presetValue = 0.0 // Default to 0 if unset
-				} else {
-					// Send preset index directly (0 to patchCount-1)
-					presetValue = int32(soundMakerSettings.Preset)
-				}
+			// Get instrument definition and send all parameters as key-value pairs
+			if def, exists := types.GetInstrumentDefinition(soundMakerSettings.Name); exists {
+				for _, param := range def.Parameters {
+					value := soundMakerSettings.GetParameterValue(param.Key)
 
-				msg.Append("preset")
-				msg.Append(presetValue)
-				// Still send A, B, C, D as 0.0 for compatibility
-				msg.Append("valueA")
-				msg.Append(float32(0.0))
-				msg.Append("valueB")
-				msg.Append(float32(0.0))
-				msg.Append("valueC")
-				msg.Append(float32(0.0))
-				msg.Append("valueD")
-				msg.Append(float32(0.0))
+					// Append parameter key
+					msg.Append(param.Key)
+
+					// Convert and append parameter value based on type
+					if value == -1 {
+						// Unset parameters send their default value or 0
+						if param.Type == types.ParameterTypeHex || param.Type == types.ParameterTypeFloat {
+							msg.Append(float32(0.0))
+						} else {
+							// ParameterTypeInt - send 0 for unset values
+							msg.Append(int32(0))
+						}
+					} else {
+						if param.Type == types.ParameterTypeHex {
+							// Normalize hex values (0-254) to float (0.0-1.0)
+							normalizedValue := float32(value) / 254.0
+							msg.Append(normalizedValue)
+						} else if param.Type == types.ParameterTypeFloat {
+							// Send float values as-is
+							msg.Append(float32(value))
+						} else {
+							// ParameterTypeInt - send as int32
+							msg.Append(int32(value))
+						}
+					}
+				}
 			} else {
-				// For other SoundMakers, normalize A, B, C, D values to 1.0 (values are 0-254, -1 means unset)
-				var valueA, valueB, valueC, valueD float32
-
-				if soundMakerSettings.A == -1 {
-					valueA = 0.0
-				} else {
-					valueA = float32(soundMakerSettings.A) / 254.0
-				}
-
-				if soundMakerSettings.B == -1 {
-					valueB = 0.0
-				} else {
-					valueB = float32(soundMakerSettings.B) / 254.0
-				}
-
-				if soundMakerSettings.C == -1 {
-					valueC = 0.0
-				} else {
-					valueC = float32(soundMakerSettings.C) / 254.0
-				}
-
-				if soundMakerSettings.D == -1 {
-					valueD = 0.0
-				} else {
-					valueD = float32(soundMakerSettings.D) / 254.0
-				}
-
-				msg.Append("valueA")
-				msg.Append(valueA)
-				msg.Append("valueB")
-				msg.Append(valueB)
-				msg.Append("valueC")
-				msg.Append(valueC)
-				msg.Append("valueD")
-				msg.Append(valueD)
+				// Fallback if instrument definition not found
+				log.Printf("WARNING: No instrument definition found for %s", soundMakerSettings.Name)
 			}
 		}
 

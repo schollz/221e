@@ -13,67 +13,60 @@ func GetSoundMakerStatusMessage(m *model.Model) string {
 	settings := m.SoundMakerSettings[m.SoundMakerEditingIndex]
 
 	var columnStatus string
-	switch types.SoundMakerRow(m.CurrentRow) {
-	case types.SoundMakerRowName: // SoundMaker Name row
+
+	// Check if we're on the name row
+	if m.CurrentRow == 0 {
 		columnStatus = fmt.Sprintf("SoundMaker: %s", settings.Name)
-	case types.SoundMakerRowParamA: // Parameter row (A or Preset depending on SoundMaker)
-		if settings.Name == "DX7" {
-			if settings.Preset == -1 {
-				columnStatus = "Preset: --"
-			} else {
-				patchName, err := supercollider.GetDX7PatchName(settings.Preset)
-				if err == nil {
-					columnStatus = fmt.Sprintf("Preset: %s (%d)", patchName, settings.Preset)
+	} else {
+		// Check if we're on a parameter row
+		if def, exists := types.GetInstrumentDefinition(settings.Name); exists {
+			col0, col1 := def.GetParametersSortedByColumn()
+			allParams := append(col0, col1...)
+
+			// Parameter rows start at row 1
+			paramIndex := m.CurrentRow - 1
+			if paramIndex >= 0 && paramIndex < len(allParams) {
+				param := allParams[paramIndex]
+				value := settings.GetParameterValue(param.Key)
+
+				// Special handling for DX7 preset display
+				if param.Key == "preset" && settings.Name == "DX7" {
+					if value == -1 {
+						columnStatus = fmt.Sprintf("%s: --", param.DisplayName)
+					} else {
+						patchName, err := supercollider.GetDX7PatchName(value)
+						if err == nil {
+							columnStatus = fmt.Sprintf("%s: %s (%d)", param.DisplayName, patchName, value)
+						} else {
+							columnStatus = fmt.Sprintf("%s: %d", param.DisplayName, value)
+						}
+					}
 				} else {
-					columnStatus = fmt.Sprintf("Preset: %d", settings.Preset)
+					// Standard parameter display
+					if value == -1 {
+						columnStatus = fmt.Sprintf("%s: --", param.DisplayName)
+					} else {
+						if param.Type == types.ParameterTypeHex {
+							columnStatus = fmt.Sprintf("%s: %02X", param.DisplayName, value)
+						} else {
+							columnStatus = fmt.Sprintf("%s: %d", param.DisplayName, value)
+						}
+					}
+				}
+			} else {
+				// SoundMaker selection rows
+				availableSoundMakers := []string{"Polyperc", "Infinite Pad", "DX7"}
+				soundMakerStartRow := 1 + len(allParams)
+
+				if m.CurrentRow >= soundMakerStartRow && m.CurrentRow-soundMakerStartRow+m.ScrollOffset < len(availableSoundMakers) {
+					soundMakerIndex := m.CurrentRow - soundMakerStartRow + m.ScrollOffset
+					columnStatus = fmt.Sprintf("Select SoundMaker: %s", availableSoundMakers[soundMakerIndex])
+				} else {
+					columnStatus = "Available SoundMakers"
 				}
 			}
 		} else {
-			if settings.A == -1 {
-				columnStatus = "Parameter A: --"
-			} else {
-				columnStatus = fmt.Sprintf("Parameter A: %02X", settings.A)
-			}
-		}
-	case types.SoundMakerRowParamB: // Parameter B row (only for non-DX7)
-		if settings.Name != "DX7" {
-			if settings.B == -1 {
-				columnStatus = "Parameter B: --"
-			} else {
-				columnStatus = fmt.Sprintf("Parameter B: %02X", settings.B)
-			}
-		}
-	case types.SoundMakerRowParamC: // Parameter C row (only for non-DX7)
-		if settings.Name != "DX7" {
-			if settings.C == -1 {
-				columnStatus = "Parameter C: --"
-			} else {
-				columnStatus = fmt.Sprintf("Parameter C: %02X", settings.C)
-			}
-		}
-	case types.SoundMakerRowParamD: // Parameter D row (only for non-DX7)
-		if settings.Name != "DX7" {
-			if settings.D == -1 {
-				columnStatus = "Parameter D: --"
-			} else {
-				columnStatus = fmt.Sprintf("Parameter D: %02X", settings.D)
-			}
-		}
-	default:
-		// SoundMaker selection rows
-		availableSoundMakers := []string{"Polyperc", "Infinite Pad", "DX7"}
-		var soundMakerStartRow int
-		if settings.Name == "DX7" {
-			soundMakerStartRow = 2 // SoundMakers start at row 2 for DX7
-		} else {
-			soundMakerStartRow = 5 // SoundMakers start at row 5 for others
-		}
-
-		if m.CurrentRow >= soundMakerStartRow && m.CurrentRow-soundMakerStartRow+m.ScrollOffset < len(availableSoundMakers) {
-			soundMakerIndex := m.CurrentRow - soundMakerStartRow + m.ScrollOffset
-			columnStatus = fmt.Sprintf("Select SoundMaker: %s", availableSoundMakers[soundMakerIndex])
-		} else {
-			columnStatus = "Available SoundMakers"
+			columnStatus = "Unknown SoundMaker"
 		}
 	}
 
@@ -90,91 +83,135 @@ func RenderSoundMakerView(m *model.Model) string {
 		// Get current SoundMaker settings
 		settings := m.SoundMakerSettings[m.SoundMakerEditingIndex]
 
-		// Settings rows with common rendering pattern
-		var settingsRows []struct {
-			label string
-			value string
-			row   int
-		}
+		// Initialize parameters if needed
+		settings.InitializeParameters()
 
-		// Always show Name row
-		settingsRows = append(settingsRows, struct {
-			label string
-			value string
-			row   int
-		}{"Name:", settings.Name, int(types.SoundMakerRowName)})
-
-		// Show different parameters based on SoundMaker type
-		if settings.Name == "DX7" {
-			// For DX7, show Preset instead of A, B, C, D
-			settingsRows = append(settingsRows, struct {
-				label string
-				value string
-				row   int
-			}{"Preset:", func() string {
-				if settings.Preset == -1 {
-					return "--"
-				}
-				patchName, err := supercollider.GetDX7PatchName(settings.Preset)
-				if err == nil {
-					return fmt.Sprintf("%s (%d)", patchName, settings.Preset)
-				}
-				return fmt.Sprintf("%d", settings.Preset)
-			}(), int(types.SoundMakerRowParamA)})
+		// Always show Name row first
+		var nameCell string
+		if m.CurrentRow == 0 {
+			nameCell = styles.Selected.Render(settings.Name)
 		} else {
-			// For other SoundMakers, show A, B, C, D
-			settingsRows = append(settingsRows, struct {
-				label string
-				value string
-				row   int
-			}{"A:", func() string {
-				if settings.A == -1 {
-					return "--"
-				}
-				return fmt.Sprintf("%02X", settings.A)
-			}(), int(types.SoundMakerRowParamA)})
-			settingsRows = append(settingsRows, struct {
-				label string
-				value string
-				row   int
-			}{"B:", func() string {
-				if settings.B == -1 {
-					return "--"
-				}
-				return fmt.Sprintf("%02X", settings.B)
-			}(), int(types.SoundMakerRowParamB)})
-			settingsRows = append(settingsRows, struct {
-				label string
-				value string
-				row   int
-			}{"C:", func() string {
-				if settings.C == -1 {
-					return "--"
-				}
-				return fmt.Sprintf("%02X", settings.C)
-			}(), int(types.SoundMakerRowParamC)})
-			settingsRows = append(settingsRows, struct {
-				label string
-				value string
-				row   int
-			}{"D:", func() string {
-				if settings.D == -1 {
-					return "--"
-				}
-				return fmt.Sprintf("%02X", settings.D)
-			}(), int(types.SoundMakerRowParamD)})
+			nameCell = styles.Normal.Render(settings.Name)
 		}
+		content.WriteString(fmt.Sprintf("  %-12s %s\n", styles.Label.Render("Name:"), nameCell))
+		content.WriteString("\n")
 
-		for _, setting := range settingsRows {
-			var valueCell string
-			if m.CurrentRow == setting.row {
-				valueCell = styles.Selected.Render(setting.value)
-			} else {
-				valueCell = styles.Normal.Render(setting.value)
+		// Get instrument definition and render parameters in two columns
+		if def, exists := types.GetInstrumentDefinition(settings.Name); exists {
+			col0, col1 := def.GetParametersSortedByColumn()
+
+			// Build list of all parameters for row indexing
+			allParams := append(col0, col1...)
+
+			// Two-column layout
+			content.WriteString(styles.Label.Render("Parameters:"))
+			content.WriteString("\n\n")
+
+			maxRows := len(col0)
+			if len(col1) > maxRows {
+				maxRows = len(col1)
 			}
-			row := fmt.Sprintf("  %-8s %s", styles.Label.Render(setting.label), valueCell)
-			content.WriteString(row)
-			content.WriteString("\n")
+
+			for i := 0; i < maxRows; i++ {
+				var leftParam, rightParam *types.InstrumentParameterDef
+				var leftRowIndex, rightRowIndex int = -1, -1
+
+				// Get parameters for this row
+				if i < len(col0) {
+					leftParam = &col0[i]
+					// Find the row index in allParams for left param
+					for idx, p := range allParams {
+						if p.Key == leftParam.Key {
+							leftRowIndex = idx + 1 // +1 because name is row 0
+							break
+						}
+					}
+				}
+
+				if i < len(col1) {
+					rightParam = &col1[i]
+					// Find the row index in allParams for right param
+					for idx, p := range allParams {
+						if p.Key == rightParam.Key {
+							rightRowIndex = idx + 1 // +1 because name is row 0
+							break
+						}
+					}
+				}
+
+				// Render left column
+				leftContent := ""
+				if leftParam != nil {
+					value := settings.GetParameterValue(leftParam.Key)
+					var valueStr string
+
+					// Special formatting for DX7 preset
+					if leftParam.Key == "preset" && settings.Name == "DX7" {
+						if value == -1 {
+							valueStr = "--"
+						} else {
+							patchName, err := supercollider.GetDX7PatchName(value)
+							if err == nil {
+								valueStr = fmt.Sprintf("%s", patchName) // Show just the name for space
+							} else {
+								valueStr = fmt.Sprintf("%d", value)
+							}
+						}
+					} else {
+						if value == -1 {
+							valueStr = "--"
+						} else {
+							if leftParam.Type == types.ParameterTypeHex {
+								valueStr = fmt.Sprintf("%02X", value)
+							} else {
+								valueStr = fmt.Sprintf("%d", value)
+							}
+						}
+					}
+
+					var valueCell string
+					if m.CurrentRow == leftRowIndex {
+						valueCell = styles.Selected.Render(valueStr)
+					} else {
+						valueCell = styles.Normal.Render(valueStr)
+					}
+					leftContent = fmt.Sprintf("%-6s %s", styles.Label.Render(leftParam.DisplayName+":"), valueCell)
+				}
+
+				// Render right column
+				rightContent := ""
+				if rightParam != nil {
+					value := settings.GetParameterValue(rightParam.Key)
+					var valueStr string
+
+					if value == -1 {
+						valueStr = "--"
+					} else {
+						if rightParam.Type == types.ParameterTypeHex {
+							valueStr = fmt.Sprintf("%02X", value)
+						} else {
+							valueStr = fmt.Sprintf("%d", value)
+						}
+					}
+
+					var valueCell string
+					if m.CurrentRow == rightRowIndex {
+						valueCell = styles.Selected.Render(valueStr)
+					} else {
+						valueCell = styles.Normal.Render(valueStr)
+					}
+					rightContent = fmt.Sprintf("%-6s %s", styles.Label.Render(rightParam.DisplayName+":"), valueCell)
+				}
+
+				// Combine columns with proper spacing
+				if leftContent != "" && rightContent != "" {
+					content.WriteString(fmt.Sprintf("  %-20s  %s\n", leftContent, rightContent))
+				} else if leftContent != "" {
+					content.WriteString(fmt.Sprintf("  %s\n", leftContent))
+				} else if rightContent != "" {
+					content.WriteString(fmt.Sprintf("  %-20s  %s\n", "", rightContent))
+				}
+			}
 		}
 
 		// Separator line
@@ -184,13 +221,14 @@ func RenderSoundMakerView(m *model.Model) string {
 
 		// Available SoundMakers list (scrollable)
 		availableSoundMakers := []string{"Polyperc", "Infinite Pad", "DX7"}
-		visibleRows := m.GetVisibleRows() - 9 // Reserve space for header, settings, and labels
-		var soundMakerStartRow int
-		if settings.Name == "DX7" {
-			soundMakerStartRow = 2 // SoundMakers start at row 2 for DX7 (after Name and Preset)
-		} else {
-			soundMakerStartRow = 5 // SoundMakers start at row 5 (after Name and A,B,C,D settings)
+		visibleRows := m.GetVisibleRows() - 10 // Reserve space for header, settings, and labels
+
+		// Calculate start row for SoundMaker selection
+		var paramCount int
+		if def, exists := types.GetInstrumentDefinition(settings.Name); exists {
+			paramCount = len(def.Parameters)
 		}
+		soundMakerStartRow := 1 + paramCount // 1 for name row + parameters
 
 		for i := 0; i < visibleRows && i+m.ScrollOffset < len(availableSoundMakers); i++ {
 			dataIndex := i + m.ScrollOffset
