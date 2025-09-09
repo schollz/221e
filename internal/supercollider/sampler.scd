@@ -8,64 +8,55 @@ s.waitForBoot({
 		~synthsPlaying = Dictionary.new();
 
 
-
-		SynthDef("PolyPerc",{
-			arg trackId,
-			trackVolume = 0,
-			pan=0,
-			note=0,
-			noteSize=1,
-			gate=1,
-			attack=0.1,
-			decay=1.0,
-			sustain=0.7,
-			release=0.5,
-			duration=30,
-			trackOut,
-			effectDryOut,
-			effectReverb = 0.0, effectReverbOut,
-			effectComb = 0.0, effectCombOut,
-			a=0,b=0,c=0,d=0 // a,b,c,d vary between 0 and 1.0
-			;
-			var snd;
-			var env;
-			snd = Pulse.ar(note.midicps, 0.5);
-			snd = MoogFF.ar(snd, 2000, 1.5);
-			env = EnvGen.ar(Env.adsr(attack,decay,sustain,release),1-EnvGen.kr(Env.new([0,0,1],[duration,0])),doneAction:2);
-			env = env * EnvGen.ar(Env.adsr(0.01,0.01,1.0,release),gate);
-			snd = snd * env * (1.0 / noteSize.sqrt);
-			snd = Pan2.ar(snd,pan);
-			Out.ar(trackOut, snd*(1.0 - effectReverb));
-			Out.ar(effectDryOut, snd*(1.0 - effectReverb));
-			Out.ar(effectCombOut, snd*effectComb);
-			Out.ar(effectReverbOut, snd*effectReverb);
+		SynthDef("MiPlaits",{
+			var env = EnvGen.ar(
+				Env.adsr(
+					\attack.kr(0.1),
+					\decay.kr(1.0),
+					\sustain.kr(0.7),
+					\release.kr(0.5)
+				),
+				1-EnvGen.kr(Env.new([0,0,1],[\duration.kr(1),0])),
+				doneAction:2,
+			);
+			var snd = MiPlaits.ar(
+				pitch: \note.kr(60),
+				engine: \engine.kr(0),
+				harm: \engine.kr(0),
+				timbre: \timbre.kr(0),
+				morph: \morph.kr(0),
+				trigger: 1,
+				fm_mod: \fm_mod.kr(0),
+				timb_mod: \timb_mod.kr(0),
+				morph_mod: \morph_mod.kr(0),
+				lpg_colour: \lpg_colour.kr(0),
+			)
+			snd = snd * env * \trackVolume.kr(0).dbamp * (1.0 / \noteSize.kr(1).sqrt);
+			Out.ar(\trackOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
+			Out.ar(\effectDryOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
+			Out.ar(\effectCombOut.kr(0), snd*\effectComb.kr(0));
+			Out.ar(\effectReverbOut.kr(0), snd*\effectReverb.kr(0));
 		}).add;
 
-
-		SynthDef("synthPad", {
-			arg trackId,
-			trackVolume = 0,
-			pan=0,
-			note=0,
-			attack=1.0,
-			trackOut,
-			effectDryOut,
-			effectReverb = 0.0, effectReverbOut,
-			effectComb = 0.0, effectCombOut,
-			a=0,b=0,c=0,d=0 // a,b,c,d vary between 0 and 1.0
-			;
-			var snd;
-			var freq = note.midicps;
-			snd = SawDPW.ar(freq * ((-3..2) * 0.05).midiratio * [1, 2, 1, 4, 1, 2]);
-			snd = Splay.ar(snd);
-			snd = MoogFF.ar(snd, XLine.kr(100,rrand(6000,\lpf.kr(18000)),attack*(1/\swell.kr(1))), 0);
-			snd = snd * EnvGen.ar(Env.adsr(attack, 0.0, 1.0, \release.kr(0.5)),\gate.kr(1) * ToggleFF.kr(1-TDelay.kr(DC.kr(1),\duration.kr(1))),doneAction:2);
-			snd = Balance2.ar(snd[0], snd[1], pan);
-			snd = snd * -10.dbamp * trackVolume.dbamp;
-			Out.ar(trackOut, snd*(1.0 - effectReverb));
-			Out.ar(effectDryOut, snd*(1.0 - effectReverb));
-			Out.ar(effectCombOut, snd*effectComb);
-			Out.ar(effectReverbOut, snd*effectReverb);
+		SynthDef("PolyPerc",{
+			var env = EnvGen.ar(
+				Env.adsr(
+					\attack.kr(0.1),
+					\decay.kr(1.0),
+					\sustain.kr(0.7),
+					\release.kr(0.5)
+				),
+				1-EnvGen.kr(Env.new([0,0,1],[\duration.kr(1),0])),
+				doneAction:2,
+			);
+			var snd = Pulse.ar(\note.kr(60).midicps, 0.5);
+			snd = MoogFF.ar(snd, \lowPassFilter.kr(20000), 1.5);
+			snd = snd * env * \trackVolume.kr(0).dbamp * (1.0 / \noteSize.kr(1).sqrt);
+			snd = Pan2.ar(snd,\pan.kr(0));
+			Out.ar(\trackOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
+			Out.ar(\effectDryOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
+			Out.ar(\effectCombOut.kr(0), snd*\effectComb.kr(0));
+			Out.ar(\effectReverbOut.kr(0), snd*\effectReverb.kr(0));
 		}).add;
 
 		SynthDef("externalInput", {
