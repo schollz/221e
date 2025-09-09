@@ -76,6 +76,9 @@ Defaults: OSC **57120**, save file **tracker-save.json**.
 - **Ctrl+V** – Paste
 - **Ctrl+D** – Deep copy
 
+### Undo
+- **Ctrl+Z** – Undo last modification (restores data and cursor position)
+
 ### File Operations and System
 - **Ctrl+S** – Manual save
 - **Ctrl+F** – Smart fill/clear for DT column (Delta Time)
