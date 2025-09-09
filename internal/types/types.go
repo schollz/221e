@@ -655,6 +655,48 @@ var InstrumentRegistry = map[string]InstrumentDefinition{
 			},
 		},
 	},
+	"MiPlaits": {
+		Name:        "MiPlaits",
+		Description: "A macro oscillator offering a multitude of synthesis methods.",
+		Parameters: []InstrumentParameterDef{
+			{
+				Key: "engine", DisplayName: "Engine", Type: ParameterTypeInt,
+				MinValue: 0, MaxValue: 15, DefaultValue: -1, Column: 0, Order: 0,
+			},
+			{
+				Key: "harm", DisplayName: "Harm", Type: ParameterTypeFloat,
+				MinValue: 0, MaxValue: 1000, DefaultValue: -1, Column: 0, Order: 1,
+			},
+			{
+				Key: "timbre", DisplayName: "Timbre", Type: ParameterTypeFloat,
+				MinValue: 0, MaxValue: 1000, DefaultValue: -1, Column: 0, Order: 2,
+			},
+			{
+				Key: "morph", DisplayName: "Morph", Type: ParameterTypeFloat,
+				MinValue: 0, MaxValue: 1000, DefaultValue: -1, Column: 0, Order: 3,
+			},
+			{
+				Key: "fm_mod", DisplayName: "FM Mod", Type: ParameterTypeFloat,
+				MinValue: -1000, MaxValue: 1000, DefaultValue: -1, Column: 1, Order: 0,
+			},
+			{
+				Key: "timb_mod", DisplayName: "Timb Mod", Type: ParameterTypeFloat,
+				MinValue: -1000, MaxValue: 1000, DefaultValue: -1, Column: 1, Order: 1,
+			},
+			{
+				Key: "morph_mod", DisplayName: "Morph Mod", Type: ParameterTypeFloat,
+				MinValue: -1000, MaxValue: 1000, DefaultValue: -1, Column: 1, Order: 2,
+			},
+			{
+				Key: "decay", DisplayName: "Decay", Type: ParameterTypeFloat,
+				MinValue: 0, MaxValue: 1000, DefaultValue: -1, Column: 1, Order: 3,
+			},
+			{
+				Key: "lpg_colour", DisplayName: "LPG Color", Type: ParameterTypeFloat,
+				MinValue: 0, MaxValue: 1000, DefaultValue: -1, Column: 1, Order: 4,
+			},
+		},
+	},
 }
 
 // Helper functions for the instrument framework
@@ -721,6 +763,22 @@ var MiBraidsModelNames = []string{
 func GetMiBraidsModelName(index int) string {
 	if index >= 0 && index < len(MiBraidsModelNames) {
 		return MiBraidsModelNames[index]
+	}
+	return "UNKNOWN"
+}
+
+// MiPlaits engine names for display
+var MiPlaitsEngineNames = []string{
+	"virtual_analog_engine", "waveshaping_engine", "fm_engine", "grain_engine",
+	"additive_engine", "wavetable_engine", "chord_engine", "speech_engine",
+	"swarm_engine", "noise_engine", "particle_engine", "string_engine",
+	"modal_engine", "bass_drum_engine", "snare_drum_engine", "hi_hat_engine",
+}
+
+// GetMiPlaitsEngineName returns the name for a given engine index
+func GetMiPlaitsEngineName(index int) string {
+	if index >= 0 && index < len(MiPlaitsEngineNames) {
+		return MiPlaitsEngineNames[index]
 	}
 	return "UNKNOWN"
 }

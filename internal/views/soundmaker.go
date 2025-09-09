@@ -46,6 +46,14 @@ func GetSoundMakerStatusMessage(m *model.Model) string {
 						modelName := types.GetMiBraidsModelName(value)
 						columnStatus = fmt.Sprintf("%s: %s (%d)", param.DisplayName, modelName, value)
 					}
+				} else if param.Key == "engine" && settings.Name == "MiPlaits" {
+					// Special handling for MiPlaits engine display
+					if value == -1 {
+						columnStatus = fmt.Sprintf("%s: --", param.DisplayName)
+					} else {
+						engineName := types.GetMiPlaitsEngineName(value)
+						columnStatus = fmt.Sprintf("%s: %s (%d)", param.DisplayName, engineName, value)
+					}
 				} else {
 					// Standard parameter display
 					if value == -1 {
@@ -130,6 +138,14 @@ func RenderSoundMakerView(m *model.Model) string {
 						modelName := types.GetMiBraidsModelName(value)
 						valueStr = fmt.Sprintf("%s", modelName)
 					}
+				} else if param.Key == "engine" && settings.Name == "MiPlaits" {
+					// Special formatting for MiPlaits engine
+					if value == -1 {
+						valueStr = "--"
+					} else {
+						engineName := types.GetMiPlaitsEngineName(value)
+						valueStr = fmt.Sprintf("%s", engineName)
+					}
 				} else {
 					if value == -1 {
 						valueStr = "--"
@@ -160,14 +176,14 @@ func RenderSoundMakerView(m *model.Model) string {
 				content.WriteString("\n")
 			}
 
-			// Add empty rows to maintain consistent height (max parameters is 7)
-			const maxParameters = 7
+			// Add empty rows to maintain consistent height (max parameters is 9)
+			const maxParameters = 9
 			for i := len(def.Parameters); i < maxParameters; i++ {
 				content.WriteString("\n") // Empty row for consistent spacing
 			}
 		} else {
 			// If no instrument definition found, add empty rows to maintain height
-			const maxParameters = 7
+			const maxParameters = 9
 			for i := 0; i < maxParameters; i++ {
 				content.WriteString("\n")
 			}

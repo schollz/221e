@@ -193,7 +193,7 @@ func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
 		}
 
 		// Use the available SoundMaker names
-		soundMakers := []string{"None", "Polyperc", "DX7", "MiBraids"}
+		soundMakers := []string{"None", "Polyperc", "DX7", "MiBraids", "MiPlaits"}
 
 		// Find current index
 		currentIndex := -1
