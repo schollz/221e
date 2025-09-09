@@ -30,7 +30,7 @@ s.waitForBoot({
 				timb_mod: \timb_mod.kr(0),
 				morph_mod: \morph_mod.kr(0),
 				lpg_colour: \lpg_colour.kr(0),
-			)
+			);
 			snd = snd * env * \trackVolume.kr(0).dbamp * (1.0 / \noteSize.kr(1).sqrt);
 			Out.ar(\trackOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
 			Out.ar(\effectDryOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
@@ -59,7 +59,7 @@ s.waitForBoot({
 				decim: \decim.kr(1),
 				bits: \bits.kr(0),
 				ws: \ws.kr(0),
-			)
+			);
 			snd = snd * env * \trackVolume.kr(0).dbamp * (1.0 / \noteSize.kr(1).sqrt);
 			Out.ar(\trackOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
 			Out.ar(\effectDryOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
