@@ -929,7 +929,7 @@ func handleRight(m *model.Model) tea.Cmd {
 		if phraseViewType == types.InstrumentPhraseView {
 			maxValidCol = int(types.InstrumentColSO) // Instrument: last valid column is SO (SoundMaker)
 		} else {
-			maxValidCol = 13 // Sampler: last valid column is 13 (FI)
+			maxValidCol = int(types.SamplerColFI) // Sampler: last valid column is FI (Filename)
 		}
 
 		if m.CurrentCol < maxValidCol {
@@ -1264,7 +1264,7 @@ func handleSpace(m *model.Model) tea.Cmd {
 		return nil
 	} else if m.ViewMode == types.SoundMakerView {
 		// Handle SoundMaker selection in SoundMaker view
-		availableSoundMakers := []string{"Polyperc", "Infinite Pad"}
+		availableSoundMakers := []string{"PolyPerc", "Infinite Pad"}
 		if m.CurrentRow >= 5 && m.CurrentRow-5+m.ScrollOffset < len(availableSoundMakers) {
 			soundMakerIndex := m.CurrentRow - 5 + m.ScrollOffset
 			selectedSoundMaker := availableSoundMakers[soundMakerIndex]
