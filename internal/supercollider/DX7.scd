@@ -640,7 +640,7 @@ defme = { arg note, vel;
 
 };
 noteParser = { arg synBefore, note, vel, pan, attack, release, duration, trackVolume, filter, 
-		effectDryOut, effectCombOut, effectReverbOut, effectReverb, effectComb;
+		effectDryOut, effectCombOut, effectReverbOut, effectReverb, effectComb, trackOut;
 	1.do { arg yxx;
 			if(vel > 0,
 				{
@@ -672,7 +672,7 @@ noteParser = { arg synBefore, note, vel, pan, attack, release, duration, trackVo
 						\pan,pan,\attack,attack,\release,release,\duration,duration,
 						\trackVolume, trackVolume, \effectDryOut,effectDryOut, \effectCombOut,effectCombOut, \effectReverbOut,effectReverbOut,
 						\effectReverb,effectReverb, \effectComb,effectComb,
-						\filter,filter
+						\filter,filter, \trackOut,trackOut
 					],synBefore,\addBefore);
 					NodeWatcher.register(noteArrayDX7[note]);
 					//noteArrayDX7[note] = Synth(\DX7 ,defme.value(note, vel), novaDX7); //orjburayi addtotail diye degistirdin

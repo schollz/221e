@@ -50,6 +50,7 @@ func DoSave(m *model.Model) {
 	log.Printf("doing save")
 
 	// Create save folder and copy sampler files, then get relative paths
+	log.Printf("Saving SamplerPhrasesFiles: %v", m.SamplerPhrasesFiles)
 	relativePaths, err := createSaveFolder(m.SaveFolder, m.SamplerPhrasesFiles)
 	if err != nil {
 		log.Printf("Error creating save folder: %v", err)
@@ -58,6 +59,7 @@ func DoSave(m *model.Model) {
 	} else {
 		log.Printf("Created save folder: %s", m.SaveFolder)
 	}
+	log.Printf("Relative paths for save: %v", relativePaths)
 
 	saveData := types.SaveData{
 		ViewMode:      m.ViewMode,
@@ -223,7 +225,9 @@ func LoadState(m *model.Model, oscPort int, saveFolder string) error {
 	}
 	if saveData.SamplerPhrasesFiles != nil {
 		// Convert relative paths to absolute paths for portable bundles
+		log.Printf("Loading SamplerPhrasesFiles: %v", saveData.SamplerPhrasesFiles)
 		resolvedPaths := resolvePortablePaths(saveFolder, saveData.SamplerPhrasesFiles)
+		log.Printf("Resolved SamplerPhrasesFiles: %v", resolvedPaths)
 		m.SamplerPhrasesFiles = append([]string(nil), resolvedPaths...)
 	}
 
@@ -319,6 +323,16 @@ func createSaveFolder(saveFolder string, samplerFiles []string) ([]string, error
 		fileName := filepath.Base(originalPath)
 		destPath := filepath.Join(saveFolder, fileName)
 
+		// Check if the file is already in the save folder
+		// This handles both exact path matches and files that are already in the target directory
+		originalDir := filepath.Dir(originalPath)
+		if originalPath == destPath || originalDir == saveFolder {
+			// File is already in the save folder, just use the filename as relative path
+			relativePaths[i] = fileName
+			log.Printf("File already in save folder: %s (relative: %s)", originalPath, fileName)
+			continue
+		}
+
 		// Copy file to save folder
 		err := copyFile(originalPath, destPath)
 		if err != nil {
@@ -351,12 +365,24 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create destination file: %w", err)
 	}
-	defer dstFile.Close()
 
 	// Copy contents
 	_, err = io.Copy(dstFile, srcFile)
 	if err != nil {
+		dstFile.Close() // Close immediately on error
 		return fmt.Errorf("failed to copy file contents: %w", err)
+	}
+
+	// Sync and close destination file explicitly
+	err = dstFile.Sync()
+	if err != nil {
+		dstFile.Close()
+		return fmt.Errorf("failed to sync destination file: %w", err)
+	}
+
+	err = dstFile.Close()
+	if err != nil {
+		return fmt.Errorf("failed to close destination file: %w", err)
 	}
 
 	// Copy file permissions
