@@ -1264,7 +1264,7 @@ func handleSpace(m *model.Model) tea.Cmd {
 		return nil
 	} else if m.ViewMode == types.SoundMakerView {
 		// Handle SoundMaker selection in SoundMaker view
-		availableSoundMakers := []string{"Polyperc", "Infinite Pad"}
+		availableSoundMakers := []string{"PolyPerc", "Infinite Pad"}
 		if m.CurrentRow >= 5 && m.CurrentRow-5+m.ScrollOffset < len(availableSoundMakers) {
 			soundMakerIndex := m.CurrentRow - 5 + m.ScrollOffset
 			selectedSoundMaker := availableSoundMakers[soundMakerIndex]

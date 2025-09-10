@@ -416,7 +416,7 @@ type MidiSettings struct {
 }
 
 type SoundMakerSettings struct {
-	Name       string         `json:"name"`       // SoundMaker name ("Polyperc", "Infinite Pad", "DX7", etc.)
+	Name       string         `json:"name"`       // SoundMaker name ("PolyPerc", "Infinite Pad", "DX7", etc.)
 	Parameters map[string]int `json:"parameters"` // Key-value pairs for parameters (e.g. "preset": 5, "A": 128)
 	PatchName  string         `json:"patchName"`  // Patch name (used for DX7 when setting by name)
 }
@@ -588,7 +588,7 @@ type InstrumentParameterDef struct {
 }
 
 type InstrumentDefinition struct {
-	Name        string                   `json:"name"`        // Instrument name (e.g. "DX7", "Polyperc")
+	Name        string                   `json:"name"`        // Instrument name (e.g. "DX7", "PolyPerc")
 	Description string                   `json:"description"` // Short description of the instrument
 	Parameters  []InstrumentParameterDef `json:"parameters"`  // Parameter definitions
 }
@@ -605,8 +605,8 @@ var InstrumentRegistry = map[string]InstrumentDefinition{
 			},
 		},
 	},
-	"Polyperc": {
-		Name:        "Polyperc",
+	"PolyPerc": {
+		Name:        "PolyPerc",
 		Description: "Polyphonic percussion synthesizer",
 		Parameters: []InstrumentParameterDef{
 			{

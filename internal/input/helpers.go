@@ -298,8 +298,30 @@ func ModifyValue(m *model.Model, delta int) {
 				newValue = 254
 			}
 			(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newValue
+		} else if colIndex == int(types.ColVelocity) {
+			// VE (Velocity) column: special handling to limit to 0x7F (127)
+			virtualDefault := types.GetVirtualDefault(types.PhraseColumn(colIndex))
+			var newValue int
+			if currentValue == -1 {
+				if virtualDefault != nil {
+					// Virtual default column: start from virtual default value and apply delta
+					newValue = virtualDefault.DefaultValue + delta
+				} else {
+					// Regular column: initialize to 00 and DO NOT apply delta
+					newValue = 0
+				}
+			} else {
+				newValue = currentValue + delta
+			}
+
+			if newValue < 0 {
+				newValue = 0
+			} else if newValue > 127 { // Limit VE to 0x7F (127)
+				newValue = 127
+			}
+			(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newValue
 		} else {
-			// All other hex-ish columns (NN, DT, GT, RT, TS, CO, VE, FI index) - check for virtual defaults
+			// All other hex-ish columns (NN, DT, GT, RT, TS, CO, FI index) - check for virtual defaults
 			virtualDefault := types.GetVirtualDefault(types.PhraseColumn(colIndex))
 			var newValue int
 			if currentValue == -1 {
