@@ -51,7 +51,7 @@ func DoSave(m *model.Model) {
 
 	// Create save folder and copy sampler files, then get relative paths
 	log.Printf("Saving SamplerPhrasesFiles: %v", m.SamplerPhrasesFiles)
-	relativePaths, err := createSaveFolder(m.SaveFolder, m.SamplerPhrasesFiles)
+	relativePaths, err := createSaveFolder(m.SaveFolder, m.SamplerPhrasesFiles, m.FileMetadata)
 	if err != nil {
 		log.Printf("Error creating save folder: %v", err)
 		// Continue with normal save without bundling
@@ -234,6 +234,12 @@ func LoadState(m *model.Model, oscPort int, saveFolder string) error {
 	// Restore phrase file list
 	m.PhrasesFiles = append([]string(nil), saveData.PhrasesFiles...)
 
+	// Load metadata for files in save folder
+	err = LoadMetadataFromSaveFolder(saveFolder, m.FileMetadata)
+	if err != nil {
+		log.Printf("Warning: Failed to load metadata from save folder: %v", err)
+	}
+
 	// Refresh file browser and push current volume to OSC
 	LoadFiles(m)
 	m.SendOSCPregainMessage()
@@ -299,7 +305,7 @@ func LoadFiles(m *model.Model) {
 }
 
 // createSaveFolder creates the save folder and copies sampler files into it
-func createSaveFolder(saveFolder string, samplerFiles []string) ([]string, error) {
+func createSaveFolder(saveFolder string, samplerFiles []string, fileMetadata map[string]types.FileMetadata) ([]string, error) {
 	// Create save folder
 	err := os.MkdirAll(saveFolder, 0755)
 	if err != nil {
@@ -340,6 +346,14 @@ func createSaveFolder(saveFolder string, samplerFiles []string) ([]string, error
 			// Use original path if copy fails
 			relativePaths[i] = originalPath
 			continue
+		}
+
+		// Save metadata alongside the file if it exists
+		if metadata, exists := fileMetadata[originalPath]; exists {
+			err = saveFileMetadata(saveFolder, originalPath, metadata)
+			if err != nil {
+				log.Printf("Warning: Failed to save metadata for %s: %v", originalPath, err)
+			}
 		}
 
 		// Store just the filename as relative path (since files are in the same folder as data.json.gz)
@@ -398,6 +412,50 @@ func copyFile(src, dst string) error {
 	return nil
 }
 
+// saveFileMetadata saves metadata as JSON for a wav file in the save folder
+func saveFileMetadata(saveFolder, originalPath string, metadata types.FileMetadata) error {
+	fileName := filepath.Base(originalPath)
+	metadataFileName := strings.TrimSuffix(fileName, filepath.Ext(fileName)) + ".metadata.json"
+	metadataPath := filepath.Join(saveFolder, metadataFileName)
+	
+	data, err := json.Marshal(metadata)
+	if err != nil {
+		return fmt.Errorf("failed to marshal metadata: %w", err)
+	}
+	
+	err = os.WriteFile(metadataPath, data, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to write metadata file: %w", err)
+	}
+	
+	log.Printf("Saved metadata for %s to %s", fileName, metadataPath)
+	return nil
+}
+
+// loadFileMetadata loads metadata from JSON for a wav file in the save folder
+func loadFileMetadata(saveFolder, fileName string) (types.FileMetadata, error) {
+	metadataFileName := strings.TrimSuffix(fileName, filepath.Ext(fileName)) + ".metadata.json"
+	metadataPath := filepath.Join(saveFolder, metadataFileName)
+	
+	data, err := os.ReadFile(metadataPath)
+	if err != nil {
+		// Return zero-value metadata if file doesn't exist
+		if os.IsNotExist(err) {
+			return types.FileMetadata{}, nil
+		}
+		return types.FileMetadata{}, fmt.Errorf("failed to read metadata file: %w", err)
+	}
+	
+	var metadata types.FileMetadata
+	err = json.Unmarshal(data, &metadata)
+	if err != nil {
+		return types.FileMetadata{}, fmt.Errorf("failed to unmarshal metadata: %w", err)
+	}
+	
+	log.Printf("Loaded metadata for %s from %s", fileName, metadataPath)
+	return metadata, nil
+}
+
 // resolvePortablePaths converts relative paths from save folder back to absolute paths
 func resolvePortablePaths(saveFolder string, paths []string) []string {
 	if len(paths) == 0 {
@@ -434,4 +492,49 @@ func resolvePortablePaths(saveFolder string, paths []string) []string {
 	}
 
 	return resolvedPaths
+}
+
+// LoadMetadataFromSaveFolder loads metadata for all wav files in the save folder
+func LoadMetadataFromSaveFolder(saveFolder string, fileMetadata map[string]types.FileMetadata) error {
+	entries, err := os.ReadDir(saveFolder)
+	if err != nil {
+		return fmt.Errorf("failed to read save folder: %w", err)
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		
+		fileName := entry.Name()
+		ext := strings.ToLower(filepath.Ext(fileName))
+		
+		// Only process wav files
+		if ext == ".wav" {
+			filePath := filepath.Join(saveFolder, fileName)
+			metadata, err := loadFileMetadata(saveFolder, fileName)
+			if err != nil {
+				log.Printf("Warning: Failed to load metadata for %s: %v", fileName, err)
+				continue
+			}
+			
+			// Only add metadata if it has meaningful data (non-zero BPM or slices)
+			if metadata.BPM > 0 || metadata.Slices > 0 {
+				fileMetadata[filePath] = metadata
+				log.Printf("Loaded metadata for %s: BPM=%.1f, Slices=%d", fileName, metadata.BPM, metadata.Slices)
+			}
+		}
+	}
+	
+	return nil
+}
+
+// SaveMetadataForFile saves metadata for a specific file if it exists in the FileMetadata map
+// This can be called whenever a wav file is created to save its associated metadata
+func SaveMetadataForFile(filePath string, fileMetadata map[string]types.FileMetadata) error {
+	if metadata, exists := fileMetadata[filePath]; exists {
+		dir := filepath.Dir(filePath)
+		return saveFileMetadata(dir, filePath, metadata)
+	}
+	return nil
 }
