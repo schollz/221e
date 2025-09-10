@@ -31,7 +31,8 @@ s.waitForBoot({
 				morph_mod: \morph_mod.kr(0),
 				lpg_colour: \lpg_colour.kr(0),
 			);
-			snd = snd * env * \trackVolume.kr(0).dbamp * (1.0 / \noteSize.kr(1).sqrt);
+			snd = snd * env * \trackVolume.kr(0).dbamp * (1.0 / \noteSize.kr(1).sqrt)
+							* \velocity.kr(100).min(127).max(0).linlin(0,127,-24,24).dbamp;
 			snd = RLPF.ar(snd, \lowPassFilter.kr(20000), 0.707);
 			snd = Balance2.ar(snd[0],snd[1],\pan.kr(0));
 			Out.ar(\trackOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
@@ -62,7 +63,8 @@ s.waitForBoot({
 				bits: \bits.kr(0),
 				ws: \ws.kr(0),
 			);
-			snd = snd * env * \trackVolume.kr(0).dbamp * (1.0 / \noteSize.kr(1).sqrt);
+			snd = snd * env * \trackVolume.kr(0).dbamp * (1.0 / \noteSize.kr(1).sqrt)
+				* \velocity.kr(100).min(127).max(0).linlin(0,127,-24,24).dbamp;
 			snd = RLPF.ar(snd, \lowPassFilter.kr(20000), 0.707);
 			snd = Pan2.ar(snd,\pan.kr(0));
 			Out.ar(\trackOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
@@ -84,7 +86,8 @@ s.waitForBoot({
 			);
 			var snd = Pulse.ar(\note.kr(60).midicps, 0.5);
 			snd = MoogFF.ar(snd, \lowPassFilter.kr(20000), 1.5);
-			snd = snd * env * \trackVolume.kr(0).dbamp * (1.0 / \noteSize.kr(1).sqrt);
+			snd = snd * env * \trackVolume.kr(0).dbamp * (1.0 / \noteSize.kr(1).sqrt)
+				* \velocity.kr(100).min(127).max(0).linlin(0,127,-24,0).dbamp;
 			snd = Pan2.ar(snd,\pan.kr(0));
 			Out.ar(\trackOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
 			Out.ar(\effectDryOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
@@ -303,7 +306,7 @@ s.waitForBoot({
 				});
 
 				// volume
-				snd = snd * trackVolume.dbamp;
+				snd = snd * trackVolume.dbamp * \velocity.kr(100).min(127).max(0).linlin(0,127,-24,24).dbamp;
 
 				// Feedback
 				LocalOut.ar(retrigCount);
@@ -592,6 +595,10 @@ s.waitForBoot({
 				// print all settings 
 				settings.keysValuesDo({ |k,v|
 					[k,v].postln;
+				});
+				// normalize velocity (0-127) and add to track volume
+				if (settings.at("velocity").notNil,{
+					settings.put("trackVolume", settings.at("trackVolume") + settings.at("velocity").min(127).max(0).linlin(0,127,-24,24));
 				});
 				["playing DX7"].postln;
 				notes.do({ |n|
