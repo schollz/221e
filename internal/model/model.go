@@ -244,6 +244,15 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "C",
 			}
+		case int(types.InstrumentColVE): // VE - velocity column
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColVelocity),
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "VE",
+			}
 		case int(types.InstrumentColA): // A - chord addition column
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColChordAddition),
@@ -383,8 +392,8 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 			return nil // Invalid column
 		}
 	} else {
-		// Sampler view: Custom mapping after removing P column and moving DT to front
-		// New order: SL (0), DT (1), NN (2), PI (3), GT (4), RT (5), TS (6), Я (7), PA (8), LP (9), HP (10), CO (11), VE (12), FI (13)
+		// Sampler view: Custom mapping after adding VE column
+		// New order: SL (0), DT (1), NN (2), VE (3), PI (4), GT (5), RT (6), TS (7), Я (8), PA (9), LP (10), HP (11), CO (12), RE (13), FI (14)
 		switch uiColumn {
 		case int(types.SamplerColSL): // SL - display only
 			return &ColumnMapping{
@@ -412,6 +421,15 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsPasteable:     true,
 				IsDeletable:     true,
 				DisplayName:     "NN",
+			}
+		case int(types.SamplerColVE): // VE - Velocity
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColVelocity),
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "VE",
 			}
 		case int(types.SamplerColPI): // PI - Pitch
 			return &ColumnMapping{
@@ -494,14 +512,14 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "CO",
 			}
-		case int(types.SamplerColVE): // VE - Reverb
+		case int(types.SamplerColRE): // RE - Reverb
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColEffectReverb), // Now index 11
 				IsEditable:      true,
 				IsCopyable:      true,
 				IsPasteable:     true,
 				IsDeletable:     true,
-				DisplayName:     "VE",
+				DisplayName:     "RE",
 			}
 		case int(types.SamplerColFI): // FI - Filename
 			return &ColumnMapping{
@@ -623,6 +641,7 @@ func (m *Model) initializeDefaultData() {
 			m.PhrasesData[p][i][types.ColEffectComb] = -1          // Comb effect (-1 means no effect)
 			m.PhrasesData[p][i][types.ColEffectReverb] = -1        // Reverb effect (-1 means no effect)
 			m.PhrasesData[p][i][types.ColFilename] = -1            // Filename index (-1 means no file selected)
+			m.PhrasesData[p][i][types.ColVelocity] = -1            // Velocity (-1 displays "--", behaves as 64)
 		}
 	}
 
@@ -657,6 +676,7 @@ func (m *Model) initializeDefaultData() {
 			m.InstrumentPhrasesData[p][i][types.ColHighPassFilter] = -1 // High pass filter (-1 means no filter/20Hz)
 			m.InstrumentPhrasesData[p][i][types.ColEffectComb] = -1     // Comb effect (-1 means no effect)
 			m.InstrumentPhrasesData[p][i][types.ColEffectReverb] = -1   // Reverb effect (-1 means no effect)
+			m.InstrumentPhrasesData[p][i][types.ColVelocity] = -1       // Velocity (-1 displays "--", behaves as 64)
 			// Other columns can stay -1 (unused for instruments)
 		}
 	}
@@ -679,6 +699,7 @@ func (m *Model) initializeDefaultData() {
 			m.SamplerPhrasesData[p][i][types.ColEffectComb] = -1     // Comb effect (-1 means no effect)
 			m.SamplerPhrasesData[p][i][types.ColEffectReverb] = -1   // Reverb effect (-1 means no effect)
 			m.SamplerPhrasesData[p][i][types.ColFilename] = -1       // Filename index (-1 means no file selected)
+			m.SamplerPhrasesData[p][i][types.ColVelocity] = -1       // Velocity (-1 displays "--", behaves as 64)
 		}
 	}
 
@@ -817,6 +838,7 @@ type SamplerOSCParams struct {
 	HighPassFilter        float32 // Frequency in Hz (20Hz to 20kHz) or -1 for no filter
 	EffectComb            float32 // 0.0 .. 1.0
 	EffectReverb          float32 // 0.0 .. 1.0
+	Velocity              int     // 0 .. 127 (0x00-0x7F)
 }
 
 type InstrumentOSCParams struct {
@@ -844,7 +866,7 @@ type InstrumentOSCParams struct {
 }
 
 // NewSamplerOSCParams creates sampler parameters with custom slice duration
-func NewSamplerOSCParams(filename string, trackId int, sliceCount, sliceNumber int, bpmSource, bpmTarget, sliceDuration, deltaTime float32) SamplerOSCParams {
+func NewSamplerOSCParams(filename string, trackId int, sliceCount, sliceNumber int, bpmSource, bpmTarget, sliceDuration, deltaTime float32, velocity int) SamplerOSCParams {
 	return SamplerOSCParams{
 		Filename:              filename,
 		TrackId:               trackId,
@@ -872,12 +894,13 @@ func NewSamplerOSCParams(filename string, trackId int, sliceCount, sliceNumber i
 		HighPassFilter:        20,    // Default no filter (20Hz)
 		EffectComb:            0,
 		EffectReverb:          0,
+		Velocity:              velocity,
 	}
 }
 
 // NewSamplerOSCParamsWithRetrigger creates sampler parameters with retrigger settings
 func NewSamplerOSCParamsWithRetrigger(filename string, trackId, sliceCount, sliceNumber int, bpmSource, bpmTarget, sliceDuration float32,
-	retrigTimes int, retrigBeats float32, retrigRateStart, retrigRateEnd, retrigPitch, retrigVolume, deltaTime float32,
+	retrigTimes int, retrigBeats float32, retrigRateStart, retrigRateEnd, retrigPitch, retrigVolume, deltaTime float32, velocity int,
 	finalPitchToStart, finalVolumeToStart int) SamplerOSCParams {
 	return SamplerOSCParams{
 		Filename:              filename,
@@ -905,6 +928,7 @@ func NewSamplerOSCParamsWithRetrigger(filename string, trackId, sliceCount, slic
 		HighPassFilter:        20,    // Default no filter (20Hz)
 		EffectComb:            0,
 		EffectReverb:          0,
+		Velocity:              velocity,
 		DeltaTime:             deltaTime, // Delta time in seconds
 	}
 }
@@ -1176,6 +1200,8 @@ func (m *Model) sendOSCInstrumentMessage(params InstrumentOSCParams) {
 		msg.Append(float32(params.EffectComb))
 		msg.Append("effectReverb")
 		msg.Append(float32(params.EffectReverb))
+		msg.Append("velocity")
+		msg.Append(int32(params.Velocity))
 
 		// Add SoundMaker information using the new parameter framework
 		if params.SoundMakerIndex == -1 {
@@ -1449,6 +1475,8 @@ func (m *Model) SendOSCSamplerMessage(params SamplerOSCParams) {
 	msg.Append(float32(params.EffectComb))
 	msg.Append("effectReverb")
 	msg.Append(float32(params.EffectReverb))
+	msg.Append("velocity")
+	msg.Append(int32(params.Velocity))
 	msg.Append("deltaTime")
 	msg.Append(float32(params.DeltaTime))
 

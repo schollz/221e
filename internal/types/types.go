@@ -68,6 +68,7 @@ const (
 	ColDecay                                  // Column 20: Decay (Instrument view only: 00-FE, 0.0-30.0s linear, default -1, sticky)
 	ColSustain                                // Column 21: Sustain (Instrument view only: 00-FE, 0.0-1.0 linear, default -1, sticky)
 	ColRelease                                // Column 22: Release (Instrument view only: 00-FE, 0.02-30s exponential, default -1, sticky)
+	ColVelocity                               // Column 23: Velocity (VE) (00-7F, 0-127)
 	ColCount                                  // Total number of columns
 )
 
@@ -159,19 +160,20 @@ const (
 	InstrumentColC     InstrumentUIColumn = 3  // C - Chord
 	InstrumentColA     InstrumentUIColumn = 4  // A - Chord Addition
 	InstrumentColT     InstrumentUIColumn = 5  // T - Chord Transposition
-	InstrumentColGT    InstrumentUIColumn = 6  // GT - Gate
-	InstrumentColATK   InstrumentUIColumn = 7  // A - Attack
-	InstrumentColDECAY InstrumentUIColumn = 8  // D - Decay
-	InstrumentColSUS   InstrumentUIColumn = 9  // S - Sustain
-	InstrumentColREL   InstrumentUIColumn = 10 // R - Release
-	InstrumentColRE    InstrumentUIColumn = 11 // RE - Reverb
-	InstrumentColCO    InstrumentUIColumn = 12 // CO - Comb
-	InstrumentColPA    InstrumentUIColumn = 13 // PA - Pan
-	InstrumentColLP    InstrumentUIColumn = 14 // LP - LowPass
-	InstrumentColHP    InstrumentUIColumn = 15 // HP - HighPass
-	InstrumentColAR    InstrumentUIColumn = 16 // AR - Arpeggio
-	InstrumentColMI    InstrumentUIColumn = 17 // MI - MIDI
-	InstrumentColSO    InstrumentUIColumn = 18 // SO - SoundMaker
+	InstrumentColVE    InstrumentUIColumn = 6  // VE - Velocity
+	InstrumentColGT    InstrumentUIColumn = 7  // GT - Gate
+	InstrumentColATK   InstrumentUIColumn = 8  // A - Attack
+	InstrumentColDECAY InstrumentUIColumn = 9  // D - Decay
+	InstrumentColSUS   InstrumentUIColumn = 10 // S - Sustain
+	InstrumentColREL   InstrumentUIColumn = 11 // R - Release
+	InstrumentColRE    InstrumentUIColumn = 12 // RE - Reverb
+	InstrumentColCO    InstrumentUIColumn = 13 // CO - Comb
+	InstrumentColPA    InstrumentUIColumn = 14 // PA - Pan
+	InstrumentColLP    InstrumentUIColumn = 15 // LP - LowPass
+	InstrumentColHP    InstrumentUIColumn = 16 // HP - HighPass
+	InstrumentColAR    InstrumentUIColumn = 17 // AR - Arpeggio
+	InstrumentColMI    InstrumentUIColumn = 18 // MI - MIDI
+	InstrumentColSO    InstrumentUIColumn = 19 // SO - SoundMaker
 )
 
 // UI Column positions for Sampler Phrase View - to prevent hardcoding issues
@@ -181,17 +183,18 @@ const (
 	SamplerColSL  SamplerUIColumn = 0  // SL - Slice (display only)
 	SamplerColDT  SamplerUIColumn = 1  // DT - Delta Time
 	SamplerColNN  SamplerUIColumn = 2  // NN - Note
-	SamplerColPI  SamplerUIColumn = 3  // PI - Pitch
-	SamplerColGT  SamplerUIColumn = 4  // GT - Gate
-	SamplerColRT  SamplerUIColumn = 5  // RT - Retrigger
-	SamplerColTS  SamplerUIColumn = 6  // TS - Timestretch
-	SamplerColREV SamplerUIColumn = 7  // Я - Reverse
-	SamplerColPA  SamplerUIColumn = 8  // PA - Pan
-	SamplerColLP  SamplerUIColumn = 9  // LP - Low Pass Filter
-	SamplerColHP  SamplerUIColumn = 10 // HP - High Pass Filter
-	SamplerColCO  SamplerUIColumn = 11 // CO - Comb
-	SamplerColVE  SamplerUIColumn = 12 // VE - Reverb
-	SamplerColFI  SamplerUIColumn = 13 // FI - Filename
+	SamplerColVE  SamplerUIColumn = 3  // VE - Velocity
+	SamplerColPI  SamplerUIColumn = 4  // PI - Pitch
+	SamplerColGT  SamplerUIColumn = 5  // GT - Gate
+	SamplerColRT  SamplerUIColumn = 6  // RT - Retrigger
+	SamplerColTS  SamplerUIColumn = 7  // TS - Timestretch
+	SamplerColREV SamplerUIColumn = 8  // Я - Reverse
+	SamplerColPA  SamplerUIColumn = 9  // PA - Pan
+	SamplerColLP  SamplerUIColumn = 10 // LP - Low Pass Filter
+	SamplerColHP  SamplerUIColumn = 11 // HP - High Pass Filter
+	SamplerColCO  SamplerUIColumn = 12 // CO - Comb
+	SamplerColRE  SamplerUIColumn = 13 // RE - Reverb
+	SamplerColFI  SamplerUIColumn = 14 // FI - Filename
 )
 
 // UI Column positions for Arpeggio View - to prevent hardcoding issues
@@ -557,6 +560,8 @@ func GetVirtualDefault(col PhraseColumn) *VirtualDefaultConfig {
 		return &VirtualDefaultConfig{DefaultValue: 0x80} // 0x80 = center pan
 	case ColLowPassFilter:
 		return &VirtualDefaultConfig{DefaultValue: 0xFE} // 0xFE = 20kHz (no filtering)
+	case ColVelocity:
+		return &VirtualDefaultConfig{DefaultValue: 0x40} // 0x40 = 64 = default velocity
 	default:
 		return nil
 	}

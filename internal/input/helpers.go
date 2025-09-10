@@ -734,6 +734,16 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 	// Calculate delta time in seconds (time per row * DT)
 	deltaTimeSeconds := calculateDeltaTimeSeconds(m, phrase, row, trackId)
 
+	// Calculate velocity from velocity column (sticky behavior)
+	rawVelocity := GetEffectiveValueForTrack(m, phrase, row, int(types.ColVelocity), trackId)
+	velocity := 64 // Default velocity (0x40)
+	if rawVelocity != -1 {
+		velocity = rawVelocity // Keep as integer (0x00-0x7F = 0-127)
+	}
+	if velocity > 127 {
+		velocity = 127
+	}
+
 	var oscParams model.SamplerOSCParams
 	if rawRetrigger != -1 && rawRetrigger >= 0 && rawRetrigger < 255 {
 		retriggerSettings := m.RetriggerSettings[rawRetrigger]
@@ -746,11 +756,12 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 			retriggerSettings.PitchChange,
 			retriggerSettings.VolumeDB,
 			deltaTimeSeconds,
+			velocity,
 			retriggerSettings.FinalPitchToStart,
 			retriggerSettings.FinalVolumeToStart,
 		)
 	} else {
-		oscParams = model.NewSamplerOSCParams(effectiveFilename, trackId, sliceCount, sliceNumber, bpmSource, m.BPM, sliceDuration, deltaTimeSeconds)
+		oscParams = model.NewSamplerOSCParams(effectiveFilename, trackId, sliceCount, sliceNumber, bpmSource, m.BPM, sliceDuration, deltaTimeSeconds, velocity)
 	}
 
 	// Pitch conversion from hex to float: 128 (0x80) = 0.0, range 0-254 maps to -24 to +24
@@ -826,9 +837,13 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 	// Determine track type and emit appropriate message
 	if isInstrumentTrack(m, trackId) {
 		// For instrument tracks, extract all instrument-specific parameters
-		velocity := float32(rawGate) / 128.0 // Convert gate to velocity (0.0-1.0)
-		if velocity > 1.0 {
-			velocity = 1.0
+		rawVelocity := GetEffectiveValueForTrack(m, phrase, row, int(types.ColVelocity), trackId)
+		velocity := float32(64) // Default velocity as float for instrument OSC (0x40)
+		if rawVelocity != -1 {
+			velocity = float32(rawVelocity) // Keep as integer value, just convert to float32 for OSC
+		}
+		if velocity > 127.0 {
+			velocity = 127.0
 		}
 
 		// Extract chord parameters

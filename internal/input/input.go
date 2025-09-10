@@ -929,7 +929,7 @@ func handleRight(m *model.Model) tea.Cmd {
 		if phraseViewType == types.InstrumentPhraseView {
 			maxValidCol = int(types.InstrumentColSO) // Instrument: last valid column is SO (SoundMaker)
 		} else {
-			maxValidCol = 13 // Sampler: last valid column is 13 (FI)
+			maxValidCol = int(types.SamplerColFI) // Sampler: last valid column is FI (Filename)
 		}
 
 		if m.CurrentCol < maxValidCol {
