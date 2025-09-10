@@ -35,7 +35,7 @@ This program is heavily inspired by my norns tracker, [zxcvbn](https://zxcvbn.no
 ./2n
 ```
 
-Defaults: OSC **57120**, save file **tracker-save.json**.
+Defaults: OSC **57120**, save folder **tracker-save/**.
 
 ## Keyboard — Quick Reference
 
@@ -102,6 +102,7 @@ Defaults: OSC **57120**, save file **tracker-save.json**.
 ### File Management Views
 - **File Browser** – Select audio files for sampler tracks
 - **File Metadata** – Configure BPM and slice count per file
+  - Metadata is automatically saved with samples for portability
 
 ### Effect Configuration Views
 - **Retrigger** – Envelope settings for retrigger effects
@@ -133,12 +134,12 @@ This unified approach allows instant playback testing of any musical element whi
 
 ### Sampler View
 ```
-SL  DT  NN  PI  GT  RT  TS  Я  PA  LP  HP  CO  VE  FI
+SL  DT  NN  PI  GT  RT  TS  Я  PA  LP  HP  CO  VE  VL  FI
 ```
 
 ### Instrument View  
 ```
-SL  DT  NOT  C  A  T  A D S R  AR  MI  SO
+SL  DT  NOT  C  A  T  A D S R  AR  MI  SO  VL
 ```
 
 ### Column Descriptions
@@ -154,6 +155,7 @@ SL  DT  NOT  C  A  T  A D S R  AR  MI  SO
 - **LP/HP** (filters) – Low-pass/High-pass filters
 - **CO** (comb) – Comb filter effect
 - **VE** (reverb) – Reverb effect
+- **VL** (velocity) – Note velocity (0-F hex, affects volume and expression)
 - **FI** (file index) – Sample file selection (sampler only)
 - **C** (chord) – Chord type: None(-), Major(M), minor(m), Dominant(d) (instrument only)
 - **A** (chord addition) – Chord addition: None(-), 7th(7), 9th(9), 4th(4) (instrument only)  
@@ -162,9 +164,18 @@ SL  DT  NOT  C  A  T  A D S R  AR  MI  SO
 - **AR** (arpeggio) – Arpeggio pattern index (instrument only)
 - **MI** (MIDI) – MIDI settings index for external MIDI output (instrument only)
 - **SO** (SoundMaker) – SoundMaker settings index for built-in synthesis (instrument only)
+- **VL** (velocity) – Note velocity (0-F hex, affects volume and expression)
 
-### Key Feature: Unified DT Column
+### Key Features
+
+#### Unified DT Column
 Both Sampler and Instrument views now use the same **DT** (Delta Time) column for playback control, replacing the previous separate P/DT system. This provides consistent behavior across both track types.
+
+#### Velocity Support
+The **VL** (Velocity) column provides expressive control over note dynamics. SuperCollider tracks and responds to velocity values for both volume and expression, enabling more musical and dynamic performances.
+
+#### Portable Sample Management
+The application now uses a local folder structure (tracker-save/) instead of a single save file, automatically storing samples and their metadata together for complete project portability.
 
 
 ## License
