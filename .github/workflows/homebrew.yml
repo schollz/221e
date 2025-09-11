@@ -7,6 +7,8 @@ on:
 jobs:
   homebrew:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -43,10 +45,12 @@ jobs:
           echo "sha256=$SHA256" >> $GITHUB_OUTPUT
 
       - name: Upload vendored source to release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.release.tag_name }}
+          files: source_code_vendored.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release upload ${{ github.event.release.tag_name }} source_code_vendored.tar.gz --clobber
 
       - name: Generate Homebrew formula
         run: |
