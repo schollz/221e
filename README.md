@@ -42,74 +42,92 @@ Defaults: OSC **57120**, save folder **tracker-save/**.
 ## Keyboard — Quick Reference
 
 ### Navigation Between Views
-- **Shift+Right** – Navigate deeper into structure
-  - Song → Chain (selected track/row)
-  - Chain → Phrase (selected row)
-  - Phrase → Retrigger/Timestretch/Arpeggio (if set) or File Browser
-- **Shift+Left** – Navigate back to parent view
-- **Shift+Up** – Go to Settings (from Song/Chain/Phrase) or File Metadata (from File Browser)
-- **Shift+Down** – Go to Mixer (from Song/Chain/Phrase) or back from Mixer
-- **p** – Toggle Preferences (Settings) view
-- **m** – Toggle Mixer view
+
+| Key Combo | Description |
+|-----------|-------------|
+| **Shift+Right** | Navigate deeper into structure:<br>• Song → Chain (selected track/row)<br>• Chain → Phrase (selected row)<br>• Phrase → Retrigger/Timestretch/Arpeggio (if set) or File Browser |
+| **Shift+Left** | Navigate back to parent view |
+| **Shift+Up** | Go to Settings (from Song/Chain/Phrase) or File Metadata (from File Browser) |
+| **Shift+Down** | Go to Mixer (from Song/Chain/Phrase) or back from Mixer |
+| **p** | Toggle Preferences (Settings) view |
+| **m** | Toggle Mixer view |
 
 ### Navigation Within Views
-- **Arrow keys** – Move cursor/navigate within current view
-- **Left/Right** – Navigate tracks (Song), chains (Chain), or columns (Phrase)
+
+| Key Combo | Description |
+|-----------|-------------|
+| **Arrow keys** | Move cursor/navigate within current view |
+| **Left/Right** | Navigate tracks (Song), chains (Chain), or columns (Phrase) |
 
 ### Playback and Recording
-- **Space** – Play/stop from current position
-- **Ctrl+@** – Play/stop from top (global)
-- **C** – Smart trigger/fill function:
-  - **Non-empty values**: Triggers `EmitRowDataFor` (plays row with full parameters)
-  - **Empty values**: Fills with next available content or copies last row
-  - Works in Song, Chain, and Phrase views
-- **Ctrl+R** – Toggle recording mode
+
+| Key Combo | Description |
+|-----------|-------------|
+| **Space** | Play/stop from current position |
+| **Ctrl+@** | Play/stop from top (global) |
+| **C** | Smart trigger/fill function:<br>• **Non-empty values**: Triggers `EmitRowDataFor` (plays row with full parameters)<br>• **Empty values**: Fills with next available content or copies last row<br>• Works in Song, Chain, and Phrase views |
+| **Ctrl+R** | Toggle recording mode |
 
 ### Value Editing
-- **Ctrl+Up/Down** – Coarse adjust values (+/-16, coarse increments)
-- **Ctrl+Left/Right** – Fine adjust values (+/-1, fine increments)
-- **Backspace** – Clear cell/value
-- **Ctrl+H** – Delete entire row
-- **S** – Paste last edited row
+
+| Key Combo | Description |
+|-----------|-------------|
+| **Ctrl+Up/Down** | Coarse adjust values (+/-16, coarse increments) |
+| **Ctrl+Left/Right** | Fine adjust values (+/-1, fine increments) |
+| **Backspace** | Clear cell/value |
+| **Ctrl+H** | Delete entire row |
+| **S** | Paste last edited row |
 
 ### Copy and Paste
-- **Ctrl+C** – Copy cell
-- **Ctrl+X** – Cut row  
-- **Ctrl+V** – Paste
-- **Ctrl+D** – Deep copy
+
+| Key Combo | Description |
+|-----------|-------------|
+| **Ctrl+C** | Copy cell |
+| **Ctrl+X** | Cut row |
+| **Ctrl+V** | Paste |
+| **Ctrl+D** | Deep copy |
 
 ### File Operations and System
-- **Ctrl+S** – Manual save
-- **Ctrl+F** – Smart fill/clear for DT column (Delta Time)
-- **Esc** – Clear selection highlight
-- **Ctrl+Q** – Quit
+
+| Key Combo | Description |
+|-----------|-------------|
+| **Ctrl+S** | Manual save |
+| **Ctrl+F** | Smart fill/clear for DT column (Delta Time) |
+| **Esc** | Clear selection highlight |
+| **Ctrl+Q** | Quit |
 
 
 ## Views
 
 ### Main Structure Views
-- **Song** – Top-level arrangement: 8 tracks × 16 rows (chains per track)
-  - Each track can be either Instrument or Sampler type
-- **Chain** – Pattern sequences: 16 rows mapping to phrases
-- **Phrase** – Main tracker grid with two modes:
-  - **Sampler** – Full sample manipulation (pitch, effects, files)
-  - **Instrument** – Note-based with chords, ADSR, arpeggio
+
+| View | Description |
+|------|-------------|
+| **Song** | Top-level arrangement: 8 tracks × 16 rows (chains per track)<br>• Each track can be either Instrument or Sampler type |
+| **Chain** | Pattern sequences: 16 rows mapping to phrases |
+| **Phrase** | Main tracker grid with two modes:<br>• **Sampler** – Full sample manipulation (pitch, effects, files)<br>• **Instrument** – Note-based with chords, ADSR, arpeggio |
 
 ### Support Views
-- **Settings** – Global configuration (BPM, PPQ, audio gains, etc.)
-  - Access with **p** key or **Shift+Up**
-- **Mixer** – Per-track volume levels and mixing
-  - Access with **m** key or **Shift+Down**
+
+| View | Description |
+|------|-------------|
+| **Settings** | Global configuration (BPM, PPQ, audio gains, etc.)<br>• Access with **p** key or **Shift+Up** |
+| **Mixer** | Per-track volume levels and mixing<br>• Access with **m** key or **Shift+Down** |
 
 ### File Management Views
-- **File Browser** – Select audio files for sampler tracks
-- **File Metadata** – Configure BPM and slice count per file
-  - Metadata is automatically saved with samples for portability
+
+| View | Description |
+|------|-------------|
+| **File Browser** | Select audio files for sampler tracks |
+| **File Metadata** | Configure BPM and slice count per file<br>• Metadata is automatically saved with samples for portability |
 
 ### Effect Configuration Views
-- **Retrigger** – Envelope settings for retrigger effects
-- **Timestretch** – Time-stretching parameters
-- **Arpeggio** – Arpeggio pattern editor (Instrument tracks only)
+
+| View | Description |
+|------|-------------|
+| **Retrigger** | Envelope settings for retrigger effects |
+| **Timestretch** | Time-stretching parameters |
+| **Arpeggio** | Arpeggio pattern editor (Instrument tracks only) |
 
 ## Smart 'C' Key Functionality
 
@@ -295,6 +313,66 @@ After building, verify the binary works:
 - Static linking is used on Windows and in the Alpine Linux build for portability
 - The RTMIDI debug flags are disabled for release builds to reduce verbosity
 - Version information can be embedded using: `go build -ldflags "-X main.Version=<version>"`
+
+
+## Big list of trackers
+
+## Popular Modern / Commercial
+- [Renoise](https://www.renoise.com/)
+- [SunVox](https://www.warmplace.ru/soft/sunvox/)
+- [DefleMask](https://deflemask.com/)
+
+
+### Cross-platform / General Trackers
+- [OpenMPT (ModPlug Tracker)](https://github.com/OpenMPT/openmpt)
+- [MilkyTracker](https://github.com/milkytracker/MilkyTracker)
+- [Schism Tracker](https://github.com/schismtracker/schismtracker)
+- [Furnace](https://github.com/tildearrow/furnace)
+- [Radium Music Editor](https://github.com/kmatheussen/radium)
+- [Psycle](https://sourceforge.net/projects/psycle/)
+- [Buzztrax](https://www.buzztrax.org/)
+- [SoundTracker (GTK/Unix)](https://www.soundtracker.org/) · [Source](https://sourceforge.net/p/soundtracker/git/ci/master/tree/)
+- [ChibiTracker](https://github.com/reduz/chibitracker)
+- [Propulse Tracker](https://github.com/hukkax/Propulse)
+
+### Classic Trackers & Clones
+- [FastTracker II (original info)](https://en.wikipedia.org/wiki/FastTracker_2) · [ft2-clone](https://github.com/8bitbubsy/ft2-clone)
+- [ProTracker 2 clone (pt2-clone)](https://github.com/8bitbubsy/pt2-clone)
+- [HivelyTracker](https://github.com/petet/hivelytracker)
+- [Impulse Tracker (mirror)](https://github.com/hx2A/impulsetracker)
+- [Scream Tracker 3](http://www.screamtracker.com/)
+- [Skale Tracker](http://www.skale.org/)
+- [MadTracker](https://www.madtracker.org/)
+
+### Web / Browser Trackers
+- [BassoonTracker](https://github.com/steffest/BassoonTracker) · [Live Demo](http://www.stef.be/bassoontracker/)
+
+### Game Boy / NES / Console-focused
+- [LSDj (Little Sound Dj)](https://littlesounddj.com/25th/)
+- [0CC-FamiTracker](https://github.com/0xCDA/0CC-FamiTracker)
+- [FamiStudio](https://github.com/BleuBleu/FamiStudio) · [Website](https://famistudio.org/)
+- [LittleGPTracker (LGPT)](https://github.com/Mdashdotdashn/LittleGPTracker) · [Website](https://www.littlegptracker.com/)
+- [NitroTracker](https://nitrotracker.tobw.net/) · [GitHub Fork](https://github.com/TobWen/NitroTracker)
+
+### Commodore 64 / SID
+- [GoatTracker 2](https://sourceforge.net/projects/goattracker2/)
+- [SID Factory II](https://github.com/Chordian/sidfactory2)
+- [CheeseCutter](https://github.com/theyamo/CheeseCutter)
+- [SID-Wizard (C64 release info)](https://csdb.dk/release/?id=221555)
+
+### Yamaha / PC-98 / FM & Multi-chip
+- [BambooTracker](https://bambootracker.github.io/BambooTracker/)
+- [klystrack](https://kometbomb.github.io/klystrack/)
+- [Protrekkr](https://github.com/hitchhikr/protrekkr)
+
+### Amiga / ProTracker Family
+- [ProTracker 2 clone](https://github.com/8bitbubsy/pt2-clone)
+- [FT2 clone](https://github.com/8bitbubsy/ft2-clone)
+- [HivelyTracker](https://github.com/petet/hivelytracker)
+
+### Niche
+- [Shield Tracker (sTracker)](https://bleep.toys/) · [Shortcuts](https://bleep.toys/stracker/keyboard_shortcuts.html)
+- [1tracker (1-bit ZX/retro)](https://randomflux.info/1bit/viewtopic.php?id=24&p=4)
 
 ## License
 
