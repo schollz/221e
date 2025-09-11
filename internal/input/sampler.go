@@ -148,6 +148,25 @@ func ModifyRetriggerValue(m *model.Model, baseDelta float32) {
 		}
 		settings.Every = newEvery
 		log.Printf("Modified retrigger %02X Every: %d -> %d (delta: %d)", m.RetriggerEditingIndex, settings.Every-delta, settings.Every, delta)
+	} else if m.CurrentRow == 9 { // Probability
+		// Use different increments: 10 for coarse, 1 for fine (based on Ctrl+Up/Down vs Ctrl+Left/Right)
+		var delta int
+		if baseDelta == 1.0 || baseDelta == -1.0 {
+			delta = int(baseDelta) * 10 // Coarse control (Ctrl+Up/Down): +/-10%
+		} else if baseDelta == 0.05 || baseDelta == -0.05 {
+			delta = int(baseDelta / 0.05) // Fine control (Ctrl+Left/Right): +/-1%
+		} else {
+			delta = int(baseDelta) // Fallback
+		}
+
+		newProbability := settings.Probability + delta
+		if newProbability < 0 {
+			newProbability = 0
+		} else if newProbability > 100 {
+			newProbability = 100
+		}
+		settings.Probability = newProbability
+		log.Printf("Modified retrigger %02X Probability: %d -> %d (delta: %d)", m.RetriggerEditingIndex, settings.Probability-delta, settings.Probability, delta)
 	}
 
 	// Store back the modified settings
@@ -225,6 +244,25 @@ func ModifyTimestrechValue(m *model.Model, baseDelta float32) {
 		}
 		settings.Every = newEvery
 		log.Printf("Modified timestretch %02X Every: %d -> %d (delta: %d)", m.TimestrechEditingIndex, settings.Every-delta, settings.Every, delta)
+	} else if m.CurrentRow == 4 { // Probability
+		// Use different increments: 10 for coarse, 1 for fine (based on Ctrl+Up/Down vs Ctrl+Left/Right)
+		var delta int
+		if baseDelta == 1.0 || baseDelta == -1.0 {
+			delta = int(baseDelta) * 10 // Coarse control (Ctrl+Up/Down): +/-10%
+		} else if baseDelta == 0.05 || baseDelta == -0.05 {
+			delta = int(baseDelta / 0.05) // Fine control (Ctrl+Left/Right): +/-1%
+		} else {
+			delta = int(baseDelta) // Fallback
+		}
+
+		newProbability := settings.Probability + delta
+		if newProbability < 0 {
+			newProbability = 0
+		} else if newProbability > 100 {
+			newProbability = 100
+		}
+		settings.Probability = newProbability
+		log.Printf("Modified timestretch %02X Probability: %d -> %d (delta: %d)", m.TimestrechEditingIndex, settings.Probability-delta, settings.Probability, delta)
 	}
 
 	// Store back the modified settings

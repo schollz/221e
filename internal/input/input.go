@@ -788,11 +788,11 @@ func handleDown(m *model.Model) tea.Cmd {
 			m.CurrentRow = m.CurrentRow + 1
 		}
 	} else if m.ViewMode == types.RetriggerView {
-		if m.CurrentRow < int(types.RetriggerSettingsRowEvery) { // Times(0) to Every(8)
+		if m.CurrentRow < int(types.RetriggerSettingsRowProbability) { // Times(0) to Probability(9)
 			m.CurrentRow = m.CurrentRow + 1
 		}
 	} else if m.ViewMode == types.TimestrechView {
-		if m.CurrentRow < int(types.TimestrechSettingsRowEvery) { // Start(0) to Every(3)
+		if m.CurrentRow < int(types.TimestrechSettingsRowProbability) { // Start(0) to Probability(4)
 			m.CurrentRow = m.CurrentRow + 1
 		}
 	} else if m.ViewMode == types.ArpeggioView {

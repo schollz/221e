@@ -80,11 +80,24 @@ func RenderTimestrechView(m *model.Model) string {
 	}
 	everyRow := fmt.Sprintf("  %-12s %s", labelStyle.Render(everyLabel), everyCell)
 	content.WriteString(everyRow)
+	content.WriteString("\n")
+
+	// Probability setting
+	probabilityLabel := "Probability:"
+	probabilityValue := fmt.Sprintf("%d%%", settings.Probability)
+	var probabilityCell string
+	if m.CurrentRow == 4 {
+		probabilityCell = selectedStyle.Render(probabilityValue)
+	} else {
+		probabilityCell = normalStyle.Render(probabilityValue)
+	}
+	probabilityRow := fmt.Sprintf("  %-12s %s", labelStyle.Render(probabilityLabel), probabilityCell)
+	content.WriteString(probabilityRow)
 	content.WriteString("\n\n")
 
 	// Footer with status
 	statusMsg := "Up/Down: Navigate | Ctrl+Arrow: Adjust values | Shift+Left: Back to Phrase view"
-	content.WriteString(RenderFooter(m, 7, statusMsg))
+	content.WriteString(RenderFooter(m, 8, statusMsg))
 
 	// Apply container padding
 	return containerStyle.Render(content.String())
