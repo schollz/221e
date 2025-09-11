@@ -23,6 +23,8 @@ import (
 	"github.com/schollz/2n/internal/views"
 )
 
+var Version = "dev"
+
 type scReadyMsg struct{}
 
 func main() {
@@ -31,10 +33,12 @@ func main() {
 	var skipJackCheck bool
 	var saveFolder string
 	var debugLog string
+	var showVersion bool
 	flag.IntVar(&oscPort, "osc-port", 57120, "OSC port for sending playback messages")
 	flag.StringVar(&saveFolder, "save-folder", "save", "Save folder to load from or create (contains data.json.gz and audio files)")
 	flag.BoolVar(&skipJackCheck, "skip-jack-check", false, "Skip checking for JACK server (for testing only)")
 	flag.StringVar(&debugLog, "debug", "", "If set, write debug logs to this file; empty disables logging")
+	flag.BoolVar(&showVersion, "version", false, "Show version and exit")
 
 	// Start CPU profiling for the first 30 seconds
 	cpuFile, err := os.Create("cpu.prof")
@@ -57,6 +61,11 @@ func main() {
 	setupCleanupOnExit()
 
 	flag.Parse()
+
+	if showVersion {
+		fmt.Printf("2n version %s\n", Version)
+		os.Exit(0)
+	}
 
 	if !supercollider.IsJackEnabled() && !skipJackCheck {
 		dialog := supercollider.NewJackDialogModel()
@@ -338,7 +347,7 @@ func (tm *TrackerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (tm TrackerModel) View() string {
 	if tm.showingSplash {
-		return views.RenderSplashScreen(tm.model.TermWidth, tm.model.TermHeight, tm.splashState)
+		return views.RenderSplashScreen(tm.model.TermWidth, tm.model.TermHeight, tm.splashState, Version)
 	}
 
 	switch tm.model.ViewMode {

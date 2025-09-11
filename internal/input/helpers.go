@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"math/rand"
 
 	tea "github.com/charmbracelet/bubbletea"
 
@@ -165,15 +166,15 @@ func ModifyValue(m *model.Model, delta int) {
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newValue
 
 	} else if colIndex == int(types.ColEffectReverse) {
-		// Я column: single bit 0..1 (keep existing behavior)
+		// Я column: probability 0..15 (0x0-0xF, where 15 = 100% chance, 0 = 0% chance)
 		if currentValue == -1 {
 			currentValue = 0
 		}
 		newValue := currentValue + delta
 		if newValue < 0 {
-			newValue = 0
-		} else if newValue > 1 {
-			newValue = 1
+			newValue = 0 // Clamp to min
+		} else if newValue > 15 {
+			newValue = 15 // Clamp to max
 		}
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newValue
 
@@ -701,10 +702,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 				if rawEffectReverse == -1 {
 					return "-"
 				}
-				if rawEffectReverse != 0 {
-					return "1"
-				}
-				return "0"
+				return fmt.Sprintf("%X", rawEffectReverse)
 			}(),
 			formatHex(rawPan),
 			formatHex(rawLowPassFilter),
@@ -922,10 +920,18 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 
 	// NEW effect params
 	if rawEffectReverse != -1 {
-		if rawEffectReverse != 0 {
-			oscParams.EffectReverse = 1
-		} else {
+		if rawEffectReverse == 0 {
 			oscParams.EffectReverse = 0
+		} else {
+			// Probability-based reverse: 1-15 maps to ~6.67%-100% chance
+			// Use true random for each playback
+			probability := float64(rawEffectReverse) / 15.0 * 100.0 // Convert to percentage
+			randomValue := float64(rand.Intn(100) + 1)              // 1-100
+			if randomValue <= probability {
+				oscParams.EffectReverse = 1
+			} else {
+				oscParams.EffectReverse = 0
+			}
 		}
 	}
 	// Pan: Use effective value, map 0-254 to -1.0 to 1.0, with 128 as center (0.0)
@@ -2317,12 +2323,12 @@ func FillSequentialPhrase(m *model.Model) {
 			}
 		}
 	} else if colIndex == int(types.ColEffectReverse) {
-		// Binary columns (0-1) - keep original logic for other binary columns
-		maxValue := 1
+		// Reverse probability column (0-15) - hex range
+		maxValue := 15
 		for row := startRow; row <= currentRow; row++ {
 			value := startValue + (row - startRow)
 			if value > maxValue {
-				value = value % (maxValue + 1) // Wrap: 0, 1, 0, 1, ...
+				value = value % (maxValue + 1) // Wrap: 0-15, 0-15, ...
 			}
 			(*phrasesData)[m.CurrentPhrase][row][colIndex] = value
 		}

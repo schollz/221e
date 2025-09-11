@@ -198,14 +198,10 @@ func RenderSamplerPhraseView(m *model.Model) string {
 			tsCell = normalStyle.Render(tsText)
 		}
 
-		// Я (EffectReverse) — single char: "-", "0", or "1" - now at position 8
+		// Я (EffectReverse) — hex char: "-", "0" to "F" - now at position 8
 		revText := "-"
 		if (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColEffectReverse] != -1 {
-			if (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColEffectReverse] != 0 {
-				revText = "1"
-			} else {
-				revText = "0"
-			}
+			revText = fmt.Sprintf("%X", (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColEffectReverse])
 		}
 		var revCell string
 		if m.CurrentRow == dataIndex && m.CurrentCol == 8 {
@@ -458,13 +454,14 @@ func GetPhraseStatusMessage(m *model.Model) string {
 					}
 				}
 			} else if colIndex == int(types.ColEffectReverse) {
-				// Reverse (Я) column - show Off/On
+				// Reverse (Я) column - show probability percentage
 				if value == -1 {
-					statusMsg = "Reverse: -- (Off)"
+					statusMsg = "Reverse: -- (0%)"
 				} else if value == 0 {
-					statusMsg = "Reverse: 0 (Off)"
+					statusMsg = "Reverse: 0 (0%)"
 				} else {
-					statusMsg = "Reverse: 1 (On)"
+					probability := int(float64(value) / 15.0 * 100.0)
+					statusMsg = fmt.Sprintf("Reverse: %X (%d%%)", value, probability)
 				}
 			} else if colIndex == int(types.ColEffectComb) {
 				// CO (Comb) column - show 0.0 to 1.0 mapping
