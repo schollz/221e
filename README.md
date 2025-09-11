@@ -150,7 +150,7 @@ SL  DT  NOT  C  A  T  A D S R  AR  MI  SO  VL
 - **GT** (gate) – Note length/gate time
 - **RT** (retrigger) – Retrigger effect index
 - **TS** (timestretch) – Time-stretch effect index  
-- **Я** (reverse) – Reverse playback flag
+- **Я** (reverse) – Reverse playback probability (0-F hex: 0=0%, F=100%)
 - **PA** (pan) – Stereo panning
 - **LP/HP** (filters) – Low-pass/High-pass filters
 - **CO** (comb) – Comb filter effect
@@ -173,6 +173,15 @@ Both Sampler and Instrument views now use the same **DT** (Delta Time) column fo
 
 #### Velocity Support
 The **VL** (Velocity) column provides expressive control over note dynamics. SuperCollider tracks and responds to velocity values for both volume and expression, enabling more musical and dynamic performances.
+
+#### Probability-Based Reverse Effect
+The **Я** (Reverse) column in Sampler view now uses a probability system instead of a simple on/off flag:
+- **0** = Never reverse (0% chance)
+- **1** = ~6.7% chance to reverse
+- **F** = Always reverse (100% chance)
+- **Values 1-E** = Linear probability scaling between 6.7%-93.3%
+
+Each time a note plays, the system randomly determines whether to apply reverse playback based on the probability value, adding dynamic variation to your tracks.
 
 #### Portable Sample Management
 The application now uses a local folder structure (tracker-save/) instead of a single save file, automatically storing samples and their metadata together for complete project portability.

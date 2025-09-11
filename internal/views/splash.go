@@ -36,12 +36,12 @@ func (s *SplashState) GetProgress() float64 {
 }
 
 // RenderSplashScreen renders the animated splash screen
-func RenderSplashScreen(termWidth, termHeight int, state *SplashState) string {
+func RenderSplashScreen(termWidth, termHeight int, state *SplashState, version string) string {
 	var content strings.Builder
 
 	// Handle edge cases for small or zero terminal dimensions
 	if termWidth <= 0 || termHeight <= 0 {
-		return "∞\nby infinite digits\ngithub.com/schollz/2n"
+		return "∞\nby infinite digits\ngithub.com/schollz/2n\nversion " + version
 	}
 
 	// Ensure minimum dimensions for proper animation
@@ -110,7 +110,14 @@ func RenderSplashScreen(termWidth, termHeight int, state *SplashState) string {
 		content.WriteString("\n")
 	}
 
-	if progress > 0.18 {
+	if progress > 0.17 {
+		// Version
+		versionLine := subtitleStyle.Width(termWidth).Render("version " + version)
+		content.WriteString(versionLine)
+		content.WriteString("\n")
+	}
+
+	if progress > 0.2 {
 		// Loading
 		loadingLine := loadingStyle.Width(termWidth).Render("initializing SuperCollider...")
 		content.WriteString(loadingLine)

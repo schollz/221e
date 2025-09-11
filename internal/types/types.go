@@ -51,7 +51,7 @@ const (
 	ColGate                                   // Column 3: Gate value (hex, default 80/0x50, sticky)
 	ColRetrigger                              // Column 4: Retrigger setting index (hex, 00-FE)
 	ColTimestretch                            // Column 5: Timestretch setting index (hex, 00-FE)
-	ColEffectReverse                          // Column 6: Я (reverse) 0/1
+	ColEffectReverse                          // Column 6: Я (reverse) 0-F (0-15, probability where F=100%, 0=0%)
 	ColPan                                    // Column 7: PA (pan) (hex, default 128/0x80, 00-FE maps -1.0 to 1.0)
 	ColLowPassFilter                          // Column 8: LP (low pass filter) (hex, default FE/20kHz, 00-FE maps 20Hz to 20kHz exponentially)
 	ColHighPassFilter                         // Column 9: HP (high pass filter) (hex, default -1/null, 00-FE maps 20Hz to 20kHz exponentially)

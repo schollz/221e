@@ -37,7 +37,7 @@ jobs:
         run: go test -v ./...
 
       - name: Build Go project
-        run: go build -v -o 2n
+        run: go build -v -ldflags "-X main.Version=${{ github.ref_name }}" -o 2n
 
       - name: Verify binary
         run: ./2n --help
@@ -70,7 +70,7 @@ jobs:
         run: go test -v ./...
 
       - name: Build Go project
-        run: go build -v -o 2n
+        run: go build -v -ldflags "-X main.Version=${{ github.ref_name }}" -o 2n
 
       - name: Verify binary
         run: ./2n --help
@@ -126,7 +126,7 @@ jobs:
           export CGO_CFLAGS="-I/usr/local/include"
           export CGO_LDFLAGS="-L/usr/local/lib"
           export CGO_CXXFLAGS="${CGO_CXXFLAGS}"
-          CGO_ENABLED=1 go build -buildvcs=false -ldflags '-linkmode external -extldflags "-static -L/usr/local/lib"' -o 2n
+          CGO_ENABLED=1 go build -buildvcs=false -ldflags '-X main.Version=${{ github.ref_name }} -linkmode external -extldflags "-static -L/usr/local/lib"' -o 2n
 
       - name: Verify static binary
         run: |
@@ -179,7 +179,7 @@ jobs:
         run: go test -v ./...
 
       - name: Build Go project
-        run: go build -v -o 2n.exe
+        run: go build -v -ldflags "-X main.Version=${{ github.ref_name }}" -o 2n.exe
 
       - name: Verify binary
         run: .\2n.exe --help
