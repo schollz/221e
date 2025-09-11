@@ -27,7 +27,24 @@ This is a music tracker designed to be used with any terminal (Linux, macOS, Win
 - **SuperCollider** (required; extensions are checked at launch). Download [here](https://supercollider.github.io/downloads.html). 
 - **SuperCollider extensions** (required): Download [here](https://supercollider.github.io/sc3-plugins/)
 - **JACK (jackd)** must be running with the output to your favorite speaker. Download [here](https://jackaudio.org/downloads/).
-- **2n** binary. Grab the latest build from **[Releases](https://github.com/schollz/2n/releases/latest)**.
+- **2n** binary. See installation options below.
+
+## Installation
+
+### macOS
+
+**Option 1: Homebrew (Recommended)**
+```bash
+brew tap schollz/tap
+brew install 2n
+```
+
+**Option 2: Manual Download**
+Grab the latest build from **[Releases](https://github.com/schollz/2n/releases/latest)**.
+
+### Linux/Windows
+
+Grab the latest build from **[Releases](https://github.com/schollz/2n/releases/latest)**.
 
 ## Run
 
