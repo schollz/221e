@@ -232,7 +232,7 @@ func TestRenderMixerView(t *testing.T) {
 func TestRenderSplashScreen(t *testing.T) {
 	splashState := NewSplashState(3 * time.Second)
 
-	view := RenderSplashScreen(80, 24, splashState)
+	view := RenderSplashScreen(80, 24, splashState, "test-version")
 	assert.NotEmpty(t, view)
 
 	lines := strings.Split(view, "\n")
@@ -400,7 +400,7 @@ func TestSplashState(t *testing.T) {
 	assert.NotNil(t, splash)
 
 	// Test splash rendering
-	view := RenderSplashScreen(80, 24, splash)
+	view := RenderSplashScreen(80, 24, splash, "test-version")
 	assert.NotEmpty(t, view)
 
 	lines := strings.Split(view, "\n")
