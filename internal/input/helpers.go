@@ -1653,6 +1653,8 @@ func DeepCopyToClipboard(m *model.Model) {
 		} else {
 			DeepCopyCurrentPhraseToClipboard(m)
 		}
+	} else if m.ViewMode == types.RetriggerView {
+		DeepCopyRetriggerToClipboard(m)
 	} else {
 		log.Printf("Deep copy not supported in this view")
 	}
@@ -2366,38 +2368,13 @@ func FindNextUnusedRetrigger(m *model.Model, startingFrom int) int {
 	return -1 // No unused retrigger found
 }
 
-// IsRetriggerUnused checks if a retrigger slot is unused (not referenced in any phrase and has default settings)
+// IsRetriggerUnused checks if a retrigger slot is unused (Times == 0)
 func IsRetriggerUnused(m *model.Model, retriggerID int) bool {
 	// Bounds check first
 	if retriggerID < 0 || retriggerID >= 255 {
 		return false
 	}
 
-	// Check if retrigger is referenced in any phrase data
-	for phrase := 0; phrase < 255; phrase++ {
-		for row := 0; row < 255; row++ {
-			// Check both sampler and instrument phrases
-			if m.SamplerPhrasesData[phrase][row][types.ColRetrigger] == retriggerID ||
-				m.InstrumentPhrasesData[phrase][row][types.ColRetrigger] == retriggerID {
-				return false
-			}
-		}
-	}
-
-	// Check if retrigger has any non-default settings
-	settings := m.RetriggerSettings[retriggerID]
-	if settings.Times != 0 ||
-		settings.Start != 0.0 ||
-		settings.End != 0.0 ||
-		settings.Beats != 0 ||
-		settings.VolumeDB != 0.0 ||
-		settings.PitchChange != 0.0 ||
-		settings.FinalPitchToStart != 0 ||
-		settings.FinalVolumeToStart != 0 ||
-		settings.Every != 1 || // Default is 1
-		settings.Probability != 100 { // Default is 100
-		return false
-	}
-
-	return true
+	// Simple check: if Times is 0, the retrigger slot is unused
+	return m.RetriggerSettings[retriggerID].Times == 0
 }
