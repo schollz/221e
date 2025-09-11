@@ -187,6 +187,113 @@ Each time a note plays, the system randomly determines whether to apply reverse 
 The application now uses a local folder structure (tracker-save/) instead of a single save file, automatically storing samples and their metadata together for complete project portability.
 
 
+## Building from source
+
+### Prerequisites for Building
+- **Go** (latest stable version)
+- **C/C++ compiler** (GCC on Linux, Xcode on macOS, MinGW on Windows)
+- **System dependencies** (varies by platform)
+
+### Windows
+
+1. **Install MSYS2**: Download from [https://www.msys2.org/](https://www.msys2.org/)
+
+2. **Install required packages** in MSYS2 terminal:
+   ```bash
+   pacman -S --noconfirm mingw-w64-x86_64-rtmidi mingw-w64-x86_64-toolchain
+   ```
+
+3. **Set environment variables**:
+   ```bash
+   export CGO_ENABLED=1
+   export CC=x86_64-w64-mingw32-gcc
+   export CGO_LDFLAGS=-static
+   export CGO_CXXFLAGS="-D__RTMIDI_DEBUG__=0 -D__RTMIDI_QUIET__"
+   ```
+
+4. **Build**:
+   ```bash
+   go build -v -o 2n.exe
+   ```
+
+### macOS
+
+1. **Install dependencies** with Homebrew:
+   ```bash
+   brew update
+   brew install pkg-config rtmidi sox
+   ```
+
+2. **Set environment variables**:
+   ```bash
+   export CGO_ENABLED=1
+   export CGO_CXXFLAGS="-D__RTMIDI_DEBUG__=0 -D__RTMIDI_QUIET__"
+   ```
+
+3. **Build**:
+   ```bash
+   go build -v -o 2n
+   ```
+
+### Linux
+
+#### Standard Build (Dynamic Linking)
+
+1. **Install dependencies** (Ubuntu/Debian):
+   ```bash
+   sudo apt-get update
+   sudo apt-get install -y libasound2-dev sox
+   ```
+
+   **For other distros**: Install equivalent packages for ALSA development headers and SoX
+
+2. **Set environment variables**:
+   ```bash
+   export CGO_CXXFLAGS="-D__RTMIDI_DEBUG__=0 -D__RTMIDI_QUIET__"
+   ```
+
+3. **Build**:
+   ```bash
+   go build -v -o 2n
+   ```
+
+#### Static Build (Portable)
+
+For a fully static binary that runs on any Linux system:
+
+1. **Use Alpine Linux environment** (Docker recommended):
+   ```bash
+   docker run --rm -v $(pwd):/workspace -w /workspace golang:1.25-alpine sh -c '
+   apk add --no-cache git build-base autoconf automake libtool linux-headers alsa-lib-dev sox &&
+   cd /tmp &&
+   git clone https://github.com/alsa-project/alsa-lib.git &&
+   cd alsa-lib && git checkout v1.2.10 &&
+   libtoolize --force --copy --automake && aclocal && autoheader &&
+   automake --foreign --copy --add-missing && autoconf &&
+   ./configure --prefix=/usr/local --enable-shared=no --enable-static=yes --disable-ucm &&
+   make -j$(nproc) && make install &&
+   cd /workspace &&
+   export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH" &&
+   export CGO_CFLAGS="-I/usr/local/include" &&
+   export CGO_LDFLAGS="-L/usr/local/lib" &&
+   export CGO_CXXFLAGS="-D__RTMIDI_DEBUG__=0 -D__RTMIDI_QUIET__" &&
+   CGO_ENABLED=1 go build -buildvcs=false -ldflags "-linkmode external -extldflags \"-static -L/usr/local/lib\"" -o 2n
+   '
+   ```
+
+### Testing the Build
+
+After building, verify the binary works:
+```bash
+./2n --help
+```
+
+### Build Notes
+- The build requires CGO (C bindings) for MIDI and audio functionality
+- Static linking is used on Windows and in the Alpine Linux build for portability
+- The RTMIDI debug flags are disabled for release builds to reduce verbosity
+- Version information can be embedded using: `go build -ldflags "-X main.Version=<version>"`
+
 ## License
 
 MIT
