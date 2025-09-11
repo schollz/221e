@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
@@ -806,12 +807,19 @@ func (m *Model) initializeDefaultData() {
 		}
 	}
 
-	// Initialize current directory
+	// Initialize current directory with absolute path
 	var err error
 	m.CurrentDir, err = os.Getwd()
 	if err != nil {
 		m.CurrentDir = "."
 	}
+	// Ensure CurrentDir is always an absolute path
+	if !filepath.IsAbs(m.CurrentDir) {
+		if abs, err := filepath.Abs(m.CurrentDir); err == nil {
+			m.CurrentDir = abs
+		}
+	}
+	m.CurrentDir = filepath.Clean(m.CurrentDir)
 }
 
 func (m *Model) GetVisibleRows() int {

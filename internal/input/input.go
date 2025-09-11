@@ -874,6 +874,24 @@ func handleLeft(m *model.Model) tea.Cmd {
 			m.CurrentCol = m.CurrentCol - 1
 			storage.AutoSave(m)
 		}
+	} else if m.ViewMode == types.FileView {
+		// Left arrow = go up one folder (same as pressing space on "..")
+		parentDir := filepath.Dir(m.CurrentDir)
+		// Ensure we can always go up unless we're already at root
+		if parentDir != m.CurrentDir && parentDir != "" {
+			m.CurrentDir = parentDir
+			// Clean the path to ensure it's absolute and normalized
+			if !filepath.IsAbs(m.CurrentDir) {
+				if abs, err := filepath.Abs(m.CurrentDir); err == nil {
+					m.CurrentDir = abs
+				}
+			}
+			m.CurrentDir = filepath.Clean(m.CurrentDir)
+			storage.LoadFiles(m)
+			m.CurrentRow = 0
+			m.ScrollOffset = 0
+			storage.AutoSave(m)
+		}
 	} else if m.ViewMode == types.MidiView {
 		// No horizontal navigation in MIDI view - use up/down for settings
 	} else if m.ViewMode == types.SoundMakerView {
@@ -928,6 +946,27 @@ func handleRight(m *model.Model) tea.Cmd {
 		if m.CurrentCol < int(types.ArpeggioColDIV) { // 3 columns: DI, CO, Divisor
 			m.CurrentCol = m.CurrentCol + 1
 			storage.AutoSave(m)
+		}
+	} else if m.ViewMode == types.FileView {
+		// Right arrow = enter current folder/file (same as pressing space)
+		if len(m.Files) > 0 && m.CurrentRow < len(m.Files) {
+			selected := m.Files[m.CurrentRow]
+			// Only navigate into directories, not files
+			if strings.HasSuffix(selected, "/") {
+				newDir := filepath.Join(m.CurrentDir, strings.TrimSuffix(selected, "/"))
+				// Clean and ensure absolute path
+				newDir = filepath.Clean(newDir)
+				if !filepath.IsAbs(newDir) {
+					if abs, err := filepath.Abs(newDir); err == nil {
+						newDir = abs
+					}
+				}
+				m.CurrentDir = newDir
+				storage.LoadFiles(m)
+				m.CurrentRow = 0
+				m.ScrollOffset = 0
+				storage.AutoSave(m)
+			}
 		}
 	} else if m.ViewMode == types.MidiView {
 		// No horizontal navigation in MIDI view - use up/down for settings
