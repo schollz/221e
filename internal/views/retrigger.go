@@ -148,11 +148,24 @@ func RenderRetriggerView(m *model.Model) string {
 	}
 	finalVolumeRow := fmt.Sprintf("  %-14s %s", labelStyle.Render(finalVolumeLabel), finalVolumeCell)
 	content.WriteString(finalVolumeRow)
+	content.WriteString("\n")
+
+	// Every setting
+	everyLabel := "Every:"
+	everyValue := fmt.Sprintf("%d", settings.Every)
+	var everyCell string
+	if m.CurrentRow == 8 {
+		everyCell = selectedStyle.Render(everyValue)
+	} else {
+		everyCell = normalStyle.Render(everyValue)
+	}
+	everyRow := fmt.Sprintf("  %-14s %s", labelStyle.Render(everyLabel), everyCell)
+	content.WriteString(everyRow)
 	content.WriteString("\n\n")
 
 	// Footer with status
 	statusMsg := "Up/Down: Navigate | Ctrl+Arrow: Adjust values | Shift+Left: Back to Phrase view"
-	content.WriteString(RenderFooter(m, 9, statusMsg))
+	content.WriteString(RenderFooter(m, 10, statusMsg))
 
 	// Apply container padding
 	return containerStyle.Render(content.String())

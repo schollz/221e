@@ -129,6 +129,25 @@ func ModifyRetriggerValue(m *model.Model, baseDelta float32) {
 			finalVolumeValue = "Yes"
 		}
 		log.Printf("Modified retrigger %02X FinalVolumeToStart: %s", m.RetriggerEditingIndex, finalVolumeValue)
+	} else if m.CurrentRow == 8 { // Every
+		// Use different increments: 4 for coarse, 1 for fine (based on Ctrl+Up/Down vs Ctrl+Left/Right)
+		var delta int
+		if baseDelta == 1.0 || baseDelta == -1.0 {
+			delta = int(baseDelta) * 4 // Coarse control (Ctrl+Up/Down): +/-4
+		} else if baseDelta == 0.05 || baseDelta == -0.05 {
+			delta = int(baseDelta / 0.05) // Fine control (Ctrl+Left/Right): +/-1
+		} else {
+			delta = int(baseDelta) // Fallback
+		}
+
+		newEvery := settings.Every + delta
+		if newEvery < 1 {
+			newEvery = 1
+		} else if newEvery > 64 {
+			newEvery = 64
+		}
+		settings.Every = newEvery
+		log.Printf("Modified retrigger %02X Every: %d -> %d (delta: %d)", m.RetriggerEditingIndex, settings.Every-delta, settings.Every, delta)
 	}
 
 	// Store back the modified settings
@@ -187,6 +206,25 @@ func ModifyTimestrechValue(m *model.Model, baseDelta float32) {
 		}
 		settings.Beats = newBeats
 		log.Printf("Modified timestretch %02X Beats: %d -> %d (delta: %.2f)", m.TimestrechEditingIndex, settings.Beats-int(baseDelta), settings.Beats, baseDelta)
+	} else if m.CurrentRow == 3 { // Every
+		// Use different increments: 4 for coarse, 1 for fine (based on Ctrl+Up/Down vs Ctrl+Left/Right)
+		var delta int
+		if baseDelta == 1.0 || baseDelta == -1.0 {
+			delta = int(baseDelta) * 4 // Coarse control (Ctrl+Up/Down): +/-4
+		} else if baseDelta == 0.05 || baseDelta == -0.05 {
+			delta = int(baseDelta / 0.05) // Fine control (Ctrl+Left/Right): +/-1
+		} else {
+			delta = int(baseDelta) // Fallback
+		}
+
+		newEvery := settings.Every + delta
+		if newEvery < 1 {
+			newEvery = 1
+		} else if newEvery > 64 {
+			newEvery = 64
+		}
+		settings.Every = newEvery
+		log.Printf("Modified timestretch %02X Every: %d -> %d (delta: %d)", m.TimestrechEditingIndex, settings.Every-delta, settings.Every, delta)
 	}
 
 	// Store back the modified settings
