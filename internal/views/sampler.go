@@ -400,14 +400,14 @@ func GetPhraseStatusMessage(m *model.Model) string {
 					// Check for effective (virtual default) Gate value
 					effectiveGateValue := input.GetEffectiveValueForTrack(m, m.CurrentPhrase, m.CurrentRow, int(types.ColGate), m.CurrentTrack)
 					if effectiveGateValue == -1 {
-						statusMsg = "Gate: -- (0x80/1.33)"
+						statusMsg = "Gate: -- (1.33, sticky)"
 					} else {
 						gateFloat := float32(effectiveGateValue) / 96.0
-						statusMsg = fmt.Sprintf("Gate: -- (%02X/%.2f)", effectiveGateValue, gateFloat)
+						statusMsg = fmt.Sprintf("Gate: -- (%.2f, sticky)", gateFloat)
 					}
 				} else {
 					gateFloat := float32(value) / 96.0
-					statusMsg = fmt.Sprintf("Gate: %02X (%.2f)", value, gateFloat)
+					statusMsg = fmt.Sprintf("Gate: %02X (%.2f, sticky)", value, gateFloat)
 				}
 			} else if colIndex == int(types.ColPitch) {
 				// PI (Pitch) column - show -24 to +24 mapping, 128 (0x80) means 0.0 pitch
