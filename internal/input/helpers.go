@@ -1648,6 +1648,8 @@ func DeepCopyToClipboard(m *model.Model) {
 		columnMapping := m.GetColumnMapping(m.CurrentCol)
 		if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColRetrigger) {
 			DeepCopyRetriggerToClipboard(m)
+		} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColTimestretch) {
+			DeepCopyTimestrechToClipboard(m)
 		} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColArpeggio) {
 			DeepCopyArpeggioToClipboard(m)
 		} else {
@@ -1655,6 +1657,8 @@ func DeepCopyToClipboard(m *model.Model) {
 		}
 	} else if m.ViewMode == types.RetriggerView {
 		DeepCopyRetriggerToClipboard(m)
+	} else if m.ViewMode == types.TimestrechView {
+		DeepCopyTimestrechToClipboard(m)
 	} else {
 		log.Printf("Deep copy not supported in this view")
 	}
@@ -1886,13 +1890,20 @@ func DeepCopyCurrentPhraseToClipboard(m *model.Model) {
 }
 
 func DeepCopyRetriggerToClipboard(m *model.Model) {
-	// Get the retrigger index from the current cell
-	phrasesData := m.GetCurrentPhrasesData()
-	sourceRetriggerIndex := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColRetrigger]
+	var sourceRetriggerIndex int
 
-	if sourceRetriggerIndex == -1 {
-		log.Printf("Cannot deep copy retrigger: no retrigger set in current cell")
-		return
+	if m.ViewMode == types.RetriggerView {
+		// In RetriggerView, use the currently editing retrigger index
+		sourceRetriggerIndex = m.RetriggerEditingIndex
+	} else {
+		// In PhraseView, get the retrigger index from the current cell
+		phrasesData := m.GetCurrentPhrasesData()
+		sourceRetriggerIndex = (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColRetrigger]
+
+		if sourceRetriggerIndex == -1 {
+			log.Printf("Cannot deep copy retrigger: no retrigger set in current cell")
+			return
+		}
 	}
 
 	if sourceRetriggerIndex < 0 || sourceRetriggerIndex >= 255 {
@@ -1909,12 +1920,51 @@ func DeepCopyRetriggerToClipboard(m *model.Model) {
 		HighlightRow:    m.CurrentRow,
 		HighlightCol:    m.CurrentCol,
 		HighlightPhrase: m.CurrentPhrase,
-		HighlightView:   types.PhraseView,
+		HighlightView:   m.ViewMode,
 		IsFreshDeepCopy: true, // Mark for deep copy on paste
 	}
 	m.Clipboard = clipboard
 
 	log.Printf("Marked retrigger %02X for deep copy on paste", sourceRetriggerIndex)
+}
+
+func DeepCopyTimestrechToClipboard(m *model.Model) {
+	var sourceTimestrechIndex int
+
+	if m.ViewMode == types.TimestrechView {
+		// In TimestrechView, use the currently editing timestrech index
+		sourceTimestrechIndex = m.TimestrechEditingIndex
+	} else {
+		// In PhraseView, get the timestrech index from the current cell
+		phrasesData := m.GetCurrentPhrasesData()
+		sourceTimestrechIndex = (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColTimestretch]
+
+		if sourceTimestrechIndex == -1 {
+			log.Printf("Cannot deep copy timestrech: no timestrech set in current cell")
+			return
+		}
+	}
+
+	if sourceTimestrechIndex < 0 || sourceTimestrechIndex >= 255 {
+		log.Printf("Cannot deep copy timestrech: invalid timestrech index %d", sourceTimestrechIndex)
+		return
+	}
+
+	// Put the ORIGINAL timestrech index in clipboard, but mark it for deep copy on paste
+	clipboard := types.ClipboardData{
+		Value:           sourceTimestrechIndex, // Keep original reference
+		CellType:        types.HexCell,
+		Mode:            types.CellMode,
+		HasData:         true,
+		HighlightRow:    m.CurrentRow,
+		HighlightCol:    m.CurrentCol,
+		HighlightPhrase: m.CurrentPhrase,
+		HighlightView:   m.ViewMode,
+		IsFreshDeepCopy: true, // Mark for deep copy on paste
+	}
+	m.Clipboard = clipboard
+
+	log.Printf("Marked timestrech %02X for deep copy on paste", sourceTimestrechIndex)
 }
 
 func DeepCopyArpeggioToClipboard(m *model.Model) {
@@ -2377,4 +2427,33 @@ func IsRetriggerUnused(m *model.Model, retriggerID int) bool {
 
 	// Simple check: if Times is 0, the retrigger slot is unused
 	return m.RetriggerSettings[retriggerID].Times == 0
+}
+
+// FindNextUnusedTimestrech finds the next unused timestrech slot starting from a given index
+func FindNextUnusedTimestrech(m *model.Model, startingFrom int) int {
+	// Bounds check input
+	if startingFrom < 0 || startingFrom >= 255 {
+		return -1
+	}
+
+	// Search from startingFrom+1 to 254, then wrap to 0 to startingFrom-1
+	for offset := 1; offset < 255; offset++ {
+		timestrechID := (startingFrom + offset) % 255
+		if timestrechID >= 0 && timestrechID < 255 && IsTimestrechUnused(m, timestrechID) {
+			return timestrechID
+		}
+	}
+	return -1 // No unused timestrech found
+}
+
+// IsTimestrechUnused checks if a timestrech slot is unused (Start == 0, End == 0, and Beats == 0)
+func IsTimestrechUnused(m *model.Model, timestrechID int) bool {
+	// Bounds check first
+	if timestrechID < 0 || timestrechID >= 255 {
+		return false
+	}
+
+	// Check if timestrech has any meaningful settings - if Start, End, or Beats are non-zero, it's used
+	settings := m.TimestrechSettings[timestrechID]
+	return settings.Start == 0.0 && settings.End == 0.0 && settings.Beats == 0
 }

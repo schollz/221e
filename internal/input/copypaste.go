@@ -115,6 +115,21 @@ func CopyCellToClipboard(m *model.Model) {
 		}
 		m.Clipboard = clipboard
 		log.Printf("Copied retrigger index: %02X", value)
+	} else if m.ViewMode == types.TimestrechView {
+		// Copy timestrech index from timestrech view
+		value := m.TimestrechEditingIndex
+		clipboard := types.ClipboardData{
+			Value:           value,
+			CellType:        types.HexCell,
+			Mode:            types.CellMode,
+			HasData:         true,
+			HighlightRow:    m.CurrentRow,
+			HighlightCol:    m.CurrentCol,
+			HighlightPhrase: -1, // Not applicable for timestrech view
+			HighlightView:   types.TimestrechView,
+		}
+		m.Clipboard = clipboard
+		log.Printf("Copied timestrech index: %02X", value)
 	}
 }
 
@@ -301,6 +316,28 @@ func PasteCellFromClipboard(m *model.Model) {
 						(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = m.Clipboard.Value
 						log.Printf("Pasted retrigger reference %02X to phrase cell", m.Clipboard.Value)
 					}
+				} else if colIndex == int(types.ColTimestretch) && m.Clipboard.Value >= 0 && m.Clipboard.Value < 255 {
+					// Special handling for timestretch column - implement deep copying
+					// Check if this is marked for deep copy on paste (Ctrl+D)
+					if m.Clipboard.IsFreshDeepCopy {
+						// Create the deep copy now (on paste)
+						newTimestrechIndex := FindNextUnusedTimestrech(m, m.Clipboard.Value)
+						if newTimestrechIndex != -1 {
+							// Deep copy the timestrech settings
+							m.TimestrechSettings[newTimestrechIndex] = m.TimestrechSettings[m.Clipboard.Value]
+							// Update the phrase data with the new timestrech index
+							(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newTimestrechIndex
+							log.Printf("Deep copied timestrech settings %02X to %02X and pasted to phrase cell", m.Clipboard.Value, newTimestrechIndex)
+						} else {
+							// No unused timestrech slots available, just copy the reference
+							(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = m.Clipboard.Value
+							log.Printf("Warning: No unused timestrech slots available, pasted reference to timestrech %02X", m.Clipboard.Value)
+						}
+					} else {
+						// Regular copy (Ctrl+C) - just paste the reference
+						(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = m.Clipboard.Value
+						log.Printf("Pasted timestrech reference %02X to phrase cell", m.Clipboard.Value)
+					}
 				} else if colIndex == int(types.ColArpeggio) && m.Clipboard.Value >= 0 && m.Clipboard.Value < 255 {
 					// Special handling for arpeggio column - implement deep copying
 					// Check if this is marked for deep copy on paste (Ctrl+D)
@@ -373,13 +410,32 @@ func PasteCellFromClipboard(m *model.Model) {
 			nextSlot := FindNextUnusedRetrigger(m, m.Clipboard.Value)
 			if nextSlot != -1 {
 				// Deep copy the retrigger settings to the next empty slot
-				m.RetriggerSettings[nextSlot] = m.RetriggerSettings[m.Clipboard.Value]
-				log.Printf("Deep copied retrigger settings %02X to next empty slot %02X", m.Clipboard.Value, nextSlot)
+				sourceSettings := m.RetriggerSettings[m.Clipboard.Value]
+				m.RetriggerSettings[nextSlot] = sourceSettings
+				log.Printf("Deep copied retrigger settings %02X to next empty slot %02X (Times: %d, Start: %.2f, End: %.2f, Beats: %d, Every: %d, Probability: %d)",
+					m.Clipboard.Value, nextSlot, sourceSettings.Times, sourceSettings.Start, sourceSettings.End, sourceSettings.Beats, sourceSettings.Every, sourceSettings.Probability)
 			} else {
 				log.Printf("Cannot paste: no empty retrigger slots available")
 			}
 		} else {
 			log.Printf("Cannot paste: incompatible cell type for retrigger view")
+		}
+	} else if m.ViewMode == types.TimestrechView {
+		// Paste to timestrech view - find next empty slot in timestrech pool
+		if m.Clipboard.CellType == types.HexCell && m.Clipboard.Value >= 0 && m.Clipboard.Value < 255 {
+			// Find next unused timestrech slot
+			nextSlot := FindNextUnusedTimestrech(m, m.Clipboard.Value)
+			if nextSlot != -1 {
+				// Deep copy the timestrech settings to the next empty slot
+				sourceSettings := m.TimestrechSettings[m.Clipboard.Value]
+				m.TimestrechSettings[nextSlot] = sourceSettings
+				log.Printf("Deep copied timestrech settings %02X to next empty slot %02X (Start: %.2f, End: %.2f, Beats: %d, Every: %d, Probability: %d)",
+					m.Clipboard.Value, nextSlot, sourceSettings.Start, sourceSettings.End, sourceSettings.Beats, sourceSettings.Every, sourceSettings.Probability)
+			} else {
+				log.Printf("Cannot paste: no empty timestrech slots available")
+			}
+		} else {
+			log.Printf("Cannot paste: incompatible cell type for timestrech view")
 		}
 	}
 }
