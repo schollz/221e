@@ -303,13 +303,15 @@ type RetriggerSettings struct {
 	FinalPitchToStart  int     `json:"finalPitchToStart"`  // Final pitch to start: 0=No, 1=Yes (default 0)
 	FinalVolumeToStart int     `json:"finalVolumeToStart"` // Final volume to start: 0=No, 1=Yes (default 0)
 	Every              int     `json:"every"`              // Every N steps (1-64, default 1) - retrigger activates when step_count % Every == 0
+	Probability        int     `json:"probability"`        // Probability percentage (0-100, default 100) - chance of activation after Every check
 }
 
 type TimestrechSettings struct {
-	Start float32 `json:"start"` // Start value (0-256, 0.05 increments)
-	End   float32 `json:"end"`   // End value (0-256, 0.05 increments, default 0)
-	Beats int     `json:"beats"` // Beats value (0-256)
-	Every int     `json:"every"` // Every N steps (1-64, default 1) - timestretch activates when step_count % Every == 0
+	Start       float32 `json:"start"`       // Start value (0-256, 0.05 increments)
+	End         float32 `json:"end"`         // End value (0-256, 0.05 increments, default 0)
+	Beats       int     `json:"beats"`       // Beats value (0-256)
+	Every       int     `json:"every"`       // Every N steps (1-64, default 1) - timestretch activates when step_count % Every == 0
+	Probability int     `json:"probability"` // Probability percentage (0-100, default 100) - chance of activation after Every check
 }
 
 // ArpeggioDirection represents different arpeggio directions
@@ -392,16 +394,18 @@ const (
 	RetriggerSettingsRowFinalPitchToStart                              // 6: FinalPitchToStart
 	RetriggerSettingsRowFinalVolumeToStart                             // 7: FinalVolumeToStart
 	RetriggerSettingsRowEvery                                          // 8: Every
+	RetriggerSettingsRowProbability                                    // 9: Probability
 )
 
 // TimestrechSettingsRow represents different rows in the timestrech settings view
 type TimestrechSettingsRow int
 
 const (
-	TimestrechSettingsRowStart TimestrechSettingsRow = iota // 0: Start
-	TimestrechSettingsRowEnd                                // 1: End
-	TimestrechSettingsRowBeats                              // 2: Beats
-	TimestrechSettingsRowEvery                              // 3: Every
+	TimestrechSettingsRowStart       TimestrechSettingsRow = iota // 0: Start
+	TimestrechSettingsRowEnd                                      // 1: End
+	TimestrechSettingsRowBeats                                    // 2: Beats
+	TimestrechSettingsRowEvery                                    // 3: Every
+	TimestrechSettingsRowProbability                              // 4: Probability
 )
 
 type ArpeggioRow struct {

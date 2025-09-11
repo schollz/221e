@@ -817,8 +817,25 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 
 		if m != nil && trackId >= 0 && trackId < 8 && phrase >= 0 && phrase < 255 && row >= 0 && row < 255 {
 			stepCount := m.EffectStepCounter[trackId][phrase][row]
-			isRetriggerActive = stepCount%retriggerSettings.Every == 0
-			log.Printf("DEBUG_RETRIGGER: track=%d phrase=%d row=%d, stepCount=%d, Every=%d, active=%v", trackId, phrase, row, stepCount, retriggerSettings.Every, isRetriggerActive)
+			everyActive := stepCount%retriggerSettings.Every == 0
+
+			// Apply probability AFTER Every check
+			if everyActive {
+				// Validate Probability field
+				if retriggerSettings.Probability < 0 || retriggerSettings.Probability > 100 {
+					log.Printf("WARNING: Invalid retrigger Probability value %d for index %d, defaulting to 100", retriggerSettings.Probability, rawRetrigger)
+					retriggerSettings.Probability = 100
+					m.RetriggerSettings[rawRetrigger] = retriggerSettings
+				}
+
+				// Generate random number 1-100 and check against probability
+				randomValue := (stepCount*31+trackId*17+phrase*13+row*7)%100 + 1
+				isRetriggerActive = randomValue <= retriggerSettings.Probability
+				log.Printf("DEBUG_RETRIGGER: track=%d phrase=%d row=%d, stepCount=%d, Every=%d, everyActive=%v, probability=%d%%, random=%d, finalActive=%v",
+					trackId, phrase, row, stepCount, retriggerSettings.Every, everyActive, retriggerSettings.Probability, randomValue, isRetriggerActive)
+			} else {
+				log.Printf("DEBUG_RETRIGGER: track=%d phrase=%d row=%d, stepCount=%d, Every=%d, skipped by Every check", trackId, phrase, row, stepCount, retriggerSettings.Every)
+			}
 		} else {
 			log.Printf("WARNING: Invalid parameters for retrigger check - model=%v, trackId=%d, phrase=%d, row=%d", m != nil, trackId, phrase, row)
 		}
@@ -868,8 +885,25 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 		isTimestrechActive := false
 		if m != nil && trackId >= 0 && trackId < 8 && phrase >= 0 && phrase < 255 && row >= 0 && row < 255 {
 			stepCount := m.EffectStepCounter[trackId][phrase][row]
-			isTimestrechActive = stepCount%ts.Every == 0
-			log.Printf("DEBUG_TIMESTRETCH: track=%d phrase=%d row=%d, stepCount=%d, Every=%d, active=%v", trackId, phrase, row, stepCount, ts.Every, isTimestrechActive)
+			everyActive := stepCount%ts.Every == 0
+
+			// Apply probability AFTER Every check
+			if everyActive {
+				// Validate Probability field
+				if ts.Probability < 0 || ts.Probability > 100 {
+					log.Printf("WARNING: Invalid timestretch Probability value %d for index %d, defaulting to 100", ts.Probability, rawTimestretch)
+					ts.Probability = 100
+					m.TimestrechSettings[rawTimestretch] = ts
+				}
+
+				// Generate random number 1-100 and check against probability (different seed than retrigger)
+				randomValue := (stepCount*37+trackId*23+phrase*19+row*11)%100 + 1
+				isTimestrechActive = randomValue <= ts.Probability
+				log.Printf("DEBUG_TIMESTRETCH: track=%d phrase=%d row=%d, stepCount=%d, Every=%d, everyActive=%v, probability=%d%%, random=%d, finalActive=%v",
+					trackId, phrase, row, stepCount, ts.Every, everyActive, ts.Probability, randomValue, isTimestrechActive)
+			} else {
+				log.Printf("DEBUG_TIMESTRETCH: track=%d phrase=%d row=%d, stepCount=%d, Every=%d, skipped by Every check", trackId, phrase, row, stepCount, ts.Every)
+			}
 		} else {
 			log.Printf("WARNING: Invalid parameters for timestretch check - model=%v, trackId=%d, phrase=%d, row=%d", m != nil, trackId, phrase, row)
 		}
@@ -2360,7 +2394,8 @@ func IsRetriggerUnused(m *model.Model, retriggerID int) bool {
 		settings.PitchChange != 0.0 ||
 		settings.FinalPitchToStart != 0 ||
 		settings.FinalVolumeToStart != 0 ||
-		settings.Every != 1 { // Default is 1
+		settings.Every != 1 || // Default is 1
+		settings.Probability != 100 { // Default is 100
 		return false
 	}
 

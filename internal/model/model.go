@@ -737,16 +737,18 @@ func (m *Model) initializeDefaultData() {
 			FinalPitchToStart:  0,   // Default No (0)
 			FinalVolumeToStart: 0,   // Default No (0)
 			Every:              1,   // Default every step (1)
+			Probability:        100, // Default 100% probability
 		}
 	}
 
 	// Initialize timestretch settings with defaults
 	for i := 0; i < 255; i++ {
 		m.TimestrechSettings[i] = types.TimestrechSettings{
-			Start: 0.0, // Default start
-			End:   0.0, // Default end
-			Beats: 0,   // Default beats
-			Every: 1,   // Default every step (1)
+			Start:       0.0, // Default start
+			End:         0.0, // Default end
+			Beats:       0,   // Default beats
+			Every:       1,   // Default every step (1)
+			Probability: 100, // Default 100% probability
 		}
 	}
 
