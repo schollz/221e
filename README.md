@@ -18,6 +18,8 @@ A terminal-based music tracker powered by SuperCollider + JACK.
 
 _IMPORTANT NOTE: this software is currently in development and is definetly unstable and chock full of bugs._
 
+**COMPATIBILITY WARNING**: Major version changes (X.0.0 -> Y.0.0) are not backward compatible. Save files from version X.0 cannot be used with version Y.0 and vice versa. Back up your projects before upgrading across major versions.
+
 This program is heavily inspired by my norns tracker, [zxcvbn](https://zxcvbn.norns.online/) and the [dirtywave m8](https://dirtywave.com/) (which itself is inspired by countless trackers before it). While it may look similar, this is not **m8**! The **m8** is incredible, much better than this poc. This thing, **2n**, is based heavily on my own SuperCollider scripts I've written over the years, using an interface modeled after the **m8**, created in a cross-platform terminal user interface.
 
 
