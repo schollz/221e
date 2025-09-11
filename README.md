@@ -20,8 +20,7 @@ _IMPORTANT NOTE: this software is currently in development and is definetly unst
 
 **COMPATIBILITY WARNING**: Major version changes (X.0.0 -> Y.0.0) are not backward compatible. Save files from version X.0 cannot be used with version Y.0 and vice versa. Back up your projects before upgrading across major versions.
 
-This program is heavily inspired by my norns tracker, [zxcvbn](https://zxcvbn.norns.online/) and the [dirtywave m8](https://dirtywave.com/) (which itself is inspired by countless trackers before it). While it may look similar, this is not **m8**! The **m8** is incredible, much better than this poc. This thing, **2n**, is based heavily on my own SuperCollider scripts I've written over the years, using an interface modeled after the **m8**, created in a cross-platform terminal user interface.
-
+This is a music tracker designed to be used with any terminal (Linux, macOS, Windows WSL/terminal). It is the first tracker that (to my knowledge) uses [SuperCollider](https://supercollider.github.io/downloads.html) as the sound engine, which allows for very flexible sound design and synthesis. It also uses [JACK](https://jackaudio.org/downloads/) for audio routing, which allows for low-latency audio and MIDI routing.
 
 ## Prerequisites
 
@@ -43,91 +42,91 @@ Defaults: OSC **57120**, save folder **tracker-save/**.
 
 ### Navigation Between Views
 
-| Key Combo | Description |
-|-----------|-------------|
+| Key Combo       | Description                                                                                                                                                                     |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Shift+Right** | Navigate deeper into structure:<br>• Song → Chain (selected track/row)<br>• Chain → Phrase (selected row)<br>• Phrase → Retrigger/Timestretch/Arpeggio (if set) or File Browser |
-| **Shift+Left** | Navigate back to parent view |
-| **Shift+Up** | Go to Settings (from Song/Chain/Phrase) or File Metadata (from File Browser) |
-| **Shift+Down** | Go to Mixer (from Song/Chain/Phrase) or back from Mixer |
-| **p** | Toggle Preferences (Settings) view |
-| **m** | Toggle Mixer view |
+| **Shift+Left**  | Navigate back to parent view                                                                                                                                                    |
+| **Shift+Up**    | Go to Settings (from Song/Chain/Phrase) or File Metadata (from File Browser)                                                                                                    |
+| **Shift+Down**  | Go to Mixer (from Song/Chain/Phrase) or back from Mixer                                                                                                                         |
+| **p**           | Toggle Preferences (Settings) view                                                                                                                                              |
+| **m**           | Toggle Mixer view                                                                                                                                                               |
 
 ### Navigation Within Views
 
-| Key Combo | Description |
-|-----------|-------------|
-| **Arrow keys** | Move cursor/navigate within current view |
+| Key Combo      | Description                                                 |
+| -------------- | ----------------------------------------------------------- |
+| **Arrow keys** | Move cursor/navigate within current view                    |
 | **Left/Right** | Navigate tracks (Song), chains (Chain), or columns (Phrase) |
 
 ### Playback and Recording
 
-| Key Combo | Description |
-|-----------|-------------|
-| **Space** | Play/stop from current position |
-| **Ctrl+@** | Play/stop from top (global) |
-| **C** | Smart trigger/fill function:<br>• **Non-empty values**: Triggers `EmitRowDataFor` (plays row with full parameters)<br>• **Empty values**: Fills with next available content or copies last row<br>• Works in Song, Chain, and Phrase views |
-| **Ctrl+R** | Toggle recording mode |
+| Key Combo  | Description                                                                                                                                                                                                                                |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Space**  | Play/stop from current position                                                                                                                                                                                                            |
+| **Ctrl+@** | Play/stop from top (global)                                                                                                                                                                                                                |
+| **C**      | Smart trigger/fill function:<br>• **Non-empty values**: Triggers `EmitRowDataFor` (plays row with full parameters)<br>• **Empty values**: Fills with next available content or copies last row<br>• Works in Song, Chain, and Phrase views |
+| **Ctrl+R** | Toggle recording mode                                                                                                                                                                                                                      |
 
 ### Value Editing
 
-| Key Combo | Description |
-|-----------|-------------|
-| **Ctrl+Up/Down** | Coarse adjust values (+/-16, coarse increments) |
-| **Ctrl+Left/Right** | Fine adjust values (+/-1, fine increments) |
-| **Backspace** | Clear cell/value |
-| **Ctrl+H** | Delete entire row |
-| **S** | Paste last edited row |
+| Key Combo           | Description                                     |
+| ------------------- | ----------------------------------------------- |
+| **Ctrl+Up/Down**    | Coarse adjust values (+/-16, coarse increments) |
+| **Ctrl+Left/Right** | Fine adjust values (+/-1, fine increments)      |
+| **Backspace**       | Clear cell/value                                |
+| **Ctrl+H**          | Delete entire row                               |
+| **S**               | Paste last edited row                           |
 
 ### Copy and Paste
 
-| Key Combo | Description |
-|-----------|-------------|
-| **Ctrl+C** | Copy cell |
-| **Ctrl+X** | Cut row |
-| **Ctrl+V** | Paste |
-| **Ctrl+D** | Deep copy |
+| Key Combo  | Description |
+| ---------- | ----------- |
+| **Ctrl+C** | Copy cell   |
+| **Ctrl+X** | Cut row     |
+| **Ctrl+V** | Paste       |
+| **Ctrl+D** | Deep copy   |
 
 ### File Operations and System
 
-| Key Combo | Description |
-|-----------|-------------|
-| **Ctrl+S** | Manual save |
+| Key Combo  | Description                                 |
+| ---------- | ------------------------------------------- |
+| **Ctrl+S** | Manual save                                 |
 | **Ctrl+F** | Smart fill/clear for DT column (Delta Time) |
-| **Esc** | Clear selection highlight |
-| **Ctrl+Q** | Quit |
+| **Esc**    | Clear selection highlight                   |
+| **Ctrl+Q** | Quit                                        |
 
 
 ## Views
 
 ### Main Structure Views
 
-| View | Description |
-|------|-------------|
-| **Song** | Top-level arrangement: 8 tracks × 16 rows (chains per track)<br>• Each track can be either Instrument or Sampler type |
-| **Chain** | Pattern sequences: 16 rows mapping to phrases |
+| View       | Description                                                                                                                                                        |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Song**   | Top-level arrangement: 8 tracks × 16 rows (chains per track)<br>• Each track can be either Instrument or Sampler type                                              |
+| **Chain**  | Pattern sequences: 16 rows mapping to phrases                                                                                                                      |
 | **Phrase** | Main tracker grid with two modes:<br>• **Sampler** – Full sample manipulation (pitch, effects, files)<br>• **Instrument** – Note-based with chords, ADSR, arpeggio |
 
 ### Support Views
 
-| View | Description |
-|------|-------------|
+| View         | Description                                                                                   |
+| ------------ | --------------------------------------------------------------------------------------------- |
 | **Settings** | Global configuration (BPM, PPQ, audio gains, etc.)<br>• Access with **p** key or **Shift+Up** |
-| **Mixer** | Per-track volume levels and mixing<br>• Access with **m** key or **Shift+Down** |
+| **Mixer**    | Per-track volume levels and mixing<br>• Access with **m** key or **Shift+Down**               |
 
 ### File Management Views
 
-| View | Description |
-|------|-------------|
-| **File Browser** | Select audio files for sampler tracks |
+| View              | Description                                                                                              |
+| ----------------- | -------------------------------------------------------------------------------------------------------- |
+| **File Browser**  | Select audio files for sampler tracks                                                                    |
 | **File Metadata** | Configure BPM and slice count per file<br>• Metadata is automatically saved with samples for portability |
 
 ### Effect Configuration Views
 
-| View | Description |
-|------|-------------|
-| **Retrigger** | Envelope settings for retrigger effects |
-| **Timestretch** | Time-stretching parameters |
-| **Arpeggio** | Arpeggio pattern editor (Instrument tracks only) |
+| View            | Description                                      |
+| --------------- | ------------------------------------------------ |
+| **Retrigger**   | Envelope settings for retrigger effects          |
+| **Timestretch** | Time-stretching parameters                       |
+| **Arpeggio**    | Arpeggio pattern editor (Instrument tracks only) |
 
 ## Smart 'C' Key Functionality
 
@@ -321,6 +320,7 @@ After building, verify the binary works:
 - [Renoise](https://www.renoise.com/)
 - [SunVox](https://www.warmplace.ru/soft/sunvox/)
 - [DefleMask](https://deflemask.com/)
+- [dirtywave m8](https://dirtywave.com/
 
 
 ### Cross-platform / General Trackers
