@@ -354,9 +354,9 @@ func RenderSamplerPhraseView(m *model.Model) string {
 func GetPhraseStatusMessage(m *model.Model) string {
 	var statusMsg string
 
-	// Use enum-driven UI indices to avoid hardcoding
-	rtUI := int(types.ColRetrigger) + 1
-	fiUI := int(types.ColFilename) + 1
+	// Use correct sampler UI column indices
+	rtUI := int(types.SamplerColRT)
+	fiUI := int(types.SamplerColFI)
 
 	if m.CurrentCol == rtUI {
 		// On retrigger column - show retrigger info
@@ -396,8 +396,19 @@ func GetPhraseStatusMessage(m *model.Model) string {
 					statusMsg = fmt.Sprintf("Delta Time: %02X (%d ticks, row played)", value, value)
 				}
 			} else if colIndex == int(types.ColGate) {
-				gateFloat := float32(value) / 96.0
-				statusMsg = fmt.Sprintf("Gate: %02X (%.2f)", value, gateFloat)
+				if value == -1 {
+					// Check for effective (virtual default) Gate value
+					effectiveGateValue := input.GetEffectiveValueForTrack(m, m.CurrentPhrase, m.CurrentRow, int(types.ColGate), m.CurrentTrack)
+					if effectiveGateValue == -1 {
+						statusMsg = "Gate: -- (0x80/1.33)"
+					} else {
+						gateFloat := float32(effectiveGateValue) / 96.0
+						statusMsg = fmt.Sprintf("Gate: -- (%02X/%.2f)", effectiveGateValue, gateFloat)
+					}
+				} else {
+					gateFloat := float32(value) / 96.0
+					statusMsg = fmt.Sprintf("Gate: %02X (%.2f)", value, gateFloat)
+				}
 			} else if colIndex == int(types.ColPitch) {
 				// PI (Pitch) column - show -24 to +24 mapping, 128 (0x80) means 0.0 pitch
 				if value == -1 {

@@ -749,9 +749,20 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 	}
 	sliceNumber := rawNote % sliceCount
 
+	// Get effective gate value (handles sticky behavior and virtual defaults)
+	effectiveGate := GetEffectiveValueForTrack(m, phrase, row, int(types.ColGate), trackId)
+	if effectiveGate == -1 {
+		effectiveGate = 0x80 // Default Gate value (128)
+	}
+
 	baseDuration := 1.0 / float32(m.PPQ)
-	gateMultiplier := float32(rawGate) / 96.0
+	gateMultiplier := float32(effectiveGate) / 96.0
 	sliceDuration := baseDuration * gateMultiplier
+	
+	// Apply DT multiplier if DT value is non-zero
+	if rawDeltaTime > 0 {
+		sliceDuration *= float32(rawDeltaTime)
+	}
 
 	// Calculate delta time in seconds (time per row * DT)
 	deltaTimeSeconds := calculateDeltaTimeSeconds(m, phrase, row, trackId)
@@ -894,7 +905,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 		// Extract Gate parameter with effective value (sticky)
 		effectiveGate := GetEffectiveValueForTrack(m, phrase, row, int(types.ColGate), trackId)
 		if effectiveGate == -1 {
-			effectiveGate = 80 // Default Gate value
+			effectiveGate = 0x80 // Default Gate value (128)
 		}
 
 		// Calculate delta time in seconds (time per row * DT)
