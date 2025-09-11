@@ -54,8 +54,8 @@ jobs:
 
       - name: Generate Homebrew formula
         run: |
-          cat > 2n.rb << 'EOF'
-          class TwoN < Formula
+          cat > tune.rb << 'EOF'
+          class Tune < Formula
             desc "Musical performance tool for live coding and improvisation"
             homepage "https://github.com/schollz/2n"
             url "https://github.com/schollz/2n/releases/download/${{ github.event.release.tag_name }}/source_code_vendored.tar.gz"
@@ -100,10 +100,10 @@ jobs:
           mkdir -p tap/Formula
           
           # Copy the formula
-          cp 2n.rb tap/Formula/2n.rb
+          cp tune.rb tap/Formula/tune.rb
           
           # Commit and push
           cd tap
-          git add Formula/2n.rb
-          git commit -m "Update 2n to ${{ steps.release_info.outputs.version }}" || exit 0
+          git add Formula/tune.rb
+          git commit -m "Update tune to ${{ steps.release_info.outputs.version }}" || exit 0
           git push

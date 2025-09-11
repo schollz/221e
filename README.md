@@ -36,7 +36,7 @@ This is a music tracker designed to be used with any terminal (Linux, macOS, Win
 **Option 1: Homebrew (Recommended)**
 ```bash
 brew tap schollz/tap
-brew install 2n
+brew install tune
 ```
 
 **Option 2: Manual Download**
