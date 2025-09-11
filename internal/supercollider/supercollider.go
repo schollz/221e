@@ -19,9 +19,17 @@ import (
 //go:embed sampler.scd
 var embeddedSamplerSCD []byte
 
+//go:embed DX7.afx
+var embeddedDX7AFX []byte
+
+//go:embed DX7.scd
+var embeddedDX7SCD []byte
+
 var (
 	startedBySelf   = false
 	tempSamplerFile = ""
+	tempDX7AFXFile  = ""
+	tempDX7SCDFile  = ""
 	sclangProcess   *exec.Cmd
 	cleanupCalled   = false
 )
@@ -54,13 +62,13 @@ func StartSuperCollider() error {
 		return fmt.Errorf("sclang not found: %v", err)
 	}
 
-	// Create temporary file from embedded sampler.scd
+	// Create temporary files from embedded SuperCollider files
+	// Create sampler.scd
 	tempFile, err := os.CreateTemp("", "sampler-*.scd")
 	if err != nil {
 		return fmt.Errorf("failed to create temporary sampler file: %v", err)
 	}
 
-	// Write embedded content to temp file
 	_, err = tempFile.Write(embeddedSamplerSCD)
 	if err != nil {
 		tempFile.Close()
@@ -68,9 +76,29 @@ func StartSuperCollider() error {
 		return fmt.Errorf("failed to write sampler content: %v", err)
 	}
 	tempFile.Close()
-
-	// Store the temp file path for cleanup
 	tempSamplerFile = tempFile.Name()
+
+	// Get the directory of the sampler file to place DX7 files alongside
+	tempDir := filepath.Dir(tempSamplerFile)
+
+	// Create DX7.afx in the same directory
+	dx7AFXPath := filepath.Join(tempDir, "DX7.afx")
+	err = os.WriteFile(dx7AFXPath, embeddedDX7AFX, 0644)
+	if err != nil {
+		os.Remove(tempSamplerFile)
+		return fmt.Errorf("failed to write DX7.afx: %v", err)
+	}
+	tempDX7AFXFile = dx7AFXPath
+
+	// Create DX7.scd in the same directory
+	dx7SCDPath := filepath.Join(tempDir, "DX7.scd")
+	err = os.WriteFile(dx7SCDPath, embeddedDX7SCD, 0644)
+	if err != nil {
+		os.Remove(tempSamplerFile)
+		os.Remove(tempDX7AFXFile)
+		return fmt.Errorf("failed to write DX7.scd: %v", err)
+	}
+	tempDX7SCDFile = dx7SCDPath
 
 	// Start sclang with the temporary scd file
 	sclangProcess = exec.Command(sclangPath, tempSamplerFile)
@@ -79,7 +107,11 @@ func StartSuperCollider() error {
 	err = sclangProcess.Start()
 	if err != nil {
 		os.Remove(tempSamplerFile)
+		os.Remove(tempDX7AFXFile)
+		os.Remove(tempDX7SCDFile)
 		tempSamplerFile = ""
+		tempDX7AFXFile = ""
+		tempDX7SCDFile = ""
 		return fmt.Errorf("failed to start SuperCollider: %v", err)
 	}
 
@@ -94,7 +126,11 @@ func StartSuperCollider() error {
 			sclangProcess.Process.Kill()
 		}
 		os.Remove(tempSamplerFile)
+		os.Remove(tempDX7AFXFile)
+		os.Remove(tempDX7SCDFile)
 		tempSamplerFile = ""
+		tempDX7AFXFile = ""
+		tempDX7SCDFile = ""
 		startedBySelf = false
 		return fmt.Errorf("SuperCollider failed to start properly")
 	}
@@ -141,10 +177,18 @@ func Cleanup() {
 		sclangProcess = nil
 	}
 
-	// Remove temporary sampler file if we created it
+	// Remove temporary files if we created them
 	if tempSamplerFile != "" {
 		os.Remove(tempSamplerFile)
 		tempSamplerFile = ""
+	}
+	if tempDX7AFXFile != "" {
+		os.Remove(tempDX7AFXFile)
+		tempDX7AFXFile = ""
+	}
+	if tempDX7SCDFile != "" {
+		os.Remove(tempDX7SCDFile)
+		tempDX7SCDFile = ""
 	}
 }
 
