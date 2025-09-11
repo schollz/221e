@@ -112,6 +112,8 @@ type Model struct {
 	SongPlaybackPhrase      [8]int  // Current phrase being played for each track
 	SongPlaybackRowInPhrase [8]int  // Current row within phrase for each track
 	SongPlaybackTicksLeft   [8]int  // Remaining ticks until next row advance for each track
+	// Effect step tracking - tracks how many times each step has been played for Every functionality
+	EffectStepCounter [8][255][255]int // [track][phrase][row] = step count for retrigger and timestretch Every logic
 	// Save folder configuration
 	SaveFolder string // Path to the save folder
 	// Recording state
@@ -734,6 +736,7 @@ func (m *Model) initializeDefaultData() {
 			PitchChange:        0.0, // Default pitch change (0 semitones)
 			FinalPitchToStart:  0,   // Default No (0)
 			FinalVolumeToStart: 0,   // Default No (0)
+			Every:              1,   // Default every step (1)
 		}
 	}
 
@@ -743,6 +746,7 @@ func (m *Model) initializeDefaultData() {
 			Start: 0.0, // Default start
 			End:   0.0, // Default end
 			Beats: 0,   // Default beats
+			Every: 1,   // Default every step (1)
 		}
 	}
 
@@ -792,6 +796,12 @@ func (m *Model) initializeDefaultData() {
 		m.SongPlaybackPhrase[track] = -1
 		m.SongPlaybackRowInPhrase[track] = 0
 		m.SongPlaybackTicksLeft[track] = 0
+		// Initialize effect step counters to 0
+		for phrase := 0; phrase < 255; phrase++ {
+			for row := 0; row < 255; row++ {
+				m.EffectStepCounter[track][phrase][row] = 0
+			}
+		}
 	}
 
 	// Initialize current directory

@@ -302,12 +302,14 @@ type RetriggerSettings struct {
 	PitchChange        float32 `json:"pitchChange"`        // Pitch change (-24 to +24, default 0)
 	FinalPitchToStart  int     `json:"finalPitchToStart"`  // Final pitch to start: 0=No, 1=Yes (default 0)
 	FinalVolumeToStart int     `json:"finalVolumeToStart"` // Final volume to start: 0=No, 1=Yes (default 0)
+	Every              int     `json:"every"`              // Every N steps (1-64, default 1) - retrigger activates when step_count % Every == 0
 }
 
 type TimestrechSettings struct {
 	Start float32 `json:"start"` // Start value (0-256, 0.05 increments)
 	End   float32 `json:"end"`   // End value (0-256, 0.05 increments, default 0)
 	Beats int     `json:"beats"` // Beats value (0-256)
+	Every int     `json:"every"` // Every N steps (1-64, default 1) - timestretch activates when step_count % Every == 0
 }
 
 // ArpeggioDirection represents different arpeggio directions
@@ -389,6 +391,7 @@ const (
 	RetriggerSettingsRowPitch                                          // 5: Pitch
 	RetriggerSettingsRowFinalPitchToStart                              // 6: FinalPitchToStart
 	RetriggerSettingsRowFinalVolumeToStart                             // 7: FinalVolumeToStart
+	RetriggerSettingsRowEvery                                          // 8: Every
 )
 
 // TimestrechSettingsRow represents different rows in the timestrech settings view
@@ -398,6 +401,7 @@ const (
 	TimestrechSettingsRowStart TimestrechSettingsRow = iota // 0: Start
 	TimestrechSettingsRowEnd                                // 1: End
 	TimestrechSettingsRowBeats                              // 2: Beats
+	TimestrechSettingsRowEvery                              // 3: Every
 )
 
 type ArpeggioRow struct {

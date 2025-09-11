@@ -565,8 +565,24 @@ func EmitLastSelectedPhraseRowData(m *model.Model) {
 func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 	log.Printf("DEBUG_EMIT: EmitRowDataFor called with phrase=%d, row=%d, trackId=%d", phrase, row, trackId)
 
+	// Defensive null check to prevent crashes
+	if m == nil {
+		log.Printf("ERROR: EmitRowDataFor called with nil model")
+		return
+	}
+
+	// Validate input parameters
+	if phrase < 0 || phrase >= 255 || row < 0 || row >= 255 || trackId < 0 || trackId >= 8 {
+		log.Printf("ERROR: EmitRowDataFor called with invalid parameters - phrase=%d, row=%d, trackId=%d", phrase, row, trackId)
+		return
+	}
+
 	// Use track-aware data access for correct playback
 	phrasesData := GetPhrasesDataForTrack(m, trackId)
+	if phrasesData == nil {
+		log.Printf("ERROR: GetPhrasesDataForTrack returned nil for trackId=%d", trackId)
+		return
+	}
 	rowData := (*phrasesData)[phrase][row]
 
 	// Raw values - DT used for playback control in both views
@@ -758,7 +774,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 	baseDuration := 1.0 / float32(m.PPQ)
 	gateMultiplier := float32(effectiveGate) / 96.0
 	sliceDuration := baseDuration * gateMultiplier
-	
+
 	// Apply DT multiplier if DT value is non-zero
 	if rawDeltaTime > 0 {
 		sliceDuration *= float32(rawDeltaTime)
@@ -777,22 +793,54 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 		velocity = 127
 	}
 
+	// Increment step counter for this position (for effect Every functionality)
+	// Add defensive check to ensure model is not nil and arrays are properly initialized
+	if m != nil && trackId >= 0 && trackId < 8 && phrase >= 0 && phrase < 255 && row >= 0 && row < 255 {
+		m.EffectStepCounter[trackId][phrase][row]++
+		log.Printf("DEBUG_EFFECTS: Incremented step counter for track=%d phrase=%d row=%d, count=%d", trackId, phrase, row, m.EffectStepCounter[trackId][phrase][row])
+	} else {
+		log.Printf("WARNING: Invalid parameters for step counter - model=%v, trackId=%d, phrase=%d, row=%d", m != nil, trackId, phrase, row)
+	}
+
 	var oscParams model.SamplerOSCParams
+	// Check if retrigger is set and should be active based on Every setting
+	isRetriggerActive := false
 	if rawRetrigger != -1 && rawRetrigger >= 0 && rawRetrigger < 255 {
 		retriggerSettings := m.RetriggerSettings[rawRetrigger]
-		oscParams = model.NewSamplerOSCParamsWithRetrigger(
-			effectiveFilename, trackId, sliceCount, sliceNumber, bpmSource, m.BPM, sliceDuration,
-			retriggerSettings.Times,
-			float32(retriggerSettings.Beats),
-			retriggerSettings.Start,
-			retriggerSettings.End,
-			retriggerSettings.PitchChange,
-			retriggerSettings.VolumeDB,
-			deltaTimeSeconds,
-			velocity,
-			retriggerSettings.FinalPitchToStart,
-			retriggerSettings.FinalVolumeToStart,
-		)
+
+		// Validate Every field to prevent division by zero
+		if retriggerSettings.Every <= 0 {
+			log.Printf("WARNING: Invalid retrigger Every value %d for index %d, defaulting to 1", retriggerSettings.Every, rawRetrigger)
+			retriggerSettings.Every = 1
+			m.RetriggerSettings[rawRetrigger] = retriggerSettings // Update the model with corrected value
+		}
+
+		if m != nil && trackId >= 0 && trackId < 8 && phrase >= 0 && phrase < 255 && row >= 0 && row < 255 {
+			stepCount := m.EffectStepCounter[trackId][phrase][row]
+			isRetriggerActive = stepCount%retriggerSettings.Every == 0
+			log.Printf("DEBUG_RETRIGGER: track=%d phrase=%d row=%d, stepCount=%d, Every=%d, active=%v", trackId, phrase, row, stepCount, retriggerSettings.Every, isRetriggerActive)
+		} else {
+			log.Printf("WARNING: Invalid parameters for retrigger check - model=%v, trackId=%d, phrase=%d, row=%d", m != nil, trackId, phrase, row)
+		}
+
+		if isRetriggerActive {
+			oscParams = model.NewSamplerOSCParamsWithRetrigger(
+				effectiveFilename, trackId, sliceCount, sliceNumber, bpmSource, m.BPM, sliceDuration,
+				retriggerSettings.Times,
+				float32(retriggerSettings.Beats),
+				retriggerSettings.Start,
+				retriggerSettings.End,
+				retriggerSettings.PitchChange,
+				retriggerSettings.VolumeDB,
+				deltaTimeSeconds,
+				velocity,
+				retriggerSettings.FinalPitchToStart,
+				retriggerSettings.FinalVolumeToStart,
+			)
+		} else {
+			// Retrigger is set but not active this time, play normally without retrigger
+			oscParams = model.NewSamplerOSCParams(effectiveFilename, trackId, sliceCount, sliceNumber, bpmSource, m.BPM, sliceDuration, deltaTimeSeconds, velocity)
+		}
 	} else {
 		oscParams = model.NewSamplerOSCParams(effectiveFilename, trackId, sliceCount, sliceNumber, bpmSource, m.BPM, sliceDuration, deltaTimeSeconds, velocity)
 	}
@@ -806,12 +854,36 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 		oscParams.Pitch = 0.0
 	}
 
-	// Timestretch
-	if rawTimestretch != -1 {
+	// Timestretch - check if it should be active based on Every setting
+	if rawTimestretch != -1 && rawTimestretch >= 0 && rawTimestretch < 255 {
 		ts := m.TimestrechSettings[rawTimestretch]
-		oscParams.TimestretchStart = float32(ts.Start)
-		oscParams.TimestretchEnd = float32(ts.End)
-		oscParams.TimestretchBeats = float32(ts.Beats)
+
+		// Validate Every field to prevent division by zero
+		if ts.Every <= 0 {
+			log.Printf("WARNING: Invalid timestretch Every value %d for index %d, defaulting to 1", ts.Every, rawTimestretch)
+			ts.Every = 1
+			m.TimestrechSettings[rawTimestretch] = ts // Update the model with corrected value
+		}
+
+		isTimestrechActive := false
+		if m != nil && trackId >= 0 && trackId < 8 && phrase >= 0 && phrase < 255 && row >= 0 && row < 255 {
+			stepCount := m.EffectStepCounter[trackId][phrase][row]
+			isTimestrechActive = stepCount%ts.Every == 0
+			log.Printf("DEBUG_TIMESTRETCH: track=%d phrase=%d row=%d, stepCount=%d, Every=%d, active=%v", trackId, phrase, row, stepCount, ts.Every, isTimestrechActive)
+		} else {
+			log.Printf("WARNING: Invalid parameters for timestretch check - model=%v, trackId=%d, phrase=%d, row=%d", m != nil, trackId, phrase, row)
+		}
+
+		if isTimestrechActive {
+			oscParams.TimestretchStart = float32(ts.Start)
+			oscParams.TimestretchEnd = float32(ts.End)
+			oscParams.TimestretchBeats = float32(ts.Beats)
+		} else {
+			// Timestretch is set but not active this time, use defaults (no timestretch)
+			oscParams.TimestretchStart = 0.0
+			oscParams.TimestretchEnd = 0.0
+			oscParams.TimestretchBeats = 0.0
+		}
 	}
 
 	// NEW effect params
@@ -2287,7 +2359,8 @@ func IsRetriggerUnused(m *model.Model, retriggerID int) bool {
 		settings.VolumeDB != 0.0 ||
 		settings.PitchChange != 0.0 ||
 		settings.FinalPitchToStart != 0 ||
-		settings.FinalVolumeToStart != 0 {
+		settings.FinalVolumeToStart != 0 ||
+		settings.Every != 1 { // Default is 1
 		return false
 	}
 

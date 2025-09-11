@@ -417,17 +417,17 @@ func saveFileMetadata(saveFolder, originalPath string, metadata types.FileMetada
 	fileName := filepath.Base(originalPath)
 	metadataFileName := strings.TrimSuffix(fileName, filepath.Ext(fileName)) + ".metadata.json"
 	metadataPath := filepath.Join(saveFolder, metadataFileName)
-	
+
 	data, err := json.Marshal(metadata)
 	if err != nil {
 		return fmt.Errorf("failed to marshal metadata: %w", err)
 	}
-	
+
 	err = os.WriteFile(metadataPath, data, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to write metadata file: %w", err)
 	}
-	
+
 	log.Printf("Saved metadata for %s to %s", fileName, metadataPath)
 	return nil
 }
@@ -436,7 +436,7 @@ func saveFileMetadata(saveFolder, originalPath string, metadata types.FileMetada
 func loadFileMetadata(saveFolder, fileName string) (types.FileMetadata, error) {
 	metadataFileName := strings.TrimSuffix(fileName, filepath.Ext(fileName)) + ".metadata.json"
 	metadataPath := filepath.Join(saveFolder, metadataFileName)
-	
+
 	data, err := os.ReadFile(metadataPath)
 	if err != nil {
 		// Return zero-value metadata if file doesn't exist
@@ -445,13 +445,13 @@ func loadFileMetadata(saveFolder, fileName string) (types.FileMetadata, error) {
 		}
 		return types.FileMetadata{}, fmt.Errorf("failed to read metadata file: %w", err)
 	}
-	
+
 	var metadata types.FileMetadata
 	err = json.Unmarshal(data, &metadata)
 	if err != nil {
 		return types.FileMetadata{}, fmt.Errorf("failed to unmarshal metadata: %w", err)
 	}
-	
+
 	log.Printf("Loaded metadata for %s from %s", fileName, metadataPath)
 	return metadata, nil
 }
@@ -505,10 +505,10 @@ func LoadMetadataFromSaveFolder(saveFolder string, fileMetadata map[string]types
 		if entry.IsDir() {
 			continue
 		}
-		
+
 		fileName := entry.Name()
 		ext := strings.ToLower(filepath.Ext(fileName))
-		
+
 		// Only process wav files
 		if ext == ".wav" {
 			filePath := filepath.Join(saveFolder, fileName)
@@ -517,7 +517,7 @@ func LoadMetadataFromSaveFolder(saveFolder string, fileMetadata map[string]types
 				log.Printf("Warning: Failed to load metadata for %s: %v", fileName, err)
 				continue
 			}
-			
+
 			// Only add metadata if it has meaningful data (non-zero BPM or slices)
 			if metadata.BPM > 0 || metadata.Slices > 0 {
 				fileMetadata[filePath] = metadata
@@ -525,7 +525,7 @@ func LoadMetadataFromSaveFolder(saveFolder string, fileMetadata map[string]types
 			}
 		}
 	}
-	
+
 	return nil
 }
 
