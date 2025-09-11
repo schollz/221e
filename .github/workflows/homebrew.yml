@@ -55,7 +55,7 @@ jobs:
       - name: Generate Homebrew formula
         run: |
           cat > 2n.rb << 'EOF'
-          class Twon < Formula
+          class TwoN < Formula
             desc "Musical performance tool for live coding and improvisation"
             homepage "https://github.com/schollz/2n"
             url "https://github.com/schollz/2n/releases/download/${{ github.event.release.tag_name }}/source_code_vendored.tar.gz"
