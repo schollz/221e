@@ -340,6 +340,7 @@ func handleShiftRight(m *model.Model) tea.Cmd {
 			}
 			// Save current phrase view position
 			m.LastPhraseRow = m.CurrentRow
+			m.LastPhraseCol = m.CurrentCol
 			m.RetriggerEditingIndex = retriggerIndex
 			m.ViewMode = types.RetriggerView
 			m.CurrentRow = 0 // Start at first setting
@@ -357,6 +358,7 @@ func handleShiftRight(m *model.Model) tea.Cmd {
 			}
 			// Save current phrase view position
 			m.LastPhraseRow = m.CurrentRow
+			m.LastPhraseCol = m.CurrentCol
 			m.TimestrechEditingIndex = timestrechIndex
 			m.ViewMode = types.TimestrechView
 			m.CurrentRow = 0 // Start at first setting
@@ -648,25 +650,11 @@ func handleShiftLeft(m *model.Model) tea.Cmd {
 		// Navigate back to phrase view - return to the column we came from
 		switchToView(m, phraseViewConfig(m.FileSelectRow, m.FileSelectCol)) // Go back to original column
 	} else if m.ViewMode == types.RetriggerView {
-		// Navigate back to phrase view - find the UI column for RT
-		var rtColumn int
-		phraseViewType := m.GetPhraseViewType()
-		if phraseViewType == types.InstrumentPhraseView {
-			rtColumn = 1 // RT is not accessible in instrument view, default to P column
-		} else {
-			rtColumn = int(types.ColRetrigger) + 1 // Sampler: data column + 1
-		}
-		switchToViewWithVisibilityCheck(m, phraseViewConfig(m.LastPhraseRow, rtColumn))
+		// Navigate back to phrase view - return to the original column
+		switchToViewWithVisibilityCheck(m, phraseViewConfig(m.LastPhraseRow, m.LastPhraseCol))
 	} else if m.ViewMode == types.TimestrechView {
-		// Navigate back to phrase view - find the UI column for TS
-		var tsColumn int
-		phraseViewType := m.GetPhraseViewType()
-		if phraseViewType == types.InstrumentPhraseView {
-			tsColumn = 1 // TS is not accessible in instrument view, default to P column
-		} else {
-			tsColumn = int(types.ColTimestretch) + 1 // Sampler: data column + 1
-		}
-		switchToViewWithVisibilityCheck(m, phraseViewConfig(m.LastPhraseRow, tsColumn))
+		// Navigate back to phrase view - return to the original column
+		switchToViewWithVisibilityCheck(m, phraseViewConfig(m.LastPhraseRow, m.LastPhraseCol))
 	} else if m.ViewMode == types.ArpeggioView {
 		// Navigate back to phrase view - find the UI column for AR
 		var arColumn int
