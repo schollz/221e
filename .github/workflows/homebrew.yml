@@ -1,0 +1,105 @@
+name: Update Homebrew Formula
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  homebrew:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "stable"
+
+      - name: Create vendored source
+        id: release_info
+        run: |
+          # Clean version string (remove 'v' prefix if present)
+          VERSION="${{ github.event.release.tag_name }}"
+          VERSION="${VERSION#v}"
+          echo "clean_version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+          
+          # Download and extract the source code
+          curl -L -o source.tar.gz "https://github.com/schollz/2n/archive/refs/tags/${{ github.event.release.tag_name }}.tar.gz"
+          tar -xzf source.tar.gz
+          cd 2n-*
+          
+          # Vendor the dependencies
+          go mod vendor
+          
+          # Create vendored tarball
+          cd ..
+          mv 2n-* 2n-vendored
+          tar -czf source_code_vendored.tar.gz 2n-vendored/
+          
+          # Calculate SHA256 of vendored tarball
+          SHA256=$(shasum -a 256 source_code_vendored.tar.gz | cut -d' ' -f1)
+          echo "sha256=$SHA256" >> $GITHUB_OUTPUT
+
+      - name: Upload vendored source to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload ${{ github.event.release.tag_name }} source_code_vendored.tar.gz --clobber
+
+      - name: Generate Homebrew formula
+        run: |
+          cat > 2n.rb << 'EOF'
+          class Twon < Formula
+            desc "Musical performance tool for live coding and improvisation"
+            homepage "https://github.com/schollz/2n"
+            url "https://github.com/schollz/2n/releases/download/${{ github.event.release.tag_name }}/source_code_vendored.tar.gz"
+            sha256 "${{ steps.release_info.outputs.sha256 }}"
+            version "${{ steps.release_info.outputs.clean_version }}"
+            license "MIT"
+
+            depends_on "go" => :build
+            depends_on "pkg-config" => :build
+            depends_on "sox"
+            depends_on "rtmidi"
+
+            def install
+              # Set up CGO environment variables for rtmidi
+              ENV["CGO_ENABLED"] = "1"
+              ENV["CGO_CXXFLAGS"] = "-D__RTMIDI_DEBUG__=0 -D__RTMIDI_QUIET__"
+              
+              # Build with proper flags matching the main workflow
+              # Use -mod=vendor to use vendored dependencies
+              system "go", "build", "-v", "-mod=vendor", "-ldflags", "-X main.Version=#{version}", "-o", "2n"
+              bin.install "2n"
+            end
+
+            test do
+              system "#{bin}/2n", "--help"
+            end
+          end
+          EOF
+
+      - name: Update Homebrew tap
+        env:
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          # Configure git
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Clone the tap repository
+          git clone https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/schollz/homebrew-tap.git tap
+          
+          # Ensure Formula directory exists
+          mkdir -p tap/Formula
+          
+          # Copy the formula
+          cp 2n.rb tap/Formula/2n.rb
+          
+          # Commit and push
+          cd tap
+          git add Formula/2n.rb
+          git commit -m "Update 2n to ${{ steps.release_info.outputs.version }}" || exit 0
+          git push
