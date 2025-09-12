@@ -312,19 +312,9 @@ func PasteCellFromClipboard(m *model.Model) {
 							log.Printf("Warning: No unused retrigger slots available, pasted reference to retrigger %02X", m.Clipboard.Value)
 						}
 					} else {
-						// Regular copy (Ctrl+C) - also create deep copy for backward compatibility
-						newRetriggerIndex := FindNextUnusedRetrigger(m, m.Clipboard.Value)
-						if newRetriggerIndex != -1 {
-							// Deep copy the retrigger settings
-							m.RetriggerSettings[newRetriggerIndex] = m.RetriggerSettings[m.Clipboard.Value]
-							// Update the phrase data with the new retrigger index
-							(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newRetriggerIndex
-							log.Printf("Deep copied retrigger settings %02X to %02X and pasted to phrase cell", m.Clipboard.Value, newRetriggerIndex)
-						} else {
-							// No unused retrigger slots available, just copy the reference
-							(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = m.Clipboard.Value
-							log.Printf("Warning: No unused retrigger slots available, pasted reference to retrigger %02X", m.Clipboard.Value)
-						}
+						// Regular copy (Ctrl+C) - just paste the same value (reference)
+						(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = m.Clipboard.Value
+						log.Printf("Pasted retrigger reference %02X to phrase cell", m.Clipboard.Value)
 					}
 				} else if colIndex == int(types.ColTimestretch) && m.Clipboard.Value >= 0 && m.Clipboard.Value < 255 {
 					// Special handling for timestretch column - implement deep copying
@@ -366,19 +356,9 @@ func PasteCellFromClipboard(m *model.Model) {
 							log.Printf("Warning: No unused arpeggio slots available, pasted reference to arpeggio %02X", m.Clipboard.Value)
 						}
 					} else {
-						// Regular copy (Ctrl+C) - also create deep copy for backward compatibility
-						newArpeggioIndex := FindNextUnusedArpeggio(m, m.Clipboard.Value)
-						if newArpeggioIndex != -1 {
-							// Deep copy the arpeggio settings
-							m.ArpeggioSettings[newArpeggioIndex] = m.ArpeggioSettings[m.Clipboard.Value]
-							// Update the phrase data with the new arpeggio index
-							(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newArpeggioIndex
-							log.Printf("Deep copied arpeggio settings %02X to %02X and pasted to phrase cell", m.Clipboard.Value, newArpeggioIndex)
-						} else {
-							// No unused arpeggio slots available, just copy the reference
-							(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = m.Clipboard.Value
-							log.Printf("Warning: No unused arpeggio slots available, pasted reference to arpeggio %02X", m.Clipboard.Value)
-						}
+						// Regular copy (Ctrl+C) - just paste the same value (reference)
+						(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = m.Clipboard.Value
+						log.Printf("Pasted arpeggio reference %02X to phrase cell", m.Clipboard.Value)
 					}
 				} else {
 					// Normal paste for all other columns
