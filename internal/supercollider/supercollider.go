@@ -207,11 +207,24 @@ func findSclangPath() (string, error) {
 
 	switch runtime.GOOS {
 	case "windows":
-		// Common installation paths on Windows
-		possiblePaths = []string{
+		// Search for SuperCollider folders with version numbers in Program Files
+		programFilesDirs := []string{
+			"C:\\Program Files",
+			"C:\\Program Files (x86)",
+		}
+		
+		for _, baseDir := range programFilesDirs {
+			if scDir := findSuperColliderDir(baseDir); scDir != "" {
+				possiblePaths = append(possiblePaths, filepath.Join(scDir, "sclang.exe"))
+			}
+		}
+		
+		// Fallback to exact paths (in case someone has a custom installation)
+		possiblePaths = append(possiblePaths,
 			"C:\\Program Files\\SuperCollider\\sclang.exe",
 			"C:\\Program Files (x86)\\SuperCollider\\sclang.exe",
-		}
+		)
+		
 		// Also check user's local app data
 		if localAppData := os.Getenv("LOCALAPPDATA"); localAppData != "" {
 			possiblePaths = append(possiblePaths, filepath.Join(localAppData, "SuperCollider", "sclang.exe"))
@@ -355,6 +368,27 @@ func getSuperColliderExtensionDirs() []string {
 func fileExists(filepath string) bool {
 	_, err := os.Stat(filepath)
 	return !os.IsNotExist(err)
+}
+
+// findSuperColliderDir searches for a SuperCollider installation directory
+// in the given base directory, looking for folders that start with "SuperCollider"
+func findSuperColliderDir(baseDir string) string {
+	entries, err := os.ReadDir(baseDir)
+	if err != nil {
+		return ""
+	}
+	
+	for _, entry := range entries {
+		if entry.IsDir() && strings.HasPrefix(entry.Name(), "SuperCollider") {
+			scDir := filepath.Join(baseDir, entry.Name())
+			// Verify sclang.exe exists in this directory
+			if fileExists(filepath.Join(scDir, "sclang.exe")) {
+				return scDir
+			}
+		}
+	}
+	
+	return ""
 }
 
 func DownloadRequiredExtensions() error {
