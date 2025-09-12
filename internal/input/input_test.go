@@ -504,27 +504,8 @@ func TestRetriggerDeepCopy(t *testing.T) {
 	// Get the new retrigger index that was pasted
 	newRetriggerIndex := m.SamplerPhrasesData[0][5][types.ColRetrigger]
 
-	// Verify that a new retrigger index was used (not the same as source)
-	assert.NotEqual(t, sourceRetriggerIndex, newRetriggerIndex)
-	assert.GreaterOrEqual(t, newRetriggerIndex, 0)
-	assert.Less(t, newRetriggerIndex, 255)
-
-	// Verify that the retrigger settings were deep copied
-	sourceSettings := m.RetriggerSettings[sourceRetriggerIndex]
-	newSettings := m.RetriggerSettings[newRetriggerIndex]
-
-	assert.Equal(t, sourceSettings.Times, newSettings.Times)
-	assert.Equal(t, sourceSettings.Start, newSettings.Start)
-	assert.Equal(t, sourceSettings.End, newSettings.End)
-	assert.Equal(t, sourceSettings.Beats, newSettings.Beats)
-	assert.Equal(t, sourceSettings.VolumeDB, newSettings.VolumeDB)
-	assert.Equal(t, sourceSettings.PitchChange, newSettings.PitchChange)
-	assert.Equal(t, sourceSettings.FinalPitchToStart, newSettings.FinalPitchToStart)
-	assert.Equal(t, sourceSettings.FinalVolumeToStart, newSettings.FinalVolumeToStart)
-
-	// Verify that modifying the new settings doesn't affect the original
-	m.RetriggerSettings[newRetriggerIndex].Times = 99
-	assert.NotEqual(t, m.RetriggerSettings[sourceRetriggerIndex].Times, m.RetriggerSettings[newRetriggerIndex].Times)
+	// Regular copy/paste should just copy the reference (same index)
+	assert.Equal(t, sourceRetriggerIndex, newRetriggerIndex)
 }
 
 func TestRetriggerDeepCopyNoUnusedSlots(t *testing.T) {
@@ -681,25 +662,8 @@ func TestArpeggioDeepCopy(t *testing.T) {
 	// Get the new arpeggio index that was pasted
 	newArpeggioIndex := m.InstrumentPhrasesData[0][5][types.ColArpeggio]
 
-	// Verify that a new arpeggio index was used (not the same as source)
-	assert.NotEqual(t, sourceArpeggioIndex, newArpeggioIndex)
-	assert.GreaterOrEqual(t, newArpeggioIndex, 0)
-	assert.Less(t, newArpeggioIndex, 255)
-
-	// Verify that the arpeggio settings were deep copied
-	sourceSettings := m.ArpeggioSettings[sourceArpeggioIndex]
-	newSettings := m.ArpeggioSettings[newArpeggioIndex]
-
-	assert.Equal(t, sourceSettings.Rows[0].Direction, newSettings.Rows[0].Direction)
-	assert.Equal(t, sourceSettings.Rows[0].Count, newSettings.Rows[0].Count)
-	assert.Equal(t, sourceSettings.Rows[0].Divisor, newSettings.Rows[0].Divisor)
-	assert.Equal(t, sourceSettings.Rows[1].Direction, newSettings.Rows[1].Direction)
-	assert.Equal(t, sourceSettings.Rows[1].Count, newSettings.Rows[1].Count)
-	assert.Equal(t, sourceSettings.Rows[1].Divisor, newSettings.Rows[1].Divisor)
-
-	// Verify that modifying the new settings doesn't affect the original
-	m.ArpeggioSettings[newArpeggioIndex].Rows[0].Count = 99
-	assert.NotEqual(t, m.ArpeggioSettings[sourceArpeggioIndex].Rows[0].Count, m.ArpeggioSettings[newArpeggioIndex].Rows[0].Count)
+	// Regular copy/paste should just copy the reference (same index)
+	assert.Equal(t, sourceArpeggioIndex, newArpeggioIndex)
 }
 
 func TestArpeggioCtrlDDeepCopy(t *testing.T) {
@@ -902,11 +866,11 @@ func TestRegularCopyPasteStillWorks(t *testing.T) {
 	assert.False(t, m.Clipboard.IsFreshDeepCopy)
 	assert.Equal(t, sourceRetriggerIndex, m.Clipboard.Value)
 
-	// Move to another cell and paste (Ctrl+V) - should create a deep copy
+	// Move to another cell and paste (Ctrl+V) - should just copy reference
 	m.CurrentRow = 10
 	PasteCellFromClipboard(m)
 
-	// Verify that it created a new deep copy
+	// Verify that it just copied the reference (same index)
 	pastedIndex := m.SamplerPhrasesData[0][10][types.ColRetrigger]
-	assert.NotEqual(t, sourceRetriggerIndex, pastedIndex) // Should be different (new deep copy)
+	assert.Equal(t, sourceRetriggerIndex, pastedIndex) // Should be same (just reference copy)
 }
