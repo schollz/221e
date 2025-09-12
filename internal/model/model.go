@@ -1444,8 +1444,15 @@ func (m *Model) SendOSCSamplerMessage(params SamplerOSCParams) {
 		return // OSC not configured
 	}
 
+	// Convert filename to absolute path for SuperCollider
+	absolutePath, err := filepath.Abs(params.Filename)
+	if err != nil {
+		log.Printf("Error converting filename to absolute path: %v", err)
+		absolutePath = params.Filename // fallback to original filename
+	}
+
 	msg := osc.NewMessage("/sampler")
-	msg.Append(params.Filename)
+	msg.Append(absolutePath)
 	msg.Append(int32(params.TrackId)) // Track ID
 	msg.Append("trackVolume")
 	msg.Append(float32(m.TrackSetLevels[params.TrackId]))
@@ -1500,26 +1507,33 @@ func (m *Model) SendOSCSamplerMessage(params SamplerOSCParams) {
 	msg.Append("deltaTime")
 	msg.Append(float32(params.DeltaTime))
 
-	err := m.oscClient.Send(msg)
+	err = m.oscClient.Send(msg)
 	if err != nil {
 		log.Printf("Error sending OSC sampler message: %v", err)
 	} else {
 		log.Printf("OSC sampler message sent: /sampler '%s' slices=%d slice=%d duration=%.2f bpmSource=%.2f bpmTarget=%.2f",
-			params.Filename, params.SliceCount, params.SliceNumber, params.SliceDuration, params.BPMSource, params.BPMTarget)
+			absolutePath, params.SliceCount, params.SliceNumber, params.SliceDuration, params.BPMSource, params.BPMTarget)
 	}
 }
 
-func (m *Model) SendOSCPlaybackMessage(filepath string, playing bool) {
+func (m *Model) SendOSCPlaybackMessage(filename string, playing bool) {
 	playingInt := int32(0)
 	if playing {
 		playingInt = 1
 	}
 
+	// Convert filename to absolute path for SuperCollider
+	absolutePath, err := filepath.Abs(filename)
+	if err != nil {
+		log.Printf("Error converting filename to absolute path: %v", err)
+		absolutePath = filename // fallback to original filename
+	}
+
 	config := OSCMessageConfig{
 		Address:    "/playback",
-		Parameters: []interface{}{filepath, playingInt},
+		Parameters: []interface{}{absolutePath, playingInt},
 		LogFormat:  "OSC message sent: /playback '%s' %d",
-		LogArgs:    []interface{}{filepath, int(playingInt)},
+		LogArgs:    []interface{}{absolutePath, int(playingInt)},
 	}
 
 	m.sendOSCMessage(config)
@@ -1629,11 +1643,18 @@ func (m *Model) SendOSCRecordMessage(filename string, recording bool, trackMask 
 		recordingInt = 1
 	}
 
+	// Convert filename to absolute path for SuperCollider
+	absolutePath, err := filepath.Abs(filename)
+	if err != nil {
+		log.Printf("Error converting filename to absolute path: %v", err)
+		absolutePath = filename // fallback to original filename
+	}
+
 	config := OSCMessageConfig{
 		Address:    "/record",
-		Parameters: []interface{}{filename, recordingInt, int32(trackMask)},
+		Parameters: []interface{}{absolutePath, recordingInt, int32(trackMask)},
 		LogFormat:  "OSC recording message sent: /record '%s' %d %d",
-		LogArgs:    []interface{}{filename, int(recordingInt), int(trackMask)},
+		LogArgs:    []interface{}{absolutePath, int(recordingInt), int(trackMask)},
 	}
 
 	m.sendOSCMessage(config)

@@ -124,7 +124,7 @@ func main() {
 	// Set up OSC dispatcher early to detect SuperCollider readiness
 	d := osc.NewStandardDispatcher()
 	d.AddMsgHandler("/cpuusage", func(msg *osc.Message) {
-		// log.Printf("SuperCollider CPU Usage: %v", msg.Arguments[0])
+		log.Printf("SuperCollider CPU Usage: %v", msg.Arguments[0])
 		// Signal that SuperCollider is ready (non-blocking)
 		select {
 		case readyChannel <- struct{}{}:
