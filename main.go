@@ -17,6 +17,7 @@ import (
 	"github.com/schollz/2n/internal/input"
 	"github.com/schollz/2n/internal/midiconnector"
 	"github.com/schollz/2n/internal/model"
+	"github.com/schollz/2n/internal/sox"
 	"github.com/schollz/2n/internal/storage"
 	"github.com/schollz/2n/internal/supercollider"
 	"github.com/schollz/2n/internal/types"
@@ -183,12 +184,16 @@ func main() {
 		}
 	}()
 
+	// Initialize sox
+	sox.Init()
+
 	if _, err := p.Run(); err != nil {
 		log.Printf("Error: %v", err)
 	}
 
 	// Always call cleanup when the program exits normally (e.g., Ctrl+Q)
 	supercollider.Cleanup()
+	sox.Clean()
 }
 
 func initialModel(oscPort int, saveFolder string, dispatcher *osc.StandardDispatcher) *TrackerModel {

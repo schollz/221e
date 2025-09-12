@@ -160,7 +160,7 @@ func soundMakerViewConfig() ViewSwitchConfig {
 type TickMsg time.Time
 
 func HandleKeyInput(m *model.Model, msg tea.KeyMsg) tea.Cmd {
-	log.Printf("key: %s", msg.String())
+	log.Printf("key: %s, %+v", msg.String(), msg)
 	switch msg.String() {
 	case "ctrl+q":
 		return tea.Quit
