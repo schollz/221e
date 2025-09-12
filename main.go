@@ -14,6 +14,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hypebeast/go-osc/osc"
 
+	"github.com/schollz/2n/internal/hacks"
 	"github.com/schollz/2n/internal/input"
 	"github.com/schollz/2n/internal/midiconnector"
 	"github.com/schollz/2n/internal/model"
@@ -186,6 +187,8 @@ func main() {
 
 	// Initialize sox
 	sox.Init()
+	// hack to make sure Ctrl+V works on Windows
+	hacks.StoreWinClipboard()
 
 	if _, err := p.Run(); err != nil {
 		log.Printf("Error: %v", err)

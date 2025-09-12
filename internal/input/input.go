@@ -9,6 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/schollz/2n/internal/audio"
+	"github.com/schollz/2n/internal/hacks"
 	"github.com/schollz/2n/internal/model"
 	"github.com/schollz/2n/internal/storage"
 	"github.com/schollz/2n/internal/types"
@@ -224,6 +225,9 @@ func HandleKeyInput(m *model.Model, msg tea.KeyMsg) tea.Cmd {
 		return handleCtrlX(m)
 
 	case "ctrl+v":
+		return handleCtrlV(m)
+
+	case "w":
 		return handleCtrlV(m)
 
 	case "ctrl+d":
@@ -1253,6 +1257,7 @@ func handleC(m *model.Model) tea.Cmd {
 }
 
 func handleCtrlC(m *model.Model) tea.Cmd {
+	hacks.StoreWinClipboard()
 	CopyCellToClipboard(m)
 	return nil
 }
