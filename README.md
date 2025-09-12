@@ -24,7 +24,7 @@ This is a music tracker designed to be used with any terminal (Linux, macOS, Win
 
 ## Prerequisites
 
-- **SuperCollider** (required; extensions are checked at launch). Download [here](https://supercollider.github.io/downloads.html). 
+- **SuperCollider** (required; extensions are checked at launch). Download [here](https://supercollider.github.io/downloads.html).
 - **SuperCollider extensions** (required): Download [here](https://supercollider.github.io/sc3-plugins/)
 - **JACK (jackd)** must be running with the output to your favorite speaker. Download [here](https://jackaudio.org/downloads/).
 - **2n** binary. See installation options below.
@@ -34,6 +34,7 @@ This is a music tracker designed to be used with any terminal (Linux, macOS, Win
 ### macOS
 
 **Option 1: Homebrew (Recommended)**
+
 ```bash
 brew tap schollz/tap
 brew install tune
@@ -48,12 +49,13 @@ Grab the latest build from **[Releases](https://github.com/schollz/2n/releases/l
 
 ## Run
 
-(After you have started Jack...)
+1. First start Jack.
+2. Run SuperCollider and then open `2n/internal/supercollider/sampler.scd` in SuperCollider. Then, in SuperCollider, goto "Lanaguage" -> "Evaluate File". SuperCollider should become Active.
+3. Now you can run 2n:
+
 ```bash
 ./2n
 ```
-
-Defaults: OSC **57120**, save folder **tracker-save/**.
 
 ## Keyboard — Quick Reference
 
@@ -112,7 +114,6 @@ Defaults: OSC **57120**, save folder **tracker-save/**.
 | **Esc**    | Clear selection highlight                   |
 | **Ctrl+Q** | Quit                                        |
 
-
 ## Views
 
 ### Main Structure Views
@@ -150,42 +151,47 @@ Defaults: OSC **57120**, save folder **tracker-save/**.
 The **C** key provides context-aware trigger and fill functionality across all views:
 
 ### Phrase View
+
 - **Non-empty row**: Triggers `EmitRowDataFor` with complete parameter set:
   - **Instrument tracks**: Note, Chord (C/A/T), ADSR (A/D/S/R), Arpeggio (AR), MIDI (MI), SoundMaker (SO)
   - **Sampler tracks**: All traditional sampler parameters
 - **Empty row**: Copies last row with increment
 
-### Chain View  
+### Chain View
+
 - **Non-empty slot**: Triggers first row of the referenced phrase
 - **Empty slot**: Fills with next unused phrase
 
 ### Song View
+
 - **Non-empty slot**: Finds first phrase in referenced chain and triggers its first row
 - **Empty slot**: Fills with next unused chain
 
 This unified approach allows instant playback testing of any musical element while maintaining the original fill functionality for composition workflow.
 
-
 ## Phrase Columns
 
 ### Sampler View
+
 ```
 SL  DT  NN  PI  GT  RT  TS  Я  PA  LP  HP  CO  VE  VL  FI
 ```
 
-### Instrument View  
+### Instrument View
+
 ```
 SL  DT  NOT  C  A  T  A D S R  AR  MI  SO  VL
 ```
 
 ### Column Descriptions
+
 - **SL** (slice) – Row number display
 - **DT** (delta time) – **Unified playback control**: `--`/`00` = skip, `>00` = play for N ticks
 - **NN/NOT** (note) – MIDI note (hex) or note name
 - **PI** (pitch) – Pitch bend (sampler only)
 - **GT** (gate) – Note length/gate time
 - **RT** (retrigger) – Retrigger effect index
-- **TS** (timestretch) – Time-stretch effect index  
+- **TS** (timestretch) – Time-stretch effect index
 - **Я** (reverse) – Reverse playback probability (0-F hex: 0=0%, F=100%)
 - **PA** (pan) – Stereo panning
 - **LP/HP** (filters) – Low-pass/High-pass filters
@@ -194,7 +200,7 @@ SL  DT  NOT  C  A  T  A D S R  AR  MI  SO  VL
 - **VL** (velocity) – Note velocity (0-F hex, affects volume and expression)
 - **FI** (file index) – Sample file selection (sampler only)
 - **C** (chord) – Chord type: None(-), Major(M), minor(m), Dominant(d) (instrument only)
-- **A** (chord addition) – Chord addition: None(-), 7th(7), 9th(9), 4th(4) (instrument only)  
+- **A** (chord addition) – Chord addition: None(-), 7th(7), 9th(9), 4th(4) (instrument only)
 - **T** (transposition) – Chord transposition: 0-F semitones (instrument only)
 - **A D S R** (ADSR) – Attack/Decay/Sustain/Release envelope (instrument only)
 - **AR** (arpeggio) – Arpeggio pattern index (instrument only)
@@ -205,13 +211,17 @@ SL  DT  NOT  C  A  T  A D S R  AR  MI  SO  VL
 ### Key Features
 
 #### Unified DT Column
+
 Both Sampler and Instrument views now use the same **DT** (Delta Time) column for playback control, replacing the previous separate P/DT system. This provides consistent behavior across both track types.
 
 #### Velocity Support
+
 The **VL** (Velocity) column provides expressive control over note dynamics. SuperCollider tracks and responds to velocity values for both volume and expression, enabling more musical and dynamic performances.
 
 #### Probability-Based Reverse Effect
+
 The **Я** (Reverse) column in Sampler view now uses a probability system instead of a simple on/off flag:
+
 - **0** = Never reverse (0% chance)
 - **1** = ~6.7% chance to reverse
 - **F** = Always reverse (100% chance)
@@ -220,12 +230,13 @@ The **Я** (Reverse) column in Sampler view now uses a probability system instea
 Each time a note plays, the system randomly determines whether to apply reverse playback based on the probability value, adding dynamic variation to your tracks.
 
 #### Portable Sample Management
-The application now uses a local folder structure (tracker-save/) instead of a single save file, automatically storing samples and their metadata together for complete project portability.
 
+The application now uses a local folder structure (tracker-save/) instead of a single save file, automatically storing samples and their metadata together for complete project portability.
 
 ## Building from source
 
 ### Prerequisites for Building
+
 - **Go** (latest stable version)
 - **C/C++ compiler** (GCC on Linux, Xcode on macOS, MinGW on Windows)
 - **System dependencies** (varies by platform)
@@ -235,11 +246,13 @@ The application now uses a local folder structure (tracker-save/) instead of a s
 1. **Install MSYS2**: Download from [https://www.msys2.org/](https://www.msys2.org/)
 
 2. **Install required packages** in MSYS2 terminal:
+
    ```bash
    pacman -S --noconfirm mingw-w64-x86_64-rtmidi mingw-w64-x86_64-toolchain
    ```
 
 3. **Set environment variables**:
+
    ```bash
    export CGO_ENABLED=1
    export CC=x86_64-w64-mingw32-gcc
@@ -255,12 +268,14 @@ The application now uses a local folder structure (tracker-save/) instead of a s
 ### macOS
 
 1. **Install dependencies** with Homebrew:
+
    ```bash
    brew update
    brew install pkg-config rtmidi sox
    ```
 
 2. **Set environment variables**:
+
    ```bash
    export CGO_ENABLED=1
    export CGO_CXXFLAGS="-D__RTMIDI_DEBUG__=0 -D__RTMIDI_QUIET__"
@@ -276,6 +291,7 @@ The application now uses a local folder structure (tracker-save/) instead of a s
 #### Standard Build (Dynamic Linking)
 
 1. **Install dependencies** (Ubuntu/Debian):
+
    ```bash
    sudo apt-get update
    sudo apt-get install -y libasound2-dev sox
@@ -284,6 +300,7 @@ The application now uses a local folder structure (tracker-save/) instead of a s
    **For other distros**: Install equivalent packages for ALSA development headers and SoX
 
 2. **Set environment variables**:
+
    ```bash
    export CGO_CXXFLAGS="-D__RTMIDI_DEBUG__=0 -D__RTMIDI_QUIET__"
    ```
@@ -320,27 +337,29 @@ For a fully static binary that runs on any Linux system:
 ### Testing the Build
 
 After building, verify the binary works:
+
 ```bash
 ./2n --help
 ```
 
 ### Build Notes
+
 - The build requires CGO (C bindings) for MIDI and audio functionality
 - Static linking is used on Windows and in the Alpine Linux build for portability
 - The RTMIDI debug flags are disabled for release builds to reduce verbosity
 - Version information can be embedded using: `go build -ldflags "-X main.Version=<version>"`
 
-
 ## Big list of trackers
 
 ## Popular Modern / Commercial
+
 - [Renoise](https://www.renoise.com/)
 - [SunVox](https://www.warmplace.ru/soft/sunvox/)
 - [DefleMask](https://deflemask.com/)
 - [dirtywave m8](https://dirtywave.com/
 
-
 ### Cross-platform / General Trackers
+
 - [OpenMPT (ModPlug Tracker)](https://github.com/OpenMPT/openmpt)
 - [MilkyTracker](https://github.com/milkytracker/MilkyTracker)
 - [Schism Tracker](https://github.com/schismtracker/schismtracker)
@@ -353,6 +372,7 @@ After building, verify the binary works:
 - [Propulse Tracker](https://github.com/hukkax/Propulse)
 
 ### Classic Trackers & Clones
+
 - [FastTracker II (original info)](https://en.wikipedia.org/wiki/FastTracker_2) · [ft2-clone](https://github.com/8bitbubsy/ft2-clone)
 - [ProTracker 2 clone (pt2-clone)](https://github.com/8bitbubsy/pt2-clone)
 - [HivelyTracker](https://github.com/petet/hivelytracker)
@@ -362,9 +382,11 @@ After building, verify the binary works:
 - [MadTracker](https://www.madtracker.org/)
 
 ### Web / Browser Trackers
+
 - [BassoonTracker](https://github.com/steffest/BassoonTracker) · [Live Demo](http://www.stef.be/bassoontracker/)
 
 ### Game Boy / NES / Console-focused
+
 - [LSDj (Little Sound Dj)](https://littlesounddj.com/25th/)
 - [0CC-FamiTracker](https://github.com/0xCDA/0CC-FamiTracker)
 - [FamiStudio](https://github.com/BleuBleu/FamiStudio) · [Website](https://famistudio.org/)
@@ -372,22 +394,26 @@ After building, verify the binary works:
 - [NitroTracker](https://nitrotracker.tobw.net/) · [GitHub Fork](https://github.com/TobWen/NitroTracker)
 
 ### Commodore 64 / SID
+
 - [GoatTracker 2](https://sourceforge.net/projects/goattracker2/)
 - [SID Factory II](https://github.com/Chordian/sidfactory2)
 - [CheeseCutter](https://github.com/theyamo/CheeseCutter)
 - [SID-Wizard (C64 release info)](https://csdb.dk/release/?id=221555)
 
 ### Yamaha / PC-98 / FM & Multi-chip
+
 - [BambooTracker](https://bambootracker.github.io/BambooTracker/)
 - [klystrack](https://kometbomb.github.io/klystrack/)
 - [Protrekkr](https://github.com/hitchhikr/protrekkr)
 
 ### Amiga / ProTracker Family
+
 - [ProTracker 2 clone](https://github.com/8bitbubsy/pt2-clone)
 - [FT2 clone](https://github.com/8bitbubsy/ft2-clone)
 - [HivelyTracker](https://github.com/petet/hivelytracker)
 
 ### Niche
+
 - [Shield Tracker (sTracker)](https://bleep.toys/) · [Shortcuts](https://bleep.toys/stracker/keyboard_shortcuts.html)
 - [1tracker (1-bit ZX/retro)](https://randomflux.info/1bit/viewtopic.php?id=24&p=4)
 
