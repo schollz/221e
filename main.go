@@ -18,6 +18,7 @@ import (
 	"github.com/schollz/collidertracker/internal/input"
 	"github.com/schollz/collidertracker/internal/midiconnector"
 	"github.com/schollz/collidertracker/internal/model"
+	"github.com/schollz/collidertracker/internal/project"
 	"github.com/schollz/collidertracker/internal/sox"
 	"github.com/schollz/collidertracker/internal/storage"
 	"github.com/schollz/collidertracker/internal/supercollider"
@@ -30,11 +31,12 @@ var (
 
 	// Command-line configuration
 	config struct {
-		port     int
-		project  string
-		record   bool
-		debug    string
-		skipJack bool
+		port            int
+		project         string
+		projectProvided bool // Track if --project flag was explicitly provided
+		record          bool
+		debug           string
+		skipJack        bool
 	}
 )
 
@@ -67,6 +69,9 @@ func init() {
 		"Write debug logs to specified file (empty disables)")
 	rootCmd.PersistentFlags().BoolVar(&config.skipJack, "skip-jack", false,
 		"Skip JACK server verification (for testing)")
+	
+	// Set up a callback to track when --project is explicitly provided
+	rootCmd.PersistentFlags().Lookup("project").Changed = false
 }
 
 func main() {
@@ -96,6 +101,33 @@ func runColliderTracker(cmd *cobra.Command, args []string) {
 
 	// Set up cleanup on exit
 	setupCleanupOnExit()
+
+	// Check if --project flag was explicitly provided
+	config.projectProvided = cmd.PersistentFlags().Changed("project")
+	
+	// If no project was specified, show project selector
+	if !config.projectProvided {
+		selectedPath, cancelled := project.RunProjectSelector()
+		if cancelled {
+			os.Exit(0)
+		}
+		
+		if selectedPath != "" {
+			// User selected an existing project
+			config.project = selectedPath
+		} else {
+			// User chose to create new project, prompt for name
+			fmt.Print("Enter project name (or press Enter for 'save'): ")
+			var projectName string
+			fmt.Scanln(&projectName)
+			
+			if projectName == "" {
+				projectName = "save"
+			}
+			
+			config.project = projectName
+		}
+	}
 
 	if !supercollider.IsJackEnabled() && !config.skipJack {
 		dialog := supercollider.NewJackDialogModel()
