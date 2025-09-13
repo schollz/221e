@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -13,6 +12,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hypebeast/go-osc/osc"
+	"github.com/spf13/cobra"
 
 	"github.com/schollz/collidertracker/internal/hacks"
 	"github.com/schollz/collidertracker/internal/input"
@@ -25,25 +25,58 @@ import (
 	"github.com/schollz/collidertracker/internal/views"
 )
 
-var Version = "dev"
+var (
+	Version = "dev"
+	
+	// Command-line configuration
+	config struct {
+		port       int
+		project    string
+		record     bool
+		debug      string
+		skipJack   bool
+	}
+)
 
 type scReadyMsg struct{}
 
-func main() {
-	// Parse command line arguments (no no-splash anymore)
-	var oscPort int
-	var skipJackCheck bool
-	var saveFolder string
-	var debugLog string
-	var showVersion bool
-	var recordAll bool
-	flag.IntVar(&oscPort, "osc-port", 57120, "OSC port for sending playback messages")
-	flag.StringVar(&saveFolder, "save-folder", "save", "Save folder to load from or create (contains data.json.gz and audio files)")
-	flag.BoolVar(&skipJackCheck, "skip-jack-check", false, "Skip checking for JACK server (for testing only)")
-	flag.StringVar(&debugLog, "debug", "", "If set, write debug logs to this file; empty disables logging")
-	flag.BoolVar(&showVersion, "version", false, "Show version and exit")
-	flag.BoolVar(&recordAll, "record-all", false, "Record entire session until exit")
+var rootCmd = &cobra.Command{
+	Use:   "collidertracker",
+	Short: "A modern music tracker for SuperCollider",
+	Long: `ColliderTracker is a modern, terminal-based music tracker that integrates 
+with SuperCollider for real-time audio synthesis and sampling.
 
+Features:
+• Real-time audio synthesis with SuperCollider
+• Sample-based music composition
+• MIDI integration
+• Live audio recording and playback
+• Retrigger and time-stretch effects`,
+	Version: Version,
+	Run:     runColliderTracker,
+}
+
+func init() {
+	rootCmd.PersistentFlags().IntVarP(&config.port, "port", "p", 57120, 
+		"OSC port for SuperCollider communication")
+	rootCmd.PersistentFlags().StringVar(&config.project, "project", "save", 
+		"Project directory for songs and audio files")
+	rootCmd.PersistentFlags().BoolVar(&config.record, "record", false, 
+		"Enable automatic session recording")
+	rootCmd.PersistentFlags().StringVar(&config.debug, "log", "", 
+		"Write debug logs to specified file (empty disables)")
+	rootCmd.PersistentFlags().BoolVar(&config.skipJack, "skip-jack", false, 
+		"Skip JACK server verification (for testing)")
+}
+
+func main() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
+
+func runColliderTracker(cmd *cobra.Command, args []string) {
 	// Start CPU profiling for the first 30 seconds
 	cpuFile, err := os.Create("cpu.prof")
 	if err != nil {
@@ -64,14 +97,7 @@ func main() {
 	// Set up cleanup on exit
 	setupCleanupOnExit()
 
-	flag.Parse()
-
-	if showVersion {
-		fmt.Printf("collidertracker version %s\n", Version)
-		os.Exit(0)
-	}
-
-	if !supercollider.IsJackEnabled() && !skipJackCheck {
+	if !supercollider.IsJackEnabled() && !config.skipJack {
 		dialog := supercollider.NewJackDialogModel()
 		p := tea.NewProgram(dialog, tea.WithAltScreen())
 		_, _ = p.Run()
@@ -104,8 +130,8 @@ func main() {
 	}
 
 	// Set up debug logging early
-	if debugLog != "" {
-		f, err := tea.LogToFile(debugLog, "debug")
+	if config.debug != "" {
+		f, err := tea.LogToFile(config.debug, "debug")
 		if err != nil {
 			log.Printf("Fatal: %v", err)
 			os.Exit(1)
@@ -120,7 +146,7 @@ func main() {
 	}
 
 	log.Println("Debug logging enabled")
-	log.Printf("OSC port configured: %d", oscPort)
+	log.Printf("OSC port configured: %d", config.port)
 
 	// Create readiness channel for SuperCollider startup detection
 	readyChannel := make(chan struct{}, 1)
@@ -143,26 +169,26 @@ func main() {
 		}
 	})
 	// Build program
-	tm = initialModel(oscPort, saveFolder, d)
+	tm = initialModel(config.port, config.project, d)
 
 	p := tea.NewProgram(tm, tea.WithAltScreen())
 
 	// Start OSC server after p is created but before p.Run()
-	server := &osc.Server{Addr: fmt.Sprintf(":%d", oscPort+1), Dispatcher: d}
+	server := &osc.Server{Addr: fmt.Sprintf(":%d", config.port+1), Dispatcher: d}
 	go func() {
-		log.Printf("Starting OSC server on port %d", oscPort+1)
+		log.Printf("Starting OSC server on port %d", config.port+1)
 		if err := server.ListenAndServe(); err != nil {
 			log.Printf("Error starting OSC server: %v", err)
 		}
 	}()
 
 	// Start SuperCollider in the background so it doesn't block the splash
-	// Always check JACK status, but only exit if --skip-jack-check is not set
+	// Always check JACK status, but only exit if --skip-jack is not set
 	if supercollider.IsJackEnabled() {
 		log.Printf("JACK server enabled; starting SuperCollider if not already running")
 		go func() {
 			if !supercollider.IsSuperColliderEnabled() {
-				if err := supercollider.StartSuperColliderWithRecording(recordAll); err != nil {
+				if err := supercollider.StartSuperColliderWithRecording(config.record); err != nil {
 					log.Printf("Failed to start SuperCollider: %v", err)
 				}
 			}
@@ -170,15 +196,15 @@ func main() {
 	} else {
 		// JACK is not running - log this but don't start SuperCollider
 		log.Printf("JACK server not enabled; skipping SuperCollider startup")
-		if !skipJackCheck {
-			// Only exit if --skip-jack-check flag was not provided
+		if !config.skipJack {
+			// Only exit if --skip-jack flag was not provided
 			os.Exit(1)
 		}
 	}
 
 	// When SC signals readiness via /cpuusage, hide the splash
 	go func() {
-		if skipJackCheck {
+		if config.skipJack {
 			p.Send(scReadyMsg{}) // skip splash if skipping JACK check
 		} else {
 			<-readyChannel
