@@ -1,6 +1,7 @@
 package input
 
 import (
+	"fmt"
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -12,6 +13,367 @@ import (
 
 func createTestModel() *model.Model {
 	return model.NewModel(0, "test.json") // Port 0 to disable OSC for testing
+}
+
+func TestHandlePgDown(t *testing.T) {
+	tests := []struct {
+		name           string
+		viewMode       types.ViewMode
+		initialRow     int
+		initialCol     int
+		expectedRow    int
+		expectedCol    int // Should stay the same
+		description    string
+	}{
+		{
+			name:        "SongView - from row 0 to row 16 (capped at 15)",
+			viewMode:    types.SongView,
+			initialRow:  0,
+			initialCol:  3,
+			expectedRow: 15, // Capped at max song row
+			expectedCol: 3,  // Column should not change
+			description: "PgDown in SongView should jump to next 16-aligned row but cap at 15",
+		},
+		{
+			name:        "SongView - from row 8 to row 16 (capped at 15)",
+			viewMode:    types.SongView,
+			initialRow:  8,
+			initialCol:  2,
+			expectedRow: 15, // Capped at max song row
+			expectedCol: 2,  // Column should not change
+			description: "PgDown in SongView from middle should jump to max",
+		},
+		{
+			name:        "ChainView - from row 0 to row 16 (capped at 15)",
+			viewMode:    types.ChainView,
+			initialRow:  0,
+			initialCol:  0,
+			expectedRow: 15, // Capped at max chain row
+			expectedCol: 0,  // Column should not change
+			description: "PgDown in ChainView should jump to next 16-aligned row but cap at 15",
+		},
+		{
+			name:        "PhraseView - from row 0 to row 16",
+			viewMode:    types.PhraseView,
+			initialRow:  0,
+			initialCol:  1,
+			expectedRow: 16,
+			expectedCol: 1, // Column should not change
+			description: "PgDown in PhraseView should jump to row 16",
+		},
+		{
+			name:        "PhraseView - from row 5 to row 16",
+			viewMode:    types.PhraseView,
+			initialRow:  5,
+			initialCol:  2,
+			expectedRow: 16,
+			expectedCol: 2, // Column should not change
+			description: "PgDown in PhraseView from row 5 should jump to row 16",
+		},
+		{
+			name:        "PhraseView - from row 16 to row 32",
+			viewMode:    types.PhraseView,
+			initialRow:  16,
+			initialCol:  1,
+			expectedRow: 32,
+			expectedCol: 1, // Column should not change
+			description: "PgDown in PhraseView from row 16 should jump to row 32",
+		},
+		{
+			name:        "PhraseView - from row 240 to row 254 (capped)",
+			viewMode:    types.PhraseView,
+			initialRow:  240,
+			initialCol:  1,
+			expectedRow: 254, // Capped at max phrase row
+			expectedCol: 1,   // Column should not change
+			description: "PgDown in PhraseView should cap at 254",
+		},
+		{
+			name:        "PhraseView - already at max row 254",
+			viewMode:    types.PhraseView,
+			initialRow:  254,
+			initialCol:  1,
+			expectedRow: 254, // Should stay at 254
+			expectedCol: 1,   // Column should not change
+			description: "PgDown in PhraseView at max row should not move",
+		},
+		{
+			name:        "FileView - from row 5 to row 16 (assuming enough files)",
+			viewMode:    types.FileView,
+			initialRow:  5,
+			initialCol:  0,
+			expectedRow: 16,
+			expectedCol: 0, // Column should not change
+			description: "PgDown in FileView should jump to next 16-aligned row",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := createTestModel()
+			m.ViewMode = tt.viewMode
+			m.CurrentRow = tt.initialRow
+			m.CurrentCol = tt.initialCol
+			m.ScrollOffset = 0
+
+			// For FileView tests, ensure we have enough mock files
+			if tt.viewMode == types.FileView {
+				m.Files = make([]string, 100) // Create 100 mock files
+				for i := 0; i < 100; i++ {
+					m.Files[i] = fmt.Sprintf("file_%d.txt", i)
+				}
+			}
+
+			// Call the function
+			handlePgDown(m)
+
+			// Verify the results
+			assert.Equal(t, tt.expectedRow, m.CurrentRow, "Row should be %d, got %d. %s", tt.expectedRow, m.CurrentRow, tt.description)
+			assert.Equal(t, tt.expectedCol, m.CurrentCol, "Column should remain %d, got %d. %s", tt.expectedCol, m.CurrentCol, tt.description)
+		})
+	}
+}
+
+func TestHandlePgUp(t *testing.T) {
+	tests := []struct {
+		name           string
+		viewMode       types.ViewMode
+		initialRow     int
+		initialCol     int
+		expectedRow    int
+		expectedCol    int // Should stay the same
+		description    string
+	}{
+		{
+			name:        "SongView - already at row 0",
+			viewMode:    types.SongView,
+			initialRow:  0,
+			initialCol:  3,
+			expectedRow: 0, // Should stay at 0
+			expectedCol: 3, // Column should not change
+			description: "PgUp in SongView at row 0 should not move",
+		},
+		{
+			name:        "SongView - from row 15 to row 0",
+			viewMode:    types.SongView,
+			initialRow:  15,
+			initialCol:  2,
+			expectedRow: 0, // Should go to 0
+			expectedCol: 2, // Column should not change
+			description: "PgUp in SongView from row 15 should jump to row 0",
+		},
+		{
+			name:        "SongView - from row 8 to row 0",
+			viewMode:    types.SongView,
+			initialRow:  8,
+			initialCol:  1,
+			expectedRow: 0, // Should go to 0
+			expectedCol: 1, // Column should not change
+			description: "PgUp in SongView from row 8 should jump to row 0",
+		},
+		{
+			name:        "ChainView - from row 15 to row 0",
+			viewMode:    types.ChainView,
+			initialRow:  15,
+			initialCol:  0,
+			expectedRow: 0, // Should go to 0
+			expectedCol: 0, // Column should not change
+			description: "PgUp in ChainView from row 15 should jump to row 0",
+		},
+		{
+			name:        "PhraseView - from row 16 to row 0",
+			viewMode:    types.PhraseView,
+			initialRow:  16,
+			initialCol:  1,
+			expectedRow: 0,
+			expectedCol: 1, // Column should not change
+			description: "PgUp in PhraseView from row 16 should jump to row 0",
+		},
+		{
+			name:        "PhraseView - from row 32 to row 16",
+			viewMode:    types.PhraseView,
+			initialRow:  32,
+			initialCol:  2,
+			expectedRow: 16,
+			expectedCol: 2, // Column should not change
+			description: "PgUp in PhraseView from row 32 should jump to row 16",
+		},
+		{
+			name:        "PhraseView - from row 48 to row 32",
+			viewMode:    types.PhraseView,
+			initialRow:  48,
+			initialCol:  1,
+			expectedRow: 32,
+			expectedCol: 1, // Column should not change
+			description: "PgUp in PhraseView from row 48 should jump to row 32",
+		},
+		{
+			name:        "PhraseView - from row 17 to row 16",
+			viewMode:    types.PhraseView,
+			initialRow:  17,
+			initialCol:  1,
+			expectedRow: 16,
+			expectedCol: 1, // Column should not change
+			description: "PgUp in PhraseView from row 17 should jump to row 16",
+		},
+		{
+			name:        "PhraseView - from row 5 to row 0",
+			viewMode:    types.PhraseView,
+			initialRow:  5,
+			initialCol:  1,
+			expectedRow: 0,
+			expectedCol: 1, // Column should not change
+			description: "PgUp in PhraseView from row 5 should jump to row 0",
+		},
+		{
+			name:        "FileView - from row 20 to row 16",
+			viewMode:    types.FileView,
+			initialRow:  20,
+			initialCol:  0,
+			expectedRow: 16,
+			expectedCol: 0, // Column should not change
+			description: "PgUp in FileView from row 20 should jump to row 16",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := createTestModel()
+			m.ViewMode = tt.viewMode
+			m.CurrentRow = tt.initialRow
+			m.CurrentCol = tt.initialCol
+			m.ScrollOffset = 0
+
+			// For FileView tests, ensure we have enough mock files
+			if tt.viewMode == types.FileView {
+				m.Files = make([]string, 100) // Create 100 mock files
+				for i := 0; i < 100; i++ {
+					m.Files[i] = fmt.Sprintf("file_%d.txt", i)
+				}
+			}
+
+			// Call the function
+			handlePgUp(m)
+
+			// Verify the results
+			assert.Equal(t, tt.expectedRow, m.CurrentRow, "Row should be %d, got %d. %s", tt.expectedRow, m.CurrentRow, tt.description)
+			assert.Equal(t, tt.expectedCol, m.CurrentCol, "Column should remain %d, got %d. %s", tt.expectedCol, m.CurrentCol, tt.description)
+		})
+	}
+}
+
+func TestPgUpPgDown16Alignment(t *testing.T) {
+	tests := []struct {
+		name              string
+		viewMode          types.ViewMode
+		startRow          int
+		col               int
+		pgDownExpected    int
+		pgUpFromExpected  int
+		description       string
+	}{
+		{
+			name:              "PhraseView - 16-alignment test from row 0",
+			viewMode:          types.PhraseView,
+			startRow:          0,
+			col:               1,
+			pgDownExpected:    16, // 0x10
+			pgUpFromExpected:  0,  // Back to 0x00
+			description:       "Test 16-alignment: 0 -> 16 -> 0",
+		},
+		{
+			name:              "PhraseView - 16-alignment test from row 32", 
+			viewMode:          types.PhraseView,
+			startRow:          32, // 0x20
+			col:               1,
+			pgDownExpected:    48, // 0x30
+			pgUpFromExpected:  32, // Back to 0x20
+			description:       "Test 16-alignment: 32 -> 48 -> 32",
+		},
+		{
+			name:              "PhraseView - 16-alignment test from row 64",
+			viewMode:          types.PhraseView,
+			startRow:          64, // 0x40
+			col:               2,
+			pgDownExpected:    80, // 0x50
+			pgUpFromExpected:  64, // Back to 0x40
+			description:       "Test 16-alignment: 64 -> 80 -> 64",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := createTestModel()
+			m.ViewMode = tt.viewMode
+			m.CurrentRow = tt.startRow
+			m.CurrentCol = tt.col
+
+			// Test PgDown
+			handlePgDown(m)
+			assert.Equal(t, tt.pgDownExpected, m.CurrentRow, "PgDown: %s - expected row %d, got %d", tt.description, tt.pgDownExpected, m.CurrentRow)
+			assert.Equal(t, tt.col, m.CurrentCol, "PgDown: Column should remain %d, got %d", tt.col, m.CurrentCol)
+
+			// Test PgUp from the new position
+			handlePgUp(m)
+			assert.Equal(t, tt.pgUpFromExpected, m.CurrentRow, "PgUp: %s - expected row %d, got %d", tt.description, tt.pgUpFromExpected, m.CurrentRow)
+			assert.Equal(t, tt.col, m.CurrentCol, "PgUp: Column should remain %d, got %d", tt.col, m.CurrentCol)
+		})
+	}
+}
+
+func TestHandleKeyInputPgUpPgDown(t *testing.T) {
+	tests := []struct {
+		name        string
+		key         string
+		viewMode    types.ViewMode
+		initialRow  int
+		initialCol  int
+		expectedRow int
+		expectedCol int
+	}{
+		{
+			name:        "pgdown key binding",
+			key:         "pgdown",
+			viewMode:    types.PhraseView,
+			initialRow:  0,
+			initialCol:  1,
+			expectedRow: 16,
+			expectedCol: 1,
+		},
+		{
+			name:        "pgup key binding",
+			key:         "pgup",
+			viewMode:    types.PhraseView,
+			initialRow:  32,
+			initialCol:  2,
+			expectedRow: 16,
+			expectedCol: 2,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := createTestModel()
+			m.ViewMode = tt.viewMode
+			m.CurrentRow = tt.initialRow
+			m.CurrentCol = tt.initialCol
+
+			keyMsg := tea.KeyMsg{}
+			keyMsg.Type = tea.KeyRunes
+			switch tt.key {
+			case "pgdown":
+				keyMsg.Type = tea.KeyPgDown
+			case "pgup":
+				keyMsg.Type = tea.KeyPgUp
+			}
+
+			// Call HandleKeyInput
+			HandleKeyInput(m, keyMsg)
+
+			assert.Equal(t, tt.expectedRow, m.CurrentRow, "Row should be %d, got %d", tt.expectedRow, m.CurrentRow)
+			assert.Equal(t, tt.expectedCol, m.CurrentCol, "Column should remain %d, got %d", tt.expectedCol, m.CurrentCol)
+		})
+	}
 }
 
 func TestViewSwitchConfig(t *testing.T) {
