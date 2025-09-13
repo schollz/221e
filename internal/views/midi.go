@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/schollz/2n/internal/model"
-	"github.com/schollz/2n/internal/types"
+	"github.com/schollz/collidertracker/internal/model"
+	"github.com/schollz/collidertracker/internal/types"
 )
 
 func GetMidiStatusMessage(m *model.Model) string {

@@ -14,15 +14,15 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hypebeast/go-osc/osc"
 
-	"github.com/schollz/2n/internal/hacks"
-	"github.com/schollz/2n/internal/input"
-	"github.com/schollz/2n/internal/midiconnector"
-	"github.com/schollz/2n/internal/model"
-	"github.com/schollz/2n/internal/sox"
-	"github.com/schollz/2n/internal/storage"
-	"github.com/schollz/2n/internal/supercollider"
-	"github.com/schollz/2n/internal/types"
-	"github.com/schollz/2n/internal/views"
+	"github.com/schollz/collidertracker/internal/hacks"
+	"github.com/schollz/collidertracker/internal/input"
+	"github.com/schollz/collidertracker/internal/midiconnector"
+	"github.com/schollz/collidertracker/internal/model"
+	"github.com/schollz/collidertracker/internal/sox"
+	"github.com/schollz/collidertracker/internal/storage"
+	"github.com/schollz/collidertracker/internal/supercollider"
+	"github.com/schollz/collidertracker/internal/types"
+	"github.com/schollz/collidertracker/internal/views"
 )
 
 var Version = "dev"
@@ -65,7 +65,7 @@ func main() {
 	flag.Parse()
 
 	if showVersion {
-		fmt.Printf("2n version %s\n", Version)
+		fmt.Printf("collidertracker version %s\n", Version)
 		os.Exit(0)
 	}
 

@@ -3,9 +3,9 @@ package input
 import (
 	"fmt"
 
-	"github.com/schollz/2n/internal/model"
-	"github.com/schollz/2n/internal/storage"
-	"github.com/schollz/2n/internal/types"
+	"github.com/schollz/collidertracker/internal/model"
+	"github.com/schollz/collidertracker/internal/storage"
+	"github.com/schollz/collidertracker/internal/types"
 )
 
 func ModifyFileMetadataValue(m *model.Model, delta float32) {

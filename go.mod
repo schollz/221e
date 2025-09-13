@@ -1,4 +1,4 @@
-module github.com/schollz/2n
+module github.com/schollz/collidertracker
 
 go 1.25
 

@@ -6,11 +6,11 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/schollz/2n/internal/input"
-	"github.com/schollz/2n/internal/model"
-	"github.com/schollz/2n/internal/music"
-	"github.com/schollz/2n/internal/ticks"
-	"github.com/schollz/2n/internal/types"
+	"github.com/schollz/collidertracker/internal/input"
+	"github.com/schollz/collidertracker/internal/model"
+	"github.com/schollz/collidertracker/internal/music"
+	"github.com/schollz/collidertracker/internal/ticks"
+	"github.com/schollz/collidertracker/internal/types"
 )
 
 func RenderInstrumentPhraseView(m *model.Model) string {

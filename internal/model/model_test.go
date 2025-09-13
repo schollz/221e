@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/schollz/2n/internal/types"
+	"github.com/schollz/collidertracker/internal/types"
 )
 
 func TestNewModel(t *testing.T) {

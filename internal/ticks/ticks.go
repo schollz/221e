@@ -1,7 +1,7 @@
 package ticks
 
 import (
-	"github.com/schollz/2n/internal/types"
+	"github.com/schollz/collidertracker/internal/types"
 )
 
 // CalculatePhraseTicks calculates the total ticks in a phrase by summing all DT values

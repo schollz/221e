@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/schollz/2n/internal/model"
-	"github.com/schollz/2n/internal/supercollider"
-	"github.com/schollz/2n/internal/types"
+	"github.com/schollz/collidertracker/internal/model"
+	"github.com/schollz/collidertracker/internal/supercollider"
+	"github.com/schollz/collidertracker/internal/types"
 )
 
 func GetSoundMakerStatusMessage(m *model.Model) string {

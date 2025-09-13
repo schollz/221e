@@ -3,8 +3,8 @@ package input
 import (
 	"log"
 
-	"github.com/schollz/2n/internal/model"
-	"github.com/schollz/2n/internal/storage"
+	"github.com/schollz/collidertracker/internal/model"
+	"github.com/schollz/collidertracker/internal/storage"
 )
 
 func ModifyRetriggerValue(m *model.Model, baseDelta float32) {

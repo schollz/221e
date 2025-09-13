@@ -400,7 +400,7 @@ LibSoX interface changes:
   o Use of sox_effect_options() is now mandatory when initialising an
     effect (see example0.c for an example of this).
   o sox_flow_effects() has a new (3rd) parameter: a void pointer
-    `client_data' that is passed as a new (2nd) parameter to the flow
+    `client_data' that is passed as a new (collidertrackerd) parameter to the flow
     callback function.  client_data may be NULL.
 
 File formats:
@@ -763,7 +763,7 @@ sox-14.0.0	2007-09-11
   o Added soft-knee companding.  (robs)
   o Show (with --plot) compand transfer function.  (robs)
   o Allow e.g. "vol 6dB" (as well as "vol 6 dB").  (robs)
-  o Changed deemph filter from 1st order to 2nd order for
+  o Changed deemph filter from 1st order to collidertrackerd order for
     slightly better accuracy.  (robs)
   o Add option to silence effect to leave periods of silence
     in and only strip out extra silence.   (Mark Schreiber)
@@ -849,7 +849,7 @@ sox-13.0.0	2007-02-11
   o Documented the butterworth filter effects; added variable Q.  (robs)
   o "rate" effect made an alias for "resample".
   o Visualisation of various filters' frequency response via Octave.  (robs)
-  o Can now specify width of many 2nd-order filters as: Hz, octaves,
+  o Can now specify width of many collidertrackerd-order filters as: Hz, octaves,
     or Q.  (robs)
   o Dither/mask amount now specifiable.  (robs)
   o Consistent (and hopefully complete) clipping detection and

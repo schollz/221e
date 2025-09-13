@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/schollz/2n/internal/types"
+	"github.com/schollz/collidertracker/internal/types"
 )
 
 //go:embed dx7.json

@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/schollz/2n/internal/model"
-	"github.com/schollz/2n/internal/types"
+	"github.com/schollz/collidertracker/internal/model"
+	"github.com/schollz/collidertracker/internal/types"
 	"github.com/stretchr/testify/assert"
 )
 

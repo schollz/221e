@@ -12,8 +12,8 @@ import (
 
 	"github.com/hypebeast/go-osc/osc"
 
-	"github.com/schollz/2n/internal/midiplayer"
-	"github.com/schollz/2n/internal/types"
+	"github.com/schollz/collidertracker/internal/midiplayer"
+	"github.com/schollz/collidertracker/internal/types"
 )
 
 // OSCMessageConfig represents configuration for sending OSC messages

@@ -37,19 +37,19 @@ jobs:
         run: go test -v ./...
 
       - name: Build Go project
-        run: go build -v -ldflags "-X main.Version=${{ github.ref_name }}" -o 2n
+        run: go build -v -ldflags "-X main.Version=${{ github.ref_name }}" -o collidertracker
 
       - name: Verify binary
-        run: ./2n --help
+        run: ./collidertracker --help
 
       - name: Zip binary (macOS)
-        run: zip -9 2n_macos.zip 2n
+        run: zip -9 collidertracker_macos.zip collidertracker
 
       - name: Upload artifact (macOS)
         uses: actions/upload-artifact@v4
         with:
-          name: 2n_macos.zip
-          path: 2n_macos.zip
+          name: collidertracker_macos.zip
+          path: collidertracker_macos.zip
           if-no-files-found: error
 
   linux:
@@ -70,19 +70,19 @@ jobs:
         run: go test -v ./...
 
       - name: Build Go project
-        run: go build -v -ldflags "-X main.Version=${{ github.ref_name }}" -o 2n
+        run: go build -v -ldflags "-X main.Version=${{ github.ref_name }}" -o collidertracker
 
       - name: Verify binary
-        run: ./2n --help
+        run: ./collidertracker --help
 
       - name: Zip binary (Linux)
-        run: zip -9 2n_linux.zip 2n
+        run: zip -9 collidertracker_linux.zip collidertracker
 
       - name: Upload artifact (Linux)
         uses: actions/upload-artifact@v4
         with:
-          name: 2n_linux.zip
-          path: 2n_linux.zip
+          name: collidertracker_linux.zip
+          path: collidertracker_linux.zip
           if-no-files-found: error
 
   alpine:
@@ -126,23 +126,23 @@ jobs:
           export CGO_CFLAGS="-I/usr/local/include"
           export CGO_LDFLAGS="-L/usr/local/lib"
           export CGO_CXXFLAGS="${CGO_CXXFLAGS}"
-          CGO_ENABLED=1 go build -buildvcs=false -ldflags '-X main.Version=${{ github.ref_name }} -linkmode external -extldflags "-static -L/usr/local/lib"' -o 2n
+          CGO_ENABLED=1 go build -buildvcs=false -ldflags '-X main.Version=${{ github.ref_name }} -linkmode external -extldflags "-static -L/usr/local/lib"' -o collidertracker
 
       - name: Verify static binary
         run: |
-          file 2n
-          (ldd 2n 2>/dev/null || echo "✓ Static binary!")
-          ls -lh 2n
-          ./2n --help
+          file collidertracker
+          (ldd collidertracker 2>/dev/null || echo "✓ Static binary!")
+          ls -lh collidertracker
+          ./collidertracker --help
 
       - name: Zip binary (Linux static)
-        run: zip -9 2n_linux_static.zip 2n
+        run: zip -9 collidertracker_linux_static.zip collidertracker
 
       - name: Upload artifact (Linux static)
         uses: actions/upload-artifact@v4
         with:
-          name: 2n_linux_static.zip
-          path: 2n_linux_static.zip
+          name: collidertracker_linux_static.zip
+          path: collidertracker_linux_static.zip
           if-no-files-found: error
 
   windows:
@@ -179,20 +179,20 @@ jobs:
         run: go test -v ./...
 
       - name: Build Go project
-        run: go build -v -ldflags "-X main.Version=${{ github.ref_name }}" -o 2n.exe
+        run: go build -v -ldflags "-X main.Version=${{ github.ref_name }}" -o collidertracker.exe
 
       - name: Verify binary
-        run: .\2n.exe --help
+        run: .\collidertracker.exe --help
 
       - name: Zip binary (Windows)
         shell: pwsh
-        run: Compress-Archive -Path 2n.exe -DestinationPath 2n_windows.zip -Force
+        run: Compress-Archive -Path collidertracker.exe -DestinationPath collidertracker_windows.zip -Force
 
       - name: Upload artifact (Windows)
         uses: actions/upload-artifact@v4
         with:
-          name: 2n_windows.zip
-          path: 2n_windows.zip
+          name: collidertracker_windows.zip
+          path: collidertracker_windows.zip
           if-no-files-found: error
 
   release:
@@ -216,9 +216,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/2n_macos.zip
-            dist/2n_linux.zip
-            dist/2n_linux_static.zip
-            dist/2n_windows.zip
+            dist/collidertracker_macos.zip
+            dist/collidertracker_linux.zip
+            dist/collidertracker_linux_static.zip
+            dist/collidertracker_windows.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

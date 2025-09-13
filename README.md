@@ -3,11 +3,11 @@
 <img width="600" alt="vlcsnap-2025-08-23-18h24m04s244" src="https://github.com/user-attachments/assets/7d4c36c0-bd28-4611-a41b-ddf864af045c" />
 </a>
 <br>
-<a href="https://github.com/schollz/2n/releases/latest">
-<img src="https://img.shields.io/github/v/release/schollz/2n" alt="Version">
+<a href="https://github.com/schollz/collidertracker/releases/latest">
+<img src="https://img.shields.io/github/v/release/schollz/collidertracker" alt="Version">
 </a>
-<a href="https://github.com/schollz/2n/actions/workflows/build.yml">
-<img src="https://github.com/schollz/2n/actions/workflows/build.yml/badge.svg" alt="Build Status">
+<a href="https://github.com/schollz/collidertracker/actions/workflows/build.yml">
+<img src="https://github.com/schollz/collidertracker/actions/workflows/build.yml/badge.svg" alt="Build Status">
 </a>
 <a href="https://github.com/sponsors/schollz">
 <img alt="GitHub Sponsors" src="https://img.shields.io/github/sponsors/schollz">
@@ -27,7 +27,7 @@ This is a music tracker designed to be used with any terminal (Linux, macOS, Win
 - **SuperCollider** (required; extensions are checked at launch). Download [here](https://supercollider.github.io/downloads.html).
 - **SuperCollider extensions** (required): Download [here](https://supercollider.github.io/sc3-plugins/)
 - **JACK (jackd)** must be running with the output to your favorite speaker. Download [here](https://jackaudio.org/downloads/).
-- **2n** binary. See installation options below.
+- **collidertracker** binary. See installation options below.
 
 ## Installation
 
@@ -41,20 +41,20 @@ brew install tune
 ```
 
 **Option 2: Manual Download**
-Grab the latest build from **[Releases](https://github.com/schollz/2n/releases/latest)**.
+Grab the latest build from **[Releases](https://github.com/schollz/collidertracker/releases/latest)**.
 
 ### Linux/Windows
 
-Grab the latest build from **[Releases](https://github.com/schollz/2n/releases/latest)**.
+Grab the latest build from **[Releases](https://github.com/schollz/collidertracker/releases/latest)**.
 
 ## Run
 
 1. First start Jack.
-2. Run SuperCollider and then open `2n/internal/supercollider/sampler.scd` in SuperCollider. Then, in SuperCollider, goto "Lanaguage" -> "Evaluate File". SuperCollider should become Active.
-3. Now you can run 2n:
+2. Run SuperCollider and then open `collidertracker/internal/supercollider/sampler.scd` in SuperCollider. Then, in SuperCollider, goto "Lanaguage" -> "Evaluate File". SuperCollider should become Active.
+3. Now you can run collidertracker:
 
 ```bash
-./2n
+./collidertracker
 ```
 
 ## Keyboard — Quick Reference
@@ -263,7 +263,7 @@ The application now uses a local folder structure (tracker-save/) instead of a s
 
 4. **Build**:
    ```bash
-   go build -v -o 2n.exe
+   go build -v -o collidertracker.exe
    ```
 
 ### macOS
@@ -284,7 +284,7 @@ The application now uses a local folder structure (tracker-save/) instead of a s
 
 3. **Build**:
    ```bash
-   go build -v -o 2n
+   go build -v -o collidertracker
    ```
 
 ### Linux
@@ -308,7 +308,7 @@ The application now uses a local folder structure (tracker-save/) instead of a s
 
 3. **Build**:
    ```bash
-   go build -v -o 2n
+   go build -v -o collidertracker
    ```
 
 #### Static Build (Portable)
@@ -331,7 +331,7 @@ For a fully static binary that runs on any Linux system:
    export CGO_CFLAGS="-I/usr/local/include" &&
    export CGO_LDFLAGS="-L/usr/local/lib" &&
    export CGO_CXXFLAGS="-D__RTMIDI_DEBUG__=0 -D__RTMIDI_QUIET__" &&
-   CGO_ENABLED=1 go build -buildvcs=false -ldflags "-linkmode external -extldflags \"-static -L/usr/local/lib\"" -o 2n
+   CGO_ENABLED=1 go build -buildvcs=false -ldflags "-linkmode external -extldflags \"-static -L/usr/local/lib\"" -o collidertracker
    '
    ```
 
@@ -340,7 +340,7 @@ For a fully static binary that runs on any Linux system:
 After building, verify the binary works:
 
 ```bash
-./2n --help
+./collidertracker --help
 ```
 
 ### Build Notes

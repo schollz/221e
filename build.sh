@@ -41,16 +41,16 @@ COPY . .
 ENV PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
 ENV CGO_CFLAGS="-I/usr/local/include"
 ENV CGO_LDFLAGS="-L/usr/local/lib"
-RUN CGO_ENABLED=1 go build -ldflags '-linkmode external -extldflags "-static -L/usr/local/lib"' -o 2n-static
+RUN CGO_ENABLED=1 go build -ldflags '-linkmode external -extldflags "-static -L/usr/local/lib"' -o collidertracker-static
 
-RUN file 2n-static && (ldd 2n-static 2>/dev/null || echo "✓ Static binary!") && ls -lh 2n-static
+RUN file collidertracker-static && (ldd collidertracker-static 2>/dev/null || echo "✓ Static binary!") && ls -lh collidertracker-static
 EOF
 
 echo -e "${YELLOW}Building...${NC}"
-docker build -f Dockerfile.static-build -t 2n-static-builder .
-docker run --rm -v "$(pwd):/output" 2n-static-builder cp /app/2n-static /output/
+docker build -f Dockerfile.static-build -t collidertracker-static-builder .
+docker run --rm -v "$(pwd):/output" collidertracker-static-builder cp /app/collidertracker-static /output/
 rm Dockerfile.static-build
 
-echo -e "${GREEN}Success! Static binary: 2n-static${NC}"
-file 2n-static
-ldd 2n-static 2>/dev/null || echo "✓ Truly static!"
+echo -e "${GREEN}Success! Static binary: collidertracker-static${NC}"
+file collidertracker-static
+ldd collidertracker-static 2>/dev/null || echo "✓ Truly static!"
