@@ -12,7 +12,7 @@ module.exports = {
     {
       name: "supercollider",
       script: "sclang",
-      args: "internal/supercollider/sampler.scd",
+      args: "internal/supercollider/collidertracker.scd",
       autorestart: true,
       watch: false,
       wait_ready: true,

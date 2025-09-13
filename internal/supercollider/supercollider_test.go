@@ -111,3 +111,134 @@ func TestGetMiUGensURL(t *testing.T) {
 		}
 	})
 }
+
+func TestExtractSynthDefNames(t *testing.T) {
+	t.Run("extracts quoted synthdef names", func(t *testing.T) {
+		scdContent := `
+			SynthDef("MiPlaits", {
+				// some code
+			}).add;
+			
+			SynthDef("MiBraids", {
+				// more code
+			}).add;
+		`
+
+		result := ExtractSynthDefNames(scdContent)
+		assert.Equal(t, []string{"MiPlaits", "MiBraids"}, result)
+	})
+
+	t.Run("extracts symbol synthdef names", func(t *testing.T) {
+		scdContent := `
+			SynthDef(\PolyPerc, {
+				// some code
+			}).add;
+			
+			SynthDef(\SimpleSynth, {
+				// more code
+			}).add;
+		`
+
+		result := ExtractSynthDefNames(scdContent)
+		assert.Equal(t, []string{"PolyPerc", "SimpleSynth"}, result)
+	})
+
+	t.Run("extracts mixed quoted and symbol synthdef names", func(t *testing.T) {
+		scdContent := `
+			SynthDef("MiPlaits", {
+				// some code
+			}).add;
+			
+			SynthDef(\PolyPerc, {
+				// more code
+			}).add;
+			
+			SynthDef("externalInput", {
+				// more code
+			}).add;
+		`
+
+		result := ExtractSynthDefNames(scdContent)
+		assert.Equal(t, []string{"MiPlaits", "PolyPerc"}, result)
+	})
+
+	t.Run("handles whitespace variations", func(t *testing.T) {
+		scdContent := `
+			SynthDef ( "SpacedOut" , {
+				// some code
+			}).add;
+			
+			SynthDef(  \TabSymbol  ,{
+				// more code
+			}).add;
+		`
+
+		result := ExtractSynthDefNames(scdContent)
+		assert.Equal(t, []string{"SpacedOut", "TabSymbol"}, result)
+	})
+
+	t.Run("handles dynamic synthdef names with concatenation", func(t *testing.T) {
+		scdContent := `
+			SynthDef("sampler"++(ch+1), {
+				// some code
+			}).add;
+			
+			SynthDef("playback"++(ch+1), {
+				// more code  
+			}).add;
+		`
+
+		// This should extract the base names before concatenation
+		result := ExtractSynthDefNames(scdContent)
+		assert.Empty(t, result)
+	})
+
+	t.Run("returns empty string for no synthdefs", func(t *testing.T) {
+		scdContent := `
+			// Some SuperCollider code without SynthDefs
+			~variable = 42;
+			"hello".postln;
+		`
+
+		result := ExtractSynthDefNames(scdContent)
+		assert.Empty(t, result)
+	})
+
+	t.Run("extracts all synthdefs including those in comments", func(t *testing.T) {
+		// Note: Current implementation doesn't handle comment filtering
+		// This test documents current behavior - future enhancement could add comment handling
+		scdContent := `
+			SynthDef("ActiveSynth", {
+				// some code
+			}).add;
+			
+			// SynthDef("CommentedSynth", {
+			//     // this is commented out
+			// }).add;
+			
+			/* SynthDef("BlockCommentSynth", {
+				// this is also commented out
+			}).add; */
+		`
+
+		result := ExtractSynthDefNames(scdContent)
+		// Current implementation extracts all matches regardless of comments
+		assert.Contains(t, result, "ActiveSynth")
+		assert.Contains(t, result, "CommentedSynth")
+		assert.Contains(t, result, "BlockCommentSynth")
+	})
+}
+
+func TestGetSynthDefNames(t *testing.T) {
+	t.Run("extracts names from embedded file", func(t *testing.T) {
+		result := GetSynthDefNames()
+
+		// Should contain all the synthdefs from the embedded file
+		assert.Contains(t, result, "MiPlaits")
+		assert.Contains(t, result, "MiBraids")
+		assert.Contains(t, result, "PolyPerc")
+
+		// Should not be empty
+		assert.NotEmpty(t, result)
+	})
+}

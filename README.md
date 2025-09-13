@@ -50,7 +50,7 @@ Grab the latest build from **[Releases](https://github.com/schollz/collidertrack
 ## Run
 
 1. First start Jack.
-2. Run SuperCollider and then open `collidertracker/internal/supercollider/sampler.scd` in SuperCollider. Then, in SuperCollider, goto "Lanaguage" -> "Evaluate File". SuperCollider should become Active.
+2. Run SuperCollider and then open `collidertracker/internal/supercollider/collidertracker.scd` in SuperCollider. Then, in SuperCollider, goto "Lanaguage" -> "Evaluate File". SuperCollider should become Active.
 3. Now you can run collidertracker:
 
 ```bash

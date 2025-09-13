@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"time"
@@ -17,7 +18,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-//go:embed sampler.scd
+//go:embed collidertracker.scd
 var embeddedSamplerSCD []byte
 
 //go:embed DX7.afx
@@ -64,7 +65,7 @@ func StartSuperCollider() error {
 	}
 
 	// Create temporary files from embedded SuperCollider files
-	// Create sampler.scd
+	// Create collidertracker.scd
 	tempFile, err := os.CreateTemp("", "sampler-*.scd")
 	if err != nil {
 		return fmt.Errorf("failed to create temporary sampler file: %v", err)
@@ -199,6 +200,49 @@ func Cleanup() {
 
 func WasStartedBySelf() bool {
 	return startedBySelf
+}
+
+// GetSynthDefNames extracts all SynthDef names from the embedded SuperCollider file
+func GetSynthDefNames() []string {
+	return ExtractSynthDefNames(string(embeddedSamplerSCD))
+}
+
+// ExtractSynthDefNames extracts synthdef names from SuperCollider code
+// It looks for patterns like SynthDef("name", ... and SynthDef(\name, ...
+func ExtractSynthDefNames(scdContent string) []string {
+	// Regex pattern to match both quoted strings and symbols
+	// SynthDef("name" or SynthDef(\name
+	pattern := `SynthDef\s*\(\s*(?:"([^"]+)"|\\([^,\s\)]+))`
+
+	re := regexp.MustCompile(pattern)
+	matches := re.FindAllStringSubmatch(scdContent, -1)
+
+	var names []string
+	for _, match := range matches {
+		if match[1] != "" {
+			// Quoted string match (group 1)
+			names = append(names, match[1])
+		} else if match[2] != "" {
+			// Symbol match (group 2)
+			names = append(names, match[2])
+		}
+	}
+
+	namesToRemove := map[string]bool{
+		"sampler":       true,
+		"externalInput": true,
+		"playback":      true,
+		"diskout":       true,
+		"out":           true,
+	}
+	var filteredNames []string
+	for _, name := range names {
+		if !namesToRemove[name] {
+			filteredNames = append(filteredNames, name)
+		}
+	}
+
+	return filteredNames
 }
 
 func findSclangPath() (string, error) {
