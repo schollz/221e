@@ -27,14 +27,14 @@ import (
 
 var (
 	Version = "dev"
-	
+
 	// Command-line configuration
 	config struct {
-		port       int
-		project    string
-		record     bool
-		debug      string
-		skipJack   bool
+		port     int
+		project  string
+		record   bool
+		debug    string
+		skipJack bool
 	}
 )
 
@@ -57,15 +57,15 @@ Features:
 }
 
 func init() {
-	rootCmd.PersistentFlags().IntVarP(&config.port, "port", "p", 57120, 
+	rootCmd.PersistentFlags().IntVarP(&config.port, "port", "p", 57120,
 		"OSC port for SuperCollider communication")
-	rootCmd.PersistentFlags().StringVar(&config.project, "project", "save", 
+	rootCmd.PersistentFlags().StringVar(&config.project, "project", "save",
 		"Project directory for songs and audio files")
-	rootCmd.PersistentFlags().BoolVar(&config.record, "record", false, 
+	rootCmd.PersistentFlags().BoolVar(&config.record, "record", false,
 		"Enable automatic session recording")
-	rootCmd.PersistentFlags().StringVar(&config.debug, "log", "", 
+	rootCmd.PersistentFlags().StringVar(&config.debug, "log", "",
 		"Write debug logs to specified file (empty disables)")
-	rootCmd.PersistentFlags().BoolVar(&config.skipJack, "skip-jack", false, 
+	rootCmd.PersistentFlags().BoolVar(&config.skipJack, "skip-jack", false,
 		"Skip JACK server verification (for testing)")
 }
 

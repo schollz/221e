@@ -44,3 +44,5 @@ save/*
 *.gz
 soxstatic/*
 .claude/*
+save1/*
+*.log

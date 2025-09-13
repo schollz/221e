@@ -17,13 +17,13 @@ func createTestModel() *model.Model {
 
 func TestHandlePgDown(t *testing.T) {
 	tests := []struct {
-		name           string
-		viewMode       types.ViewMode
-		initialRow     int
-		initialCol     int
-		expectedRow    int
-		expectedCol    int // Should stay the same
-		description    string
+		name        string
+		viewMode    types.ViewMode
+		initialRow  int
+		initialCol  int
+		expectedRow int
+		expectedCol int // Should stay the same
+		description string
 	}{
 		{
 			name:        "SongView - from row 0 to row 16 (capped at 15)",
@@ -136,13 +136,13 @@ func TestHandlePgDown(t *testing.T) {
 
 func TestHandlePgUp(t *testing.T) {
 	tests := []struct {
-		name           string
-		viewMode       types.ViewMode
-		initialRow     int
-		initialCol     int
-		expectedRow    int
-		expectedCol    int // Should stay the same
-		description    string
+		name        string
+		viewMode    types.ViewMode
+		initialRow  int
+		initialCol  int
+		expectedRow int
+		expectedCol int // Should stay the same
+		description string
 	}{
 		{
 			name:        "SongView - already at row 0",
@@ -264,40 +264,40 @@ func TestHandlePgUp(t *testing.T) {
 
 func TestPgUpPgDown16Alignment(t *testing.T) {
 	tests := []struct {
-		name              string
-		viewMode          types.ViewMode
-		startRow          int
-		col               int
-		pgDownExpected    int
-		pgUpFromExpected  int
-		description       string
+		name             string
+		viewMode         types.ViewMode
+		startRow         int
+		col              int
+		pgDownExpected   int
+		pgUpFromExpected int
+		description      string
 	}{
 		{
-			name:              "PhraseView - 16-alignment test from row 0",
-			viewMode:          types.PhraseView,
-			startRow:          0,
-			col:               1,
-			pgDownExpected:    16, // 0x10
-			pgUpFromExpected:  0,  // Back to 0x00
-			description:       "Test 16-alignment: 0 -> 16 -> 0",
+			name:             "PhraseView - 16-alignment test from row 0",
+			viewMode:         types.PhraseView,
+			startRow:         0,
+			col:              1,
+			pgDownExpected:   16, // 0x10
+			pgUpFromExpected: 0,  // Back to 0x00
+			description:      "Test 16-alignment: 0 -> 16 -> 0",
 		},
 		{
-			name:              "PhraseView - 16-alignment test from row 32", 
-			viewMode:          types.PhraseView,
-			startRow:          32, // 0x20
-			col:               1,
-			pgDownExpected:    48, // 0x30
-			pgUpFromExpected:  32, // Back to 0x20
-			description:       "Test 16-alignment: 32 -> 48 -> 32",
+			name:             "PhraseView - 16-alignment test from row 32",
+			viewMode:         types.PhraseView,
+			startRow:         32, // 0x20
+			col:              1,
+			pgDownExpected:   48, // 0x30
+			pgUpFromExpected: 32, // Back to 0x20
+			description:      "Test 16-alignment: 32 -> 48 -> 32",
 		},
 		{
-			name:              "PhraseView - 16-alignment test from row 64",
-			viewMode:          types.PhraseView,
-			startRow:          64, // 0x40
-			col:               2,
-			pgDownExpected:    80, // 0x50
-			pgUpFromExpected:  64, // Back to 0x40
-			description:       "Test 16-alignment: 64 -> 80 -> 64",
+			name:             "PhraseView - 16-alignment test from row 64",
+			viewMode:         types.PhraseView,
+			startRow:         64, // 0x40
+			col:              2,
+			pgDownExpected:   80, // 0x50
+			pgUpFromExpected: 64, // Back to 0x40
+			description:      "Test 16-alignment: 64 -> 80 -> 64",
 		},
 	}
 

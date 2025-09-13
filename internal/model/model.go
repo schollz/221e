@@ -953,7 +953,7 @@ func NewSamplerOSCParamsWithRetrigger(filename string, trackId, sliceCount, slic
 		EffectReverb:          0,
 		Velocity:              velocity,
 		DeltaTime:             deltaTime, // Delta time in seconds
-		Update:                0, // Default is not an update
+		Update:                0,         // Default is not an update
 	}
 }
 

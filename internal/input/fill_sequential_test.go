@@ -19,7 +19,7 @@ func TestFillSequentialRT(t *testing.T) {
 	// Set RT value 05 in row 0
 	(*phrasesData)[0][0][types.ColRetrigger] = 5
 
-	// Position cursor on RT column, row 4 
+	// Position cursor on RT column, row 4
 	m.CurrentCol = 6 // RT column in sampler view
 	m.CurrentRow = 4
 
@@ -107,7 +107,7 @@ func TestFillSequentialTSNoReferenceValue(t *testing.T) {
 
 	// Verify TS column values - should all be 0 (default when no reference found)
 	assert.Equal(t, 0, (*phrasesData)[0][0][types.ColTimestretch], "Row 0 should have default value 0")
-	assert.Equal(t, 0, (*phrasesData)[0][1][types.ColTimestretch], "Row 1 should have default value 0") 
+	assert.Equal(t, 0, (*phrasesData)[0][1][types.ColTimestretch], "Row 1 should have default value 0")
 	assert.Equal(t, 0, (*phrasesData)[0][2][types.ColTimestretch], "Row 2 should have default value 0")
 	assert.Equal(t, -1, (*phrasesData)[0][3][types.ColTimestretch], "Row 3 should remain empty")
 }

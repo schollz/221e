@@ -1013,7 +1013,8 @@ func handleCtrlUp(m *model.Model) tea.Cmd {
 			// Toggle track type when on type row
 			ToggleTrackType(m, m.CurrentCol)
 		} else {
-			ModifySongValue(m, 4) // Coarse increment for song view
+			// Increment current cell value by 16 (0x10)
+			ModifySongValue(m, 16)
 		}
 	} else if m.ViewMode == types.SettingsView {
 		ModifySettingsValue(m, 1.0)
@@ -1045,7 +1046,8 @@ func handleCtrlDown(m *model.Model) tea.Cmd {
 			// Toggle track type when on type row
 			ToggleTrackType(m, m.CurrentCol)
 		} else {
-			ModifySongValue(m, -4) // Coarse decrement for song view
+			// Decrement current cell value by 16 (0x10)
+			ModifySongValue(m, -16)
 		}
 	} else if m.ViewMode == types.SettingsView {
 		ModifySettingsValue(m, -1.0)
@@ -1251,6 +1253,8 @@ func handleC(m *model.Model) tea.Cmd {
 		}
 		return nil
 	} else if m.ViewMode == types.RetriggerView {
+		EmitLastSelectedPhraseRowData(m)
+	} else if m.ViewMode == types.TimestrechView {
 		EmitLastSelectedPhraseRowData(m)
 	} else if m.ViewMode == types.ArpeggioView {
 		// Play the last edited phrase row from Instrument view
@@ -1553,7 +1557,7 @@ func handlePgDown(m *model.Model) tea.Cmd {
 	} else {
 		// For other views, use 16-row increment with appropriate bounds
 		newRow := ((m.CurrentRow + 16) / 16) * 16
-		
+
 		// Apply view-specific maximum bounds
 		var maxRow int
 		switch m.ViewMode {
@@ -1578,7 +1582,7 @@ func handlePgDown(m *model.Model) tea.Cmd {
 		default:
 			maxRow = 254 // Default maximum
 		}
-		
+
 		if newRow > maxRow {
 			newRow = maxRow
 		}
@@ -1603,7 +1607,7 @@ func handlePgUp(m *model.Model) tea.Cmd {
 		// Already at first row, nothing to do
 		return nil
 	}
-	
+
 	if m.ViewMode == types.SongView {
 		// Calculate previous 16-aligned row for Song view
 		newRow := ((m.CurrentRow - 1) / 16) * 16
