@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -102,6 +103,10 @@ func StartSuperCollider() error {
 
 	// Start sclang with the temporary scd file
 	sclangProcess = exec.Command(sclangPath, tempSamplerFile)
+
+	// Redirect SuperCollider output to the same logger used by the main application
+	sclangProcess.Stdout = log.Writer()
+	sclangProcess.Stderr = log.Writer()
 
 	// Start the process but don't wait for it to complete
 	err = sclangProcess.Start()
@@ -212,19 +217,19 @@ func findSclangPath() (string, error) {
 			"C:\\Program Files",
 			"C:\\Program Files (x86)",
 		}
-		
+
 		for _, baseDir := range programFilesDirs {
 			if scDir := findSuperColliderDir(baseDir); scDir != "" {
 				possiblePaths = append(possiblePaths, filepath.Join(scDir, "sclang.exe"))
 			}
 		}
-		
+
 		// Fallback to exact paths (in case someone has a custom installation)
 		possiblePaths = append(possiblePaths,
 			"C:\\Program Files\\SuperCollider\\sclang.exe",
 			"C:\\Program Files (x86)\\SuperCollider\\sclang.exe",
 		)
-		
+
 		// Also check user's local app data
 		if localAppData := os.Getenv("LOCALAPPDATA"); localAppData != "" {
 			possiblePaths = append(possiblePaths, filepath.Join(localAppData, "SuperCollider", "sclang.exe"))
@@ -377,7 +382,7 @@ func findSuperColliderDir(baseDir string) string {
 	if err != nil {
 		return ""
 	}
-	
+
 	for _, entry := range entries {
 		if entry.IsDir() && strings.HasPrefix(entry.Name(), "SuperCollider") {
 			scDir := filepath.Join(baseDir, entry.Name())
@@ -387,7 +392,7 @@ func findSuperColliderDir(baseDir string) string {
 			}
 		}
 	}
-	
+
 	return ""
 }
 
