@@ -2340,6 +2340,21 @@ func FillSequentialPhrase(m *model.Model) {
 				(*phrasesData)[m.CurrentPhrase][row][colIndex] = -1 // Set to "--"
 			}
 		}
+	} else if colIndex == int(types.ColRetrigger) || colIndex == int(types.ColTimestretch) {
+		// RT and TS columns should keep the reference value constant
+		// Find the last non-null value and fill all cells with that same value
+		referenceValue := 0
+		for row := currentRow - 1; row >= 0; row-- {
+			cellValue := (*phrasesData)[m.CurrentPhrase][row][colIndex]
+			if cellValue != -1 {
+				referenceValue = cellValue
+				break
+			}
+		}
+		// Fill from the found starting row to current row with the same reference value
+		for row := startRow; row <= currentRow; row++ {
+			(*phrasesData)[m.CurrentPhrase][row][colIndex] = referenceValue
+		}
 	} else if colIndex == int(types.ColEffectReverse) {
 		// Reverse probability column (0-15) - hex range
 		maxValue := 15
