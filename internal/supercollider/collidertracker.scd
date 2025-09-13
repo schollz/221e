@@ -801,6 +801,8 @@ s.waitForBoot({
 		// Routine {
 		// 	NetAddr.new("127.0.0.1", NetAddr.langPort).sendMsg("/instrument",0,1,60.1,63.9,67,"duration",2,"attack",1,"release",2);
 		// }.play;
+
+		//Server.default.record;
 	}.play;
 });
 )
