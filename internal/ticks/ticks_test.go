@@ -3,7 +3,7 @@ package ticks
 import (
 	"testing"
 
-	"github.com/schollz/2n/internal/types"
+	"github.com/schollz/collidertracker/internal/types"
 )
 
 func TestCalculatePhraseTicks(t *testing.T) {

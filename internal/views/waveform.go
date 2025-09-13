@@ -4,7 +4,7 @@ import (
 	"math"
 	"strings"
 
-	"github.com/schollz/2n/internal/types"
+	"github.com/schollz/collidertracker/internal/types"
 )
 
 // RenderWaveform renders waveform data (assumed in [-1,1]) into a Braille string.

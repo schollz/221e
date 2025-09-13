@@ -6,8 +6,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/schollz/2n/internal/model"
-	"github.com/schollz/2n/internal/types"
+	"github.com/schollz/collidertracker/internal/model"
+	"github.com/schollz/collidertracker/internal/types"
 )
 
 func TestPlayFile(t *testing.T) {

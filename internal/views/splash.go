@@ -41,7 +41,7 @@ func RenderSplashScreen(termWidth, termHeight int, state *SplashState, version s
 
 	// Handle edge cases for small or zero terminal dimensions
 	if termWidth <= 0 || termHeight <= 0 {
-		return "∞\nby infinite digits\ngithub.com/schollz/2n\nversion " + version
+		return "∞\nby infinite digits\ngithub.com/schollz/collidertracker\nversion " + version
 	}
 
 	// Ensure minimum dimensions for proper animation
@@ -105,7 +105,7 @@ func RenderSplashScreen(termWidth, termHeight int, state *SplashState, version s
 
 	if progress > 0.15 {
 		// URL
-		urlLine := urlStyle.Width(termWidth).Render("github.com/schollz/2n")
+		urlLine := urlStyle.Width(termWidth).Render("github.com/schollz/collidertracker")
 		content.WriteString(urlLine)
 		content.WriteString("\n")
 	}

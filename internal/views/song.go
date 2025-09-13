@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/schollz/2n/internal/model"
-	"github.com/schollz/2n/internal/ticks"
-	"github.com/schollz/2n/internal/types"
+	"github.com/schollz/collidertracker/internal/model"
+	"github.com/schollz/collidertracker/internal/ticks"
+	"github.com/schollz/collidertracker/internal/types"
 )
 
 // RenderSongView renders the new song view with 8 tracks × 16 rows

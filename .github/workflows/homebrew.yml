@@ -28,17 +28,17 @@ jobs:
           echo "version=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
           
           # Download and extract the source code
-          curl -L -o source.tar.gz "https://github.com/schollz/2n/archive/refs/tags/${{ github.event.release.tag_name }}.tar.gz"
+          curl -L -o source.tar.gz "https://github.com/schollz/collidertracker/archive/refs/tags/${{ github.event.release.tag_name }}.tar.gz"
           tar -xzf source.tar.gz
-          cd 2n-*
+          cd collidertracker-*
           
           # Vendor the dependencies
           go mod vendor
           
           # Create vendored tarball
           cd ..
-          mv 2n-* 2n-vendored
-          tar -czf source_code_vendored.tar.gz 2n-vendored/
+          mv collidertracker-* collidertracker-vendored
+          tar -czf source_code_vendored.tar.gz collidertracker-vendored/
           
           # Calculate SHA256 of vendored tarball
           SHA256=$(shasum -a 256 source_code_vendored.tar.gz | cut -d' ' -f1)
@@ -54,11 +54,11 @@ jobs:
 
       - name: Generate Homebrew formula
         run: |
-          cat > tune.rb << 'EOF'
-          class Tune < Formula
+          cat > collidertracker.rb << 'EOF'
+          class ColliderTracker < Formula
             desc "Musical performance tool for live coding and improvisation"
-            homepage "https://github.com/schollz/2n"
-            url "https://github.com/schollz/2n/releases/download/${{ github.event.release.tag_name }}/source_code_vendored.tar.gz"
+            homepage "https://github.com/schollz/collidertracker"
+            url "https://github.com/schollz/collidertracker/releases/download/${{ github.event.release.tag_name }}/source_code_vendored.tar.gz"
             sha256 "${{ steps.release_info.outputs.sha256 }}"
             version "${{ steps.release_info.outputs.clean_version }}"
             license "MIT"
@@ -75,12 +75,12 @@ jobs:
               
               # Build with proper flags matching the main workflow
               # Use -mod=vendor to use vendored dependencies
-              system "go", "build", "-v", "-mod=vendor", "-ldflags", "-X main.Version=#{version}", "-o", "2n"
-              bin.install "2n"
+              system "go", "build", "-v", "-mod=vendor", "-ldflags", "-X main.Version=#{version}", "-o", "collidertracker"
+              bin.install "collidertracker"
             end
 
             test do
-              system "#{bin}/2n", "--help"
+              system "#{bin}/collidertracker", "--help"
             end
           end
           EOF

@@ -7,7 +7,7 @@ import (
 
 	"github.com/lucasb-eyer/go-colorful"
 	"github.com/muesli/termenv"
-	"github.com/schollz/2n/internal/model"
+	"github.com/schollz/collidertracker/internal/model"
 )
 
 // getUnicodeBlock returns the appropriate Unicode block character for a fill ratio (0-1)

@@ -31,8 +31,8 @@ go.work.sum
 # .idea/
 # .vscode/
 debug.log
-2n
-2n.exe
+collidertracker
+collidertracker.exe
 tracker-save.json
 internal/sox/test.wav
 cpu.prof

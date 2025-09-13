@@ -8,11 +8,11 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/schollz/2n/internal/audio"
-	"github.com/schollz/2n/internal/hacks"
-	"github.com/schollz/2n/internal/model"
-	"github.com/schollz/2n/internal/storage"
-	"github.com/schollz/2n/internal/types"
+	"github.com/schollz/collidertracker/internal/audio"
+	"github.com/schollz/collidertracker/internal/hacks"
+	"github.com/schollz/collidertracker/internal/model"
+	"github.com/schollz/collidertracker/internal/storage"
+	"github.com/schollz/collidertracker/internal/types"
 )
 
 // ViewSwitchConfig represents the configuration for switching to a new view

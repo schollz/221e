@@ -180,7 +180,7 @@ The audio effects/tools included in this release are as follows:
     o  restart: Restart 1st effects chain when multiple chains exist.
 
   o  Low-level signal processing effects
-    o  biquad: 2nd-order IIR filter using externally provided coefficients
+    o  biquad: collidertrackerd-order IIR filter using externally provided coefficients
     o  downsample: Reduce sample rate by discarding samples
     o  fir: FFT convolution FIR filter using externally provided coefficients
     o  upsample: Increase sample rate by zero stuffing

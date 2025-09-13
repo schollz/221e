@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/schollz/2n/internal/model"
+	"github.com/schollz/collidertracker/internal/model"
 )
 
 func RenderTimestrechView(m *model.Model) string {

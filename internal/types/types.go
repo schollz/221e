@@ -272,7 +272,7 @@ func GetChordNotes(root int, ctype ChordType, add ChordAddition, transpose Chord
 			notes = append(notes, root+11) // major 7th
 		}
 	case ChordAdd9:
-		notes = append(notes, root+14) // 9th = 2nd + octave
+		notes = append(notes, root+14) // 9th = collidertrackerd + octave
 	case ChordAdd4:
 		notes = append(notes, root+5) // 4th
 	}

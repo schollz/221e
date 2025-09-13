@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/schollz/2n/internal/midiconnector"
+	"github.com/schollz/collidertracker/internal/midiconnector"
 )
 
 // NoteState tracks the state of a single note

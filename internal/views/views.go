@@ -8,8 +8,8 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/schollz/2n/internal/model"
-	"github.com/schollz/2n/internal/types"
+	"github.com/schollz/collidertracker/internal/model"
+	"github.com/schollz/collidertracker/internal/types"
 )
 
 // Common styles used across all views

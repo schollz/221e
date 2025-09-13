@@ -1,9 +1,9 @@
 package input
 
 import (
-	"github.com/schollz/2n/internal/model"
-	"github.com/schollz/2n/internal/storage"
-	"github.com/schollz/2n/internal/types"
+	"github.com/schollz/collidertracker/internal/model"
+	"github.com/schollz/collidertracker/internal/storage"
+	"github.com/schollz/collidertracker/internal/types"
 )
 
 func ModifySettingsValue(m *model.Model, delta float32) {
