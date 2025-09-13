@@ -359,6 +359,13 @@ func ModifyValue(m *model.Model, delta int) {
 	log.Printf("Modified phrase %d row %d, col %d: %d -> %d (delta: %d)",
 		m.CurrentPhrase, m.CurrentRow, colIndex, currentValue,
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex], delta)
+
+	// If this row is currently playing, send an update OSC message
+	if m.IsRowCurrentlyPlaying(m.CurrentPhrase, m.CurrentRow, m.CurrentTrack) {
+		log.Printf("Row is currently playing, sending update OSC message")
+		EmitRowDataFor(m, m.CurrentPhrase, m.CurrentRow, m.CurrentTrack, true) // true indicates this is an update
+	}
+
 	storage.AutoSave(m)
 }
 
@@ -563,8 +570,10 @@ func EmitLastSelectedPhraseRowData(m *model.Model) {
 
 // EmitRowDataFor logs row data (rich debug) and emits OSC if applicable.
 // This is the single canonical emitter used by both manual "c" triggers and playback ("space").
-func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
-	log.Printf("DEBUG_EMIT: EmitRowDataFor called with phrase=%d, row=%d, trackId=%d", phrase, row, trackId)
+// If isUpdate is true, the OSC message will include "update",1 to indicate this is an update to a playing row.
+func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) {
+	shouldUpdate := len(isUpdate) > 0 && isUpdate[0]
+	log.Printf("DEBUG_EMIT: EmitRowDataFor called with phrase=%d, row=%d, trackId=%d, isUpdate=%v", phrase, row, trackId, shouldUpdate)
 
 	// Defensive null check to prevent crashes
 	if m == nil {
@@ -977,6 +986,11 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 		oscParams.EffectReverb = float32(effectiveReverb) / 254.0
 	}
 
+	// Set update flag if this is an update call
+	if shouldUpdate {
+		oscParams.Update = 1
+	}
+
 	log.Printf("[EmitRowDataFor] oscParams: %+v", oscParams)
 
 	// Determine track type and emit appropriate message
@@ -1105,6 +1119,10 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int) {
 		for i, note := range midiNotes {
 			// TODO: future add detuning things to this?
 			instrumentParams.Notes[i] = float32(note)
+		}
+		// Set update flag for instrument params if this is an update
+		if shouldUpdate {
+			instrumentParams.Update = 1
 		}
 		m.SendOSCInstrumentMessageWithArpeggio(instrumentParams)
 	} else {

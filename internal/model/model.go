@@ -859,6 +859,7 @@ type SamplerOSCParams struct {
 	EffectComb            float32 // 0.0 .. 1.0
 	EffectReverb          float32 // 0.0 .. 1.0
 	Velocity              int     // 0 .. 127 (0x00-0x7F)
+	Update                int     // 1 if this is an update to a playing row, 0 otherwise
 }
 
 type InstrumentOSCParams struct {
@@ -883,6 +884,7 @@ type InstrumentOSCParams struct {
 	ArpeggioIndex      int       // Arpeggio settings index (AR parameter)
 	MidiSettingsIndex  int       // MIDI settings index (MI parameter)
 	SoundMakerIndex    int       // SoundMaker settings index (SO parameter)
+	Update             int       // 1 if this is an update to a playing row, 0 otherwise
 }
 
 // NewSamplerOSCParams creates sampler parameters with custom slice duration
@@ -915,6 +917,7 @@ func NewSamplerOSCParams(filename string, trackId int, sliceCount, sliceNumber i
 		EffectComb:            0,
 		EffectReverb:          0,
 		Velocity:              velocity,
+		Update:                0, // Default is not an update
 	}
 }
 
@@ -950,6 +953,7 @@ func NewSamplerOSCParamsWithRetrigger(filename string, trackId, sliceCount, slic
 		EffectReverb:          0,
 		Velocity:              velocity,
 		DeltaTime:             deltaTime, // Delta time in seconds
+		Update:                0, // Default is not an update
 	}
 }
 
@@ -976,6 +980,7 @@ func NewInstrumentOSCParams(trackId int32, velocity float32, chordType, chordAdd
 		ArpeggioIndex:      arpeggioIndex,
 		MidiSettingsIndex:  midiSettingsIndex,
 		SoundMakerIndex:    soundMakerIndex,
+		Update:             0, // Default is not an update
 	}
 }
 
@@ -1273,6 +1278,12 @@ func (m *Model) sendOSCInstrumentMessage(params InstrumentOSCParams) {
 			}
 		}
 
+		// Add update parameter when this is an update to a playing row
+		if params.Update == 1 {
+			msg.Append("update")
+			msg.Append(int32(1))
+		}
+
 		err := m.oscClient.Send(msg)
 		if err != nil {
 			log.Printf("Error sending OSC instrument message: %v", err)
@@ -1506,6 +1517,11 @@ func (m *Model) SendOSCSamplerMessage(params SamplerOSCParams) {
 	msg.Append(int32(params.Velocity))
 	msg.Append("deltaTime")
 	msg.Append(float32(params.DeltaTime))
+	// Add update parameter when this is an update to a playing row
+	if params.Update == 1 {
+		msg.Append("update")
+		msg.Append(int32(1))
+	}
 
 	err = m.oscClient.Send(msg)
 	if err != nil {
@@ -1840,4 +1856,22 @@ func (m *Model) HasTrackData(track int) bool {
 		}
 	}
 	return false
+}
+
+// IsRowCurrentlyPlaying checks if a specific phrase/row is currently being played
+func (m *Model) IsRowCurrentlyPlaying(phrase, row, trackId int) bool {
+	if !m.IsPlaying {
+		return false
+	}
+
+	if m.PlaybackMode == types.SongView {
+		// Song playback mode - check the track context
+		return trackId >= 0 && trackId < 8 &&
+			m.SongPlaybackActive[trackId] &&
+			m.SongPlaybackPhrase[trackId] == phrase &&
+			m.SongPlaybackRowInPhrase[trackId] == row
+	} else {
+		// Chain/Phrase playback mode - use single-track playback variables
+		return m.PlaybackPhrase == phrase && m.PlaybackRow == row
+	}
 }
