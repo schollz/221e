@@ -36,11 +36,13 @@ func main() {
 	var saveFolder string
 	var debugLog string
 	var showVersion bool
+	var recordAll bool
 	flag.IntVar(&oscPort, "osc-port", 57120, "OSC port for sending playback messages")
 	flag.StringVar(&saveFolder, "save-folder", "save", "Save folder to load from or create (contains data.json.gz and audio files)")
 	flag.BoolVar(&skipJackCheck, "skip-jack-check", false, "Skip checking for JACK server (for testing only)")
 	flag.StringVar(&debugLog, "debug", "", "If set, write debug logs to this file; empty disables logging")
 	flag.BoolVar(&showVersion, "version", false, "Show version and exit")
+	flag.BoolVar(&recordAll, "record-all", false, "Record entire session until exit")
 
 	// Start CPU profiling for the first 30 seconds
 	cpuFile, err := os.Create("cpu.prof")
@@ -160,7 +162,7 @@ func main() {
 		log.Printf("JACK server enabled; starting SuperCollider if not already running")
 		go func() {
 			if !supercollider.IsSuperColliderEnabled() {
-				if err := supercollider.StartSuperCollider(); err != nil {
+				if err := supercollider.StartSuperColliderWithRecording(recordAll); err != nil {
 					log.Printf("Failed to start SuperCollider: %v", err)
 				}
 			}

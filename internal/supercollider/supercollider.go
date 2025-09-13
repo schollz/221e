@@ -54,6 +54,10 @@ func IsSuperColliderEnabled() bool {
 }
 
 func StartSuperCollider() error {
+	return StartSuperColliderWithRecording(false)
+}
+
+func StartSuperColliderWithRecording(enableRecording bool) error {
 	if IsSuperColliderEnabled() {
 		return nil // Already running (started externally)
 	}
@@ -65,13 +69,21 @@ func StartSuperCollider() error {
 	}
 
 	// Create temporary files from embedded SuperCollider files
-	// Create collidertracker.scd
+	// Create collidertracker.scd with optional recording modification
 	tempFile, err := os.CreateTemp("", "sampler-*.scd")
 	if err != nil {
 		return fmt.Errorf("failed to create temporary sampler file: %v", err)
 	}
 
-	_, err = tempFile.Write(embeddedSamplerSCD)
+	// Modify the embedded content if recording is enabled
+	scdContent := embeddedSamplerSCD
+	if enableRecording {
+		// Replace "//Server.default.record;" with "Server.default.record;"
+		modified := strings.Replace(string(embeddedSamplerSCD), "//Server.default.record;", "Server.default.record;", 1)
+		scdContent = []byte(modified)
+	}
+
+	_, err = tempFile.Write(scdContent)
 	if err != nil {
 		tempFile.Close()
 		os.Remove(tempFile.Name())
