@@ -259,6 +259,12 @@ func HandleKeyInput(m *model.Model, msg tea.KeyMsg) tea.Cmd {
 
 	case "m":
 		return handleM(m)
+
+	case "pgdown":
+		return handlePgDown(m)
+
+	case "pgup":
+		return handlePgUp(m)
 	}
 
 	return nil
@@ -1482,6 +1488,191 @@ func handleM(m *model.Model) tea.Cmd {
 		return handleShiftDown(m)
 	}
 	// For other views (FileView, SettingsView, etc.), do nothing
+	return nil
+}
+
+// handlePgDown moves to the next 16-aligned row (0x10, 0x20, 0x30, etc.) staying in the same column
+func handlePgDown(m *model.Model) tea.Cmd {
+	if m.ViewMode == types.SongView {
+		// Calculate next 16-aligned row for Song view (0-15)
+		newRow := ((m.CurrentRow + 16) / 16) * 16
+		if newRow > 15 {
+			newRow = 15 // Cap at maximum song row
+		}
+		if newRow != m.CurrentRow {
+			m.CurrentRow = newRow
+			if m.CurrentRow >= 0 { // Only update LastSongRow for data rows, not type row
+				m.LastSongRow = m.CurrentRow
+			}
+		}
+	} else if m.ViewMode == types.ChainView {
+		// Calculate next 16-aligned row for Chain view (0-15)
+		newRow := ((m.CurrentRow + 16) / 16) * 16
+		if newRow > 15 {
+			newRow = 15 // Cap at maximum chain row
+		}
+		if newRow != m.CurrentRow {
+			m.CurrentRow = newRow
+		}
+	} else if m.ViewMode == types.PhraseView {
+		// Calculate next 16-aligned row for Phrase view (0-254)
+		newRow := ((m.CurrentRow + 16) / 16) * 16
+		if newRow > 254 {
+			newRow = 254 // Cap at maximum phrase row
+		}
+		if newRow != m.CurrentRow {
+			m.CurrentRow = newRow
+			// Update scroll offset if needed
+			visibleRows := m.GetVisibleRows()
+			if m.CurrentRow >= m.ScrollOffset+visibleRows {
+				m.ScrollOffset = m.CurrentRow - visibleRows + 1
+			}
+			// Update position tracking for view navigation
+			m.LastPhraseRow = m.CurrentRow
+		}
+	} else if m.ViewMode == types.SettingsView {
+		// Settings view doesn't benefit from 16-row jumping, do regular down
+		return handleDown(m)
+	} else if m.ViewMode == types.FileView {
+		// Calculate next 16-aligned row for File view
+		if len(m.Files) > 0 {
+			newRow := ((m.CurrentRow + 16) / 16) * 16
+			maxRow := len(m.Files) - 1
+			if newRow > maxRow {
+				newRow = maxRow // Cap at last file
+			}
+			if newRow != m.CurrentRow {
+				m.CurrentRow = newRow
+				// Update scroll offset if needed
+				visibleRows := m.GetVisibleRows()
+				if m.CurrentRow >= m.ScrollOffset+visibleRows {
+					m.ScrollOffset = m.CurrentRow - visibleRows + 1
+				}
+			}
+		}
+	} else {
+		// For other views, use 16-row increment with appropriate bounds
+		newRow := ((m.CurrentRow + 16) / 16) * 16
+		
+		// Apply view-specific maximum bounds
+		var maxRow int
+		switch m.ViewMode {
+		case types.ArpeggioView:
+			maxRow = 15 // 0-15 (16 rows total)
+		case types.MidiView:
+			maxRow = int(types.MidiSettingsRowChannel) + len(m.AvailableMidiDevices) // Settings + devices
+		case types.SoundMakerView:
+			// Calculate maximum row based on current instrument parameters
+			settings := m.SoundMakerSettings[m.SoundMakerEditingIndex]
+			if def, exists := types.GetInstrumentDefinition(settings.Name); exists {
+				maxRow = len(def.Parameters) // Last valid row index
+			} else {
+				maxRow = 0 // Only name row if no definition
+			}
+		case types.RetriggerView:
+			maxRow = int(types.RetriggerSettingsRowProbability) // Times(0) to Probability(9)
+		case types.TimestrechView:
+			maxRow = int(types.TimestrechSettingsRowProbability) // Start(0) to Probability(4)
+		case types.FileMetadataView:
+			maxRow = int(types.FileMetadataRowSlices) // BPM(0) to Slices(1)
+		default:
+			maxRow = 254 // Default maximum
+		}
+		
+		if newRow > maxRow {
+			newRow = maxRow
+		}
+		if newRow != m.CurrentRow {
+			m.CurrentRow = newRow
+			// Update scroll offset if needed for scrollable views
+			if m.ViewMode == types.MidiView || m.ViewMode == types.SoundMakerView {
+				visibleRows := m.GetVisibleRows()
+				if m.CurrentRow >= m.ScrollOffset+visibleRows {
+					m.ScrollOffset = m.CurrentRow - visibleRows + 1
+				}
+			}
+		}
+	}
+	storage.AutoSave(m)
+	return nil
+}
+
+// handlePgUp moves to the previous 16-aligned row (0x00, 0x10, 0x20, etc.) staying in the same column
+func handlePgUp(m *model.Model) tea.Cmd {
+	if m.CurrentRow == 0 {
+		// Already at first row, nothing to do
+		return nil
+	}
+	
+	if m.ViewMode == types.SongView {
+		// Calculate previous 16-aligned row for Song view
+		newRow := ((m.CurrentRow - 1) / 16) * 16
+		if newRow < 0 {
+			newRow = 0 // Floor at 0
+		}
+		if newRow != m.CurrentRow {
+			m.CurrentRow = newRow
+			if m.CurrentRow >= 0 { // Only update LastSongRow for data rows, not type row
+				m.LastSongRow = m.CurrentRow
+			}
+		}
+	} else if m.ViewMode == types.ChainView {
+		// Calculate previous 16-aligned row for Chain view
+		newRow := ((m.CurrentRow - 1) / 16) * 16
+		if newRow < 0 {
+			newRow = 0 // Floor at 0
+		}
+		if newRow != m.CurrentRow {
+			m.CurrentRow = newRow
+		}
+	} else if m.ViewMode == types.PhraseView {
+		// Calculate previous 16-aligned row for Phrase view
+		newRow := ((m.CurrentRow - 1) / 16) * 16
+		if newRow < 0 {
+			newRow = 0 // Floor at 0
+		}
+		if newRow != m.CurrentRow {
+			m.CurrentRow = newRow
+			// Update scroll offset if needed
+			if m.CurrentRow < m.ScrollOffset {
+				m.ScrollOffset = m.CurrentRow
+			}
+			// Update position tracking for view navigation
+			m.LastPhraseRow = m.CurrentRow
+		}
+	} else if m.ViewMode == types.SettingsView {
+		// Settings view doesn't benefit from 16-row jumping, do regular up
+		return handleUp(m)
+	} else if m.ViewMode == types.FileView {
+		// Calculate previous 16-aligned row for File view
+		newRow := ((m.CurrentRow - 1) / 16) * 16
+		if newRow < 0 {
+			newRow = 0 // Floor at 0
+		}
+		if newRow != m.CurrentRow {
+			m.CurrentRow = newRow
+			// Update scroll offset if needed
+			if m.CurrentRow < m.ScrollOffset {
+				m.ScrollOffset = m.CurrentRow
+			}
+		}
+	} else {
+		// For other views, use 16-row decrement with appropriate bounds
+		newRow := ((m.CurrentRow - 1) / 16) * 16
+		if newRow < 0 {
+			newRow = 0 // Floor at 0
+		}
+		if newRow != m.CurrentRow {
+			m.CurrentRow = newRow
+			// Update scroll offset if needed for scrollable views
+			if m.ViewMode == types.MidiView || m.ViewMode == types.SoundMakerView {
+				if m.CurrentRow < m.ScrollOffset {
+					m.ScrollOffset = m.CurrentRow
+				}
+			}
+		}
+	}
+	storage.AutoSave(m)
 	return nil
 }
 

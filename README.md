@@ -76,6 +76,7 @@ Grab the latest build from **[Releases](https://github.com/schollz/2n/releases/l
 | -------------- | ----------------------------------------------------------- |
 | **Arrow keys** | Move cursor/navigate within current view                    |
 | **Left/Right** | Navigate tracks (Song), chains (Chain), or columns (Phrase) |
+| **PgUp/PgDown** | Jump to previous/next 16-row boundary (0x00, 0x10, 0x20, etc.) |
 
 ### Playback and Recording
 
