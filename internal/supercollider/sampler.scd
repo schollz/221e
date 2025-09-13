@@ -492,47 +492,53 @@ s.waitForBoot({
 			var synName = 1000000.rand.asString;
 			var track = msg[2].asInteger;
 			var argLast;
-			var args = [
-				\buf,b,
-				\effectDryOut, ~busDry,
-				\effectCombOut, ~busComb,
-				\effectReverbOut, ~busReverb,
-				\trackId, track,
-				\trackOut, ~busTrack[track],
-			];
+			var dict = Dictionary.new;
+			dict.putAll((
+			    buf:             b,
+			    effectDryOut:    ~busDry,
+			    effectCombOut:   ~busComb,
+			    effectReverbOut: ~busReverb,
+			    trackId:         track,
+			    trackOut:        ~busTrack[track]
+			));
+			dict.putPairs(msg.copyToEnd(3));
+			// round numbers to 1/128 in place
+			dict.keysValuesChange { |k, v|
+			    if (v.isNumber) { v.round(1.0/128.0) } { v }
+			};
+
 			// create a new dictionary for the track if it doesn't exist
 			if (~samplesPlaying.at(track).isNil,{
 				~samplesPlaying.put(track, Dictionary.new());
 			});
-			// stop all currently playing synths for this track
-			~samplesPlaying.at(track).values.do({
-				arg syn;
-				if (syn.isPlaying,{
-					if (syn.notNil,{
-						syn.set(\gate,0);
-					});
-				});
-			});
-			// add msg[2:] array to args
-			args = args ++ msg[3..];
-			args.do({
-				arg v,i;
-				if (v.isNumber,{
-					args.put(i,v.round(1.0/16.0));
-					[argLast,v.round(1.0/16.0)].postln;
-				},{
-					argLast = v;
-				});
-			});
 
-
-			~samplesPlaying.at(track).put(synName,
-				Synth.head(Server.default,"sampler"++(b.numChannels),args).onFree({
-					[b,"freed"].postln;
-					~samplesPlaying.at(track).removeAt(synName);
-				});
-			);
-
+			if (
+			    (dict.includesKey(\update).not) or: { dict[\update] == 0 }
+			) {
+			    // stop all synths
+			    ~samplesPlaying.at(track).values.do { |syn|
+			        if (syn.notNil and: { syn.isPlaying }) {
+			            syn.set(\gate, 0);
+			        }
+			    };
+			    // play new synth
+			    ~samplesPlaying.at(track).put(synName,
+			        Synth.head(Server.default, "sampler" ++ (b.numChannels), dict.asPairs).onFree({
+			            [b, "freed"].postln;
+			            ~samplesPlaying.at(track).removeAt(synName);
+			        })
+			    );
+			    ["played",~samplesPlaying.at(track).at(synName)].postln;
+			    NodeWatcher.register(~samplesPlaying.at(track).at(synName));
+			} {
+			    // set all synths
+			    ~samplesPlaying.at(track).values.do { |syn|
+			        if (syn.notNil and: { syn.isPlaying }) {
+			        	["updating",syn].postln;
+			            syn.set(*dict.asPairs);
+			        }
+			    };
+			};
 		};
 
 		OSCFunc({ |msg|
