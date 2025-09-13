@@ -17,7 +17,7 @@ func RenderSongView(m *model.Model) string {
 		// Render header with song name on the right (like Phrase View)
 		columnHeader := "    "
 		for track := 0; track < 8; track++ {
-			columnHeader += fmt.Sprintf("  T%d", track)
+			columnHeader += fmt.Sprintf("  T%d", track+1)
 		}
 		songHeader := "Song"
 		content.WriteString(RenderHeader(m, columnHeader, songHeader))
