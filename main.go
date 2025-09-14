@@ -235,16 +235,13 @@ func runColliderTracker(cmd *cobra.Command, args []string) {
 	// Start CPU profiling for the first 30 seconds
 	cpuFile, err := os.Create("cpu.prof")
 	if err != nil {
-		log.Printf("Could not create CPU profile: %v", err)
 	} else {
 		if err := pprof.StartCPUProfile(cpuFile); err != nil {
-			log.Printf("Could not start CPU profile: %v", err)
 		} else {
 			go func() {
 				time.Sleep(30 * time.Second)
 				pprof.StopCPUProfile()
 				cpuFile.Close()
-				log.Println("CPU profiling stopped after 30 seconds")
 			}()
 		}
 	}

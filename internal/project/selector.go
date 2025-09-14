@@ -367,7 +367,7 @@ func (ps *ProjectSelector) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		switch msg.String() {
-		case "q", "ctrl+c", "esc":
+		case "q", "ctrl+c", "ctrl+q", "esc":
 			return ps, tea.Quit
 
 		case "up", "k":
@@ -393,6 +393,8 @@ func (ps *ProjectSelector) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "n":
 			// Create new project option - transition to name input dialog
 			nameInput := NewProjectNameInput()
+			nameInput.width = ps.width
+			nameInput.height = ps.height
 			return nameInput, nameInput.Init()
 		}
 	}
