@@ -49,13 +49,34 @@ Grab the latest build from **[Releases](https://github.com/schollz/collidertrack
 
 ## Run
 
-1. First start Jack.
-2. Run SuperCollider and then open `collidertracker/internal/supercollider/collidertracker.scd` in SuperCollider. Then, in SuperCollider, goto "Lanaguage" -> "Evaluate File". SuperCollider should become Active.
-3. Now you can run collidertracker:
+**Option 1: Automatic SuperCollider Management (Recommended)**
+
+1. First start JACK audio server.
+2. Run collidertracker (it will automatically start and manage SuperCollider):
 
 ```bash
 ./collidertracker
 ```
+
+**Option 2: Manual SuperCollider Management**
+
+1. First start JACK audio server.
+2. Run SuperCollider and then open `collidertracker/internal/supercollider/collidertracker.scd` in SuperCollider. Then, in SuperCollider, goto "Language" -> "Evaluate File". SuperCollider should become Active.
+3. Run collidertracker with the `--skip-sc` flag:
+
+```bash
+./collidertracker --skip-sc
+```
+
+### Command-line Options
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--project <dir>` | `save` | Project directory for songs and audio files |
+| `-p, --port <port>` | `57120` | OSC port for SuperCollider communication |
+| `--record` | `false` | Enable automatic session recording |
+| `--skip-sc` | `false` | Skip SuperCollider management (assume SC running) |
+| `--log <file>` | - | Write debug logs to specified file |
 
 ## Keyboard — Quick Reference
 
@@ -86,6 +107,12 @@ Grab the latest build from **[Releases](https://github.com/schollz/collidertrack
 | **Ctrl+@** | Play/stop from top (global)                                                                                                                                                                                                                |
 | **C**      | Smart trigger/fill function:<br>• **Non-empty values**: Triggers `EmitRowDataFor` (plays row with full parameters)<br>• **Empty values**: Fills with next available content or copies last row<br>• Works in Song, Chain, and Phrase views |
 | **Ctrl+R** | Toggle recording mode                                                                                                                                                                                                                      |
+
+## Recording Features
+
+- **Session Recording**: Use `--record` flag or press **Ctrl+R** to toggle recording mode
+- **Context-Aware Recording**: Records current track (Chain/Phrase view) or all active tracks (Song view)
+- **Output**: Generates master mix + individual track stems with timestamps
 
 ### Value Editing
 

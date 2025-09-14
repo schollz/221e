@@ -36,7 +36,7 @@ var (
 		projectProvided bool // Track if --project flag was explicitly provided
 		record          bool
 		debug           string
-		skipJack        bool
+		skipSC          bool
 	}
 )
 
@@ -67,8 +67,8 @@ func init() {
 		"Enable automatic session recording")
 	rootCmd.PersistentFlags().StringVar(&config.debug, "log", "",
 		"Write debug logs to specified file (empty disables)")
-	rootCmd.PersistentFlags().BoolVar(&config.skipJack, "skip-jack", false,
-		"Skip JACK server verification (for testing)")
+	rootCmd.PersistentFlags().BoolVar(&config.skipSC, "skip-sc", false,
+		"Skip SuperCollider management (assume SC is already running)")
 	
 	// Set up a callback to track when --project is explicitly provided
 	rootCmd.PersistentFlags().Lookup("project").Changed = false
@@ -86,12 +86,6 @@ func restartWithProject() {
 	// without going through cobra command parsing again
 	
 	// Check JACK and SuperCollider requirements (same as in runColliderTracker)
-	if !supercollider.IsJackEnabled() && !config.skipJack {
-		dialog := supercollider.NewJackDialogModel()
-		p := tea.NewProgram(dialog, tea.WithAltScreen())
-		_, _ = p.Run()
-		os.Exit(1)
-	}
 
 	// Check for required SuperCollider extensions before starting
 	if !supercollider.HasRequiredExtensions() {
@@ -172,9 +166,8 @@ func restartWithProject() {
 	}()
 
 	// Start SuperCollider in the background so it doesn't block the splash
-	// Always check JACK status, but only exit if --skip-jack is not set
-	if supercollider.IsJackEnabled() {
-		log.Printf("JACK server enabled; starting SuperCollider if not already running")
+	if !config.skipSC {
+		log.Printf("Starting SuperCollider if not already running")
 		go func() {
 			if !supercollider.IsSuperColliderEnabled() {
 				if err := supercollider.StartSuperColliderWithRecording(config.record); err != nil {
@@ -183,18 +176,13 @@ func restartWithProject() {
 			}
 		}()
 	} else {
-		// JACK is not running - log this but don't start SuperCollider
-		log.Printf("JACK server not enabled; skipping SuperCollider startup")
-		if !config.skipJack {
-			// Only exit if --skip-jack flag was not provided
-			os.Exit(1)
-		}
+		log.Printf("Skipping SuperCollider management (--skip-sc flag provided)")
 	}
 
 	// When SC signals readiness via /cpuusage, hide the splash
 	go func() {
-		if config.skipJack {
-			p.Send(scReadyMsg{}) // skip splash if skipping JACK check
+		if config.skipSC {
+			p.Send(scReadyMsg{}) // skip splash if skipping SC management
 		} else {
 			<-readyChannel
 			log.Printf("Received SuperCollider ready; hiding splash")
@@ -301,12 +289,6 @@ func runColliderTracker(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	if !supercollider.IsJackEnabled() && !config.skipJack {
-		dialog := supercollider.NewJackDialogModel()
-		p := tea.NewProgram(dialog, tea.WithAltScreen())
-		_, _ = p.Run()
-		os.Exit(1)
-	}
 
 	// Check for required SuperCollider extensions before starting
 	if !supercollider.HasRequiredExtensions() {
@@ -387,9 +369,8 @@ func runColliderTracker(cmd *cobra.Command, args []string) {
 	}()
 
 	// Start SuperCollider in the background so it doesn't block the splash
-	// Always check JACK status, but only exit if --skip-jack is not set
-	if supercollider.IsJackEnabled() {
-		log.Printf("JACK server enabled; starting SuperCollider if not already running")
+	if !config.skipSC {
+		log.Printf("Starting SuperCollider if not already running")
 		go func() {
 			if !supercollider.IsSuperColliderEnabled() {
 				if err := supercollider.StartSuperColliderWithRecording(config.record); err != nil {
@@ -398,18 +379,13 @@ func runColliderTracker(cmd *cobra.Command, args []string) {
 			}
 		}()
 	} else {
-		// JACK is not running - log this but don't start SuperCollider
-		log.Printf("JACK server not enabled; skipping SuperCollider startup")
-		if !config.skipJack {
-			// Only exit if --skip-jack flag was not provided
-			os.Exit(1)
-		}
+		log.Printf("Skipping SuperCollider management (--skip-sc flag provided)")
 	}
 
 	// When SC signals readiness via /cpuusage, hide the splash
 	go func() {
-		if config.skipJack {
-			p.Send(scReadyMsg{}) // skip splash if skipping JACK check
+		if config.skipSC {
+			p.Send(scReadyMsg{}) // skip splash if skipping SC management
 		} else {
 			<-readyChannel
 			log.Printf("Received SuperCollider ready; hiding splash")
