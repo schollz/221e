@@ -35,6 +35,178 @@ type searchCompleteMsg struct {
 	err      error
 }
 
+// ProjectNameInput is a dialog for entering a new project name
+type ProjectNameInput struct {
+	projectName string
+	cursor      int
+	width       int
+	height      int
+	done        bool
+	cancelled   bool
+}
+
+// NewProjectNameInput creates a new project name input dialog
+func NewProjectNameInput() *ProjectNameInput {
+	return &ProjectNameInput{
+		projectName: "",
+		cursor:      0,
+	}
+}
+
+// Init is required for tea.Model interface
+func (pni *ProjectNameInput) Init() tea.Cmd {
+	return nil
+}
+
+// Update handles messages for project name input
+func (pni *ProjectNameInput) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		pni.width = msg.Width
+		pni.height = msg.Height
+
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "esc", "ctrl+c":
+			pni.cancelled = true
+			pni.done = true
+			return pni, tea.Quit
+
+		case "enter":
+			// If empty, use default name "save"
+			if strings.TrimSpace(pni.projectName) == "" {
+				pni.projectName = "save"
+			}
+			pni.done = true
+			return pni, tea.Quit
+
+		case "backspace":
+			if len(pni.projectName) > 0 && pni.cursor > 0 {
+				pni.projectName = pni.projectName[:pni.cursor-1] + pni.projectName[pni.cursor:]
+				pni.cursor--
+			}
+
+		case "left":
+			if pni.cursor > 0 {
+				pni.cursor--
+			}
+
+		case "right":
+			if pni.cursor < len(pni.projectName) {
+				pni.cursor++
+			}
+
+		case "home":
+			pni.cursor = 0
+
+		case "end":
+			pni.cursor = len(pni.projectName)
+
+		default:
+			// Handle regular character input
+			if len(msg.String()) == 1 {
+				char := msg.String()
+				// Allow alphanumeric characters, spaces, dashes, and underscores
+				if (char >= "a" && char <= "z") || (char >= "A" && char <= "Z") ||
+					(char >= "0" && char <= "9") || char == " " || char == "-" || char == "_" {
+					pni.projectName = pni.projectName[:pni.cursor] + char + pni.projectName[pni.cursor:]
+					pni.cursor++
+				}
+			}
+		}
+	}
+
+	return pni, nil
+}
+
+// View renders the project name input dialog
+func (pni *ProjectNameInput) View() string {
+	dialogWidth := 50
+	if pni.width > 0 && dialogWidth > pni.width-4 {
+		dialogWidth = pni.width - 4
+	}
+
+	// Create the message
+	title := "Create New Project"
+	message := "Enter project name:"
+
+	// Show the input field with cursor
+	input := pni.projectName
+	if pni.cursor <= len(input) {
+		// Insert cursor character
+		if pni.cursor < len(input) {
+			input = input[:pni.cursor] + "│" + input[pni.cursor:]
+		} else {
+			input = input + "│"
+		}
+	}
+
+	// Add placeholder text if empty
+	if pni.projectName == "" {
+		input = "│"
+	}
+
+	instructions := "Enter: Confirm  •  Esc: Cancel"
+	hint := "(Leave empty for 'save')"
+
+	// Create styles
+	titleStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color("15")).
+		Align(lipgloss.Center)
+
+	messageStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("15")).
+		Align(lipgloss.Center)
+
+	inputStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("62")).
+		Padding(0, 1).
+		Width(dialogWidth - 6).
+		Align(lipgloss.Left)
+
+	instructionsStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("8")).
+		Align(lipgloss.Center)
+
+	hintStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("8")).
+		Italic(true).
+		Align(lipgloss.Center)
+
+	// Combine all elements
+	content := lipgloss.JoinVertical(
+		lipgloss.Center,
+		titleStyle.Render(title),
+		"",
+		messageStyle.Render(message),
+		"",
+		inputStyle.Render(input),
+		"",
+		hintStyle.Render(hint),
+		"",
+		instructionsStyle.Render(instructions),
+	)
+
+	// Create dialog container
+	dialogStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("62")).
+		Padding(1, 2).
+		Width(dialogWidth)
+
+	dialog := dialogStyle.Render(content)
+
+	// Center the dialog on screen
+	return lipgloss.NewStyle().
+		Width(pni.width).
+		Height(pni.height).
+		Align(lipgloss.Center).
+		AlignVertical(lipgloss.Center).
+		Render(dialog)
+}
+
 // NewProjectSelector creates a new project selector and starts the search
 func NewProjectSelector() *ProjectSelector {
 	ps := &ProjectSelector{
@@ -219,11 +391,9 @@ func (ps *ProjectSelector) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 		case "n":
-			// Create new project option
-			return &ProjectResult{
-				SelectedProject: nil,
-				Cancelled:       false,
-			}, tea.Quit
+			// Create new project option - transition to name input dialog
+			nameInput := NewProjectNameInput()
+			return nameInput, nameInput.Init()
 		}
 	}
 
@@ -356,27 +526,39 @@ func (pr *ProjectResult) View() string {
 	return ""
 }
 
-// RunProjectSelector runs the project selector and returns the selected project path
-func RunProjectSelector() (string, bool) {
+// RunProjectSelector runs the project selector and returns the selected project path or name,
+// whether it was cancelled, and whether it's a new project (true) or existing project (false)
+func RunProjectSelector() (string, bool, bool) {
 	selector := NewProjectSelector()
 	p := tea.NewProgram(selector, tea.WithAltScreen())
 
 	finalModel, err := p.Run()
 	if err != nil {
 		log.Printf("Error running project selector: %v", err)
-		return "", true // cancelled
+		return "", true, false // cancelled
+	}
+
+	// Handle project name input dialog result
+	if nameInput, ok := finalModel.(*ProjectNameInput); ok {
+		if nameInput.cancelled {
+			return "", true, false
+		}
+		if nameInput.done {
+			// Return the project name for new project creation
+			return nameInput.projectName, false, true // not cancelled, is new project
+		}
 	}
 
 	if result, ok := finalModel.(*ProjectResult); ok {
 		if result.Cancelled {
-			return "", true
+			return "", true, false
 		}
 		if result.SelectedProject != nil {
-			return result.SelectedProject.Path, false
+			return result.SelectedProject.Path, false, false // not cancelled, is existing project
 		}
-		// User chose to create new project, return empty string
-		return "", false
+		// User chose to create new project, return empty string (legacy fallback)
+		return "", false, true // not cancelled, is new project (legacy)
 	}
 
-	return "", true // default to cancelled
+	return "", true, false // default to cancelled
 }

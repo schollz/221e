@@ -209,25 +209,15 @@ func restartWithProject() {
 			sox.Clean()
 
 			// Run project selector again
-			selectedPath, cancelled := project.RunProjectSelector()
-			if !cancelled && selectedPath != "" {
-				// Update project path and restart
-				config.project = selectedPath
-				config.projectProvided = true // Mark as provided to skip selector
-				// Restart the main function logic
-				restartWithProject()
-				return
-			} else if !cancelled && selectedPath == "" {
-				// User chose to create new project, prompt for name
-				fmt.Print("Enter project name (or press Enter for 'save'): ")
-				var projectName string
-				fmt.Scanln(&projectName)
-
-				if projectName == "" {
-					projectName = "save"
+			selectedPath, cancelled, isNewProject := project.RunProjectSelector()
+			if !cancelled {
+				if isNewProject {
+					// User chose to create new project with provided name
+					config.project = selectedPath
+				} else {
+					// User selected an existing project
+					config.project = selectedPath
 				}
-
-				config.project = projectName
 				config.projectProvided = true // Mark as provided to skip selector
 				// Restart the main function logic
 				restartWithProject()
@@ -267,25 +257,17 @@ func runColliderTracker(cmd *cobra.Command, args []string) {
 
 	// If no project was specified, show project selector
 	if !config.projectProvided {
-		selectedPath, cancelled := project.RunProjectSelector()
+		selectedPath, cancelled, isNewProject := project.RunProjectSelector()
 		if cancelled {
 			os.Exit(0)
 		}
 
-		if selectedPath != "" {
-			// User selected an existing project
+		if isNewProject {
+			// User chose to create new project with provided name
 			config.project = selectedPath
 		} else {
-			// User chose to create new project, prompt for name
-			fmt.Print("Enter project name (or press Enter for 'save'): ")
-			var projectName string
-			fmt.Scanln(&projectName)
-
-			if projectName == "" {
-				projectName = "save"
-			}
-
-			config.project = projectName
+			// User selected an existing project
+			config.project = selectedPath
 		}
 	}
 
@@ -411,25 +393,15 @@ func runColliderTracker(cmd *cobra.Command, args []string) {
 			sox.Clean()
 
 			// Run project selector again
-			selectedPath, cancelled := project.RunProjectSelector()
-			if !cancelled && selectedPath != "" {
-				// Update project path and restart
-				config.project = selectedPath
-				config.projectProvided = true // Mark as provided to skip selector
-				// Restart the main function logic
-				restartWithProject()
-				return
-			} else if !cancelled && selectedPath == "" {
-				// User chose to create new project, prompt for name
-				fmt.Print("Enter project name (or press Enter for 'save'): ")
-				var projectName string
-				fmt.Scanln(&projectName)
-
-				if projectName == "" {
-					projectName = "save"
+			selectedPath, cancelled, isNewProject := project.RunProjectSelector()
+			if !cancelled {
+				if isNewProject {
+					// User chose to create new project with provided name
+					config.project = selectedPath
+				} else {
+					// User selected an existing project
+					config.project = selectedPath
 				}
-
-				config.project = projectName
 				config.projectProvided = true // Mark as provided to skip selector
 				// Restart the main function logic
 				restartWithProject()
