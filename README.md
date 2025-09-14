@@ -139,7 +139,7 @@ Grab the latest build from **[Releases](https://github.com/schollz/collidertrack
 | ---------- | ------------------------------------------- |
 | **Ctrl+S** | Manual save                                 |
 | **Ctrl+F** | Smart fill/clear for DT column (Delta Time) |
-| **Ctrl+O** | Open project selector to switch projects   |
+| **Ctrl+O** | Open project selector to switch projects (press "n" to create new project) |
 | **Esc**    | Clear selection highlight                   |
 | **Ctrl+Q** | Quit                                        |
 
