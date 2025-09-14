@@ -265,6 +265,9 @@ func HandleKeyInput(m *model.Model, msg tea.KeyMsg) tea.Cmd {
 
 	case "pgup":
 		return handlePgUp(m)
+
+	case "ctrl+o":
+		return handleCtrlO(m)
 	}
 
 	return nil
@@ -1691,4 +1694,12 @@ func getEffectiveValue(phrasesData *[255][][]int, phrase int, currentRow int, co
 		}
 	}
 	return -1 // No effective value found
+}
+
+func handleCtrlO(m *model.Model) tea.Cmd {
+	// Set a flag to indicate we want to return to project selection
+	m.ReturnToProjectSelector = true
+	// Save current state before exiting
+	storage.AutoSave(m)
+	return tea.Quit
 }

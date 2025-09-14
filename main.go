@@ -81,6 +81,178 @@ func main() {
 	}
 }
 
+func restartWithProject() {
+	// This function restarts the ColliderTracker with the new project
+	// without going through cobra command parsing again
+	
+	// Check JACK and SuperCollider requirements (same as in runColliderTracker)
+	if !supercollider.IsJackEnabled() && !config.skipJack {
+		dialog := supercollider.NewJackDialogModel()
+		p := tea.NewProgram(dialog, tea.WithAltScreen())
+		_, _ = p.Run()
+		os.Exit(1)
+	}
+
+	// Check for required SuperCollider extensions before starting
+	if !supercollider.HasRequiredExtensions() {
+		dialog := supercollider.NewInstallDialogModel()
+		p := tea.NewProgram(dialog, tea.WithAltScreen())
+
+		finalModel, err := p.Run()
+		if err != nil {
+			log.Printf("Error running install dialog: %v", err)
+			os.Exit(1)
+		}
+
+		if result, ok := finalModel.(supercollider.InstallDialogModel); ok {
+			if !result.ShouldInstall() {
+				os.Exit(1)
+			}
+			if result.Error() != nil {
+				log.Printf("Failed to install SuperCollider extensions: %v", result.Error())
+				os.Exit(1)
+			}
+		} else {
+			log.Printf("Unexpected model type returned from install dialog")
+			os.Exit(1)
+		}
+	}
+
+	// Set up debug logging early
+	if config.debug != "" {
+		f, err := tea.LogToFile(config.debug, "debug")
+		if err != nil {
+			log.Printf("Fatal: %v", err)
+			os.Exit(1)
+		}
+		defer f.Close()
+		log.SetOutput(f)
+		// Set log flags to include file and line number for VS Code clickable links
+		log.SetFlags(log.LstdFlags | log.Lshortfile)
+	} else {
+		// send log to io.Discard
+		log.SetOutput(io.Discard)
+	}
+
+	log.Println("Debug logging enabled")
+	log.Printf("OSC port configured: %d", config.port)
+
+	// Create readiness channel for SuperCollider startup detection
+	readyChannel := make(chan struct{}, 1)
+
+	// Set up OSC dispatcher early to detect SuperCollider readiness
+	d := osc.NewStandardDispatcher()
+	d.AddMsgHandler("/cpuusage", func(msg *osc.Message) {
+		log.Printf("SuperCollider CPU Usage: %v", msg.Arguments[0])
+		// Signal that SuperCollider is ready (non-blocking)
+		select {
+		case readyChannel <- struct{}{}:
+		default:
+		}
+	})
+	var tm *TrackerModel // Will be set after model creation
+
+	d.AddMsgHandler("/track_volume", func(msg *osc.Message) {
+		for i := 0; i < len(tm.model.TrackVolumes); i++ {
+			tm.model.TrackVolumes[i] = msg.Arguments[i].(float32)
+		}
+	})
+	// Build program
+	tm = initialModel(config.port, config.project, d)
+
+	p := tea.NewProgram(tm, tea.WithAltScreen())
+
+	// Start OSC server after p is created but before p.Run()
+	server := &osc.Server{Addr: fmt.Sprintf(":%d", config.port+1), Dispatcher: d}
+	go func() {
+		log.Printf("Starting OSC server on port %d", config.port+1)
+		if err := server.ListenAndServe(); err != nil {
+			log.Printf("Error starting OSC server: %v", err)
+		}
+	}()
+
+	// Start SuperCollider in the background so it doesn't block the splash
+	// Always check JACK status, but only exit if --skip-jack is not set
+	if supercollider.IsJackEnabled() {
+		log.Printf("JACK server enabled; starting SuperCollider if not already running")
+		go func() {
+			if !supercollider.IsSuperColliderEnabled() {
+				if err := supercollider.StartSuperColliderWithRecording(config.record); err != nil {
+					log.Printf("Failed to start SuperCollider: %v", err)
+				}
+			}
+		}()
+	} else {
+		// JACK is not running - log this but don't start SuperCollider
+		log.Printf("JACK server not enabled; skipping SuperCollider startup")
+		if !config.skipJack {
+			// Only exit if --skip-jack flag was not provided
+			os.Exit(1)
+		}
+	}
+
+	// When SC signals readiness via /cpuusage, hide the splash
+	go func() {
+		if config.skipJack {
+			p.Send(scReadyMsg{}) // skip splash if skipping JACK check
+		} else {
+			<-readyChannel
+			log.Printf("Received SuperCollider ready; hiding splash")
+			p.Send(scReadyMsg{})
+		}
+	}()
+
+	// Initialize sox
+	sox.Init()
+	// hack to make sure Ctrl+V works on Windows
+	hacks.StoreWinClipboard()
+
+	finalModel, err := p.Run()
+	if err != nil {
+		log.Printf("Error: %v", err)
+	}
+
+	// Check if we should return to project selection again (recursive)
+	if finalModel != nil {
+		if trackerModel, ok := finalModel.(*TrackerModel); ok && trackerModel.model.ReturnToProjectSelector {
+			log.Printf("Returning to project selection...")
+			// Clean up current session
+			supercollider.Cleanup()
+			sox.Clean()
+			
+			// Run project selector again
+			selectedPath, cancelled := project.RunProjectSelector()
+			if !cancelled && selectedPath != "" {
+				// Update project path and restart
+				config.project = selectedPath
+				config.projectProvided = true // Mark as provided to skip selector
+				// Restart the main function logic
+				restartWithProject()
+				return
+			} else if !cancelled && selectedPath == "" {
+				// User chose to create new project, prompt for name
+				fmt.Print("Enter project name (or press Enter for 'save'): ")
+				var projectName string
+				fmt.Scanln(&projectName)
+				
+				if projectName == "" {
+					projectName = "save"
+				}
+				
+				config.project = projectName
+				config.projectProvided = true // Mark as provided to skip selector
+				// Restart the main function logic
+				restartWithProject()
+				return
+			}
+		}
+	}
+
+	// Always call cleanup when the program exits normally (e.g., Ctrl+Q)
+	supercollider.Cleanup()
+	sox.Clean()
+}
+
 func runColliderTracker(cmd *cobra.Command, args []string) {
 	// Start CPU profiling for the first 30 seconds
 	cpuFile, err := os.Create("cpu.prof")
@@ -250,8 +422,45 @@ func runColliderTracker(cmd *cobra.Command, args []string) {
 	// hack to make sure Ctrl+V works on Windows
 	hacks.StoreWinClipboard()
 
-	if _, err := p.Run(); err != nil {
+	finalModel, err := p.Run()
+	if err != nil {
 		log.Printf("Error: %v", err)
+	}
+
+	// Check if we should return to project selection
+	if finalModel != nil {
+		if trackerModel, ok := finalModel.(*TrackerModel); ok && trackerModel.model.ReturnToProjectSelector {
+			log.Printf("Returning to project selection...")
+			// Clean up current session
+			supercollider.Cleanup()
+			sox.Clean()
+			
+			// Run project selector again
+			selectedPath, cancelled := project.RunProjectSelector()
+			if !cancelled && selectedPath != "" {
+				// Update project path and restart
+				config.project = selectedPath
+				config.projectProvided = true // Mark as provided to skip selector
+				// Restart the main function logic
+				restartWithProject()
+				return
+			} else if !cancelled && selectedPath == "" {
+				// User chose to create new project, prompt for name
+				fmt.Print("Enter project name (or press Enter for 'save'): ")
+				var projectName string
+				fmt.Scanln(&projectName)
+				
+				if projectName == "" {
+					projectName = "save"
+				}
+				
+				config.project = projectName
+				config.projectProvided = true // Mark as provided to skip selector
+				// Restart the main function logic
+				restartWithProject()
+				return
+			}
+		}
 	}
 
 	// Always call cleanup when the program exits normally (e.g., Ctrl+Q)

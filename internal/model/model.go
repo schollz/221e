@@ -121,6 +121,8 @@ type Model struct {
 	RecordingEnabled     bool   // Whether recording is queued/enabled
 	RecordingActive      bool   // Whether recording is currently active
 	CurrentRecordingFile string // Current recording filename
+	// Project selection state
+	ReturnToProjectSelector bool // Flag to indicate we should return to project selection
 	// Mixer state
 	TrackVolumes      [9]float32 // Current volume levels received from SuperCollider (-96 to +12 dB)
 	TrackSetLevels    [9]float32 // User-controllable set levels for each track (-96 to +32 dB, default -6.0)
