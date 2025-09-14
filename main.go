@@ -69,7 +69,7 @@ func init() {
 		"Write debug logs to specified file (empty disables)")
 	rootCmd.PersistentFlags().BoolVar(&config.skipSC, "skip-sc", false,
 		"Skip SuperCollider management (assume SC is already running)")
-	
+
 	// Set up a callback to track when --project is explicitly provided
 	rootCmd.PersistentFlags().Lookup("project").Changed = false
 }
@@ -84,7 +84,7 @@ func main() {
 func restartWithProject() {
 	// This function restarts the ColliderTracker with the new project
 	// without going through cobra command parsing again
-	
+
 	// Check JACK and SuperCollider requirements (same as in runColliderTracker)
 
 	// Check for required SuperCollider extensions before starting
@@ -207,7 +207,7 @@ func restartWithProject() {
 			// Clean up current session
 			supercollider.Cleanup()
 			sox.Clean()
-			
+
 			// Run project selector again
 			selectedPath, cancelled := project.RunProjectSelector()
 			if !cancelled && selectedPath != "" {
@@ -222,11 +222,11 @@ func restartWithProject() {
 				fmt.Print("Enter project name (or press Enter for 'save'): ")
 				var projectName string
 				fmt.Scanln(&projectName)
-				
+
 				if projectName == "" {
 					projectName = "save"
 				}
-				
+
 				config.project = projectName
 				config.projectProvided = true // Mark as provided to skip selector
 				// Restart the main function logic
@@ -264,14 +264,14 @@ func runColliderTracker(cmd *cobra.Command, args []string) {
 
 	// Check if --project flag was explicitly provided
 	config.projectProvided = cmd.PersistentFlags().Changed("project")
-	
+
 	// If no project was specified, show project selector
 	if !config.projectProvided {
 		selectedPath, cancelled := project.RunProjectSelector()
 		if cancelled {
 			os.Exit(0)
 		}
-		
+
 		if selectedPath != "" {
 			// User selected an existing project
 			config.project = selectedPath
@@ -280,15 +280,14 @@ func runColliderTracker(cmd *cobra.Command, args []string) {
 			fmt.Print("Enter project name (or press Enter for 'save'): ")
 			var projectName string
 			fmt.Scanln(&projectName)
-			
+
 			if projectName == "" {
 				projectName = "save"
 			}
-			
+
 			config.project = projectName
 		}
 	}
-
 
 	// Check for required SuperCollider extensions before starting
 	if !supercollider.HasRequiredExtensions() {
@@ -410,7 +409,7 @@ func runColliderTracker(cmd *cobra.Command, args []string) {
 			// Clean up current session
 			supercollider.Cleanup()
 			sox.Clean()
-			
+
 			// Run project selector again
 			selectedPath, cancelled := project.RunProjectSelector()
 			if !cancelled && selectedPath != "" {
@@ -425,11 +424,11 @@ func runColliderTracker(cmd *cobra.Command, args []string) {
 				fmt.Print("Enter project name (or press Enter for 'save'): ")
 				var projectName string
 				fmt.Scanln(&projectName)
-				
+
 				if projectName == "" {
 					projectName = "save"
 				}
-				
+
 				config.project = projectName
 				config.projectProvided = true // Mark as provided to skip selector
 				// Restart the main function logic

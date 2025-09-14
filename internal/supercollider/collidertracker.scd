@@ -56,7 +56,7 @@ s.waitForBoot({
 				pitch: \note.kr(60),
 				timbre: \timbre.kr(0),
 				color: \color.kr(0),
-				model: \model.kr(0).poll,
+				model: \model.kr(0),
 				trig: 1,
 				resamp: \resamp.kr(0),
 				decim: \decim.kr(1),

@@ -78,6 +78,7 @@ func StartSuperColliderWithRecording(enableRecording bool) error {
 	// Modify the embedded content if recording is enabled
 	scdContent := embeddedSamplerSCD
 	if enableRecording {
+		log.Printf("enableRecording is true")
 		// Replace "//Server.default.record;" with "Server.default.record;"
 		modified := strings.Replace(string(embeddedSamplerSCD), "//Server.default.record;", "Server.default.record;", 1)
 		scdContent = []byte(modified)
