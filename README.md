@@ -37,7 +37,7 @@ This is a music tracker designed to be used with any terminal (Linux, macOS, Win
 
 ```bash
 brew tap schollz/tap
-brew install tune
+brew install collidertracker
 ```
 
 **Option 2: Manual Download**
