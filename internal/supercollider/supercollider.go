@@ -140,7 +140,7 @@ func StartSuperColliderWithRecording(enableRecording bool) error {
 	time.Sleep(2 * time.Second)
 	if !IsSuperColliderEnabled() {
 		// Clean up if it failed to start
-		if sclangProcess.Process != nil {
+		if sclangProcess != nil && sclangProcess.Process != nil {
 			sclangProcess.Process.Kill()
 		}
 		os.Remove(tempSamplerFile)
