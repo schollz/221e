@@ -3,7 +3,6 @@ package modulation
 import (
 	"math/rand"
 	"testing"
-	"time"
 )
 
 func TestNewModulateSettings(t *testing.T) {
@@ -51,6 +50,34 @@ func TestApplyModulationNoRandomization(t *testing.T) {
 	}
 }
 
+func TestApplyModulationNoneDoesNothing(t *testing.T) {
+	// Test that "none" (-1) does no randomization even with IRandom > 0
+	settings := ModulateSettings{
+		Seed:      -1, // "none" - should skip randomization entirely
+		IRandom:   10, // This should be ignored
+		Sub:       2,
+		Add:       5,
+		ScaleRoot: 0,
+		Scale:     "all",
+	}
+
+	// Create a test RNG 
+	rng := rand.New(rand.NewSource(1))
+
+	// With Seed=-1 ("none"), should skip randomization and apply Sub and Add only
+	result := ApplyModulation(60, settings, rng)
+	expected := 60 - 2 + 5 // 63
+	if result != expected {
+		t.Errorf("Expected %d, got %d", expected, result)
+	}
+	
+	// Should get same result multiple times since no randomization
+	result2 := ApplyModulation(60, settings, rng)
+	if result != result2 {
+		t.Errorf("'none' should produce consistent results, got %d and %d", result, result2)
+	}
+}
+
 func TestApplyModulationWithFixedSeed(t *testing.T) {
 	settings := ModulateSettings{
 		Seed:      42, // Fixed seed
@@ -80,8 +107,16 @@ func TestApplyModulationWithFixedSeed(t *testing.T) {
 }
 
 func TestApplyModulationWithTimeSeed(t *testing.T) {
+	// This test is now obsolete since -1 means "none" (no randomization)
+	// The equivalent behavior is now with seed=0 ("random")
+	// See TestApplyModulationWithRandomSeed for the new test
+	t.Skip("Skipping obsolete test - replaced by TestApplyModulationWithRandomSeed")
+}
+
+func TestApplyModulationWithRandomSeed(t *testing.T) {
+	// Test that Seed=0 ("random") uses time seeding (track RNG)
 	settings := ModulateSettings{
-		Seed:      -1, // Track-based RNG seed
+		Seed:      0, // "random" - should use track RNG
 		IRandom:   20,
 		Sub:       0,
 		Add:       0,
@@ -90,11 +125,10 @@ func TestApplyModulationWithTimeSeed(t *testing.T) {
 	}
 
 	// Create different RNGs for different "tracks" to ensure different results
-	rng1 := rand.New(rand.NewSource(time.Now().UnixNano()))
-	time.Sleep(1) // Ensure different seed
-	rng2 := rand.New(rand.NewSource(time.Now().UnixNano()))
+	rng1 := rand.New(rand.NewSource(100))
+	rng2 := rand.New(rand.NewSource(200))
 
-	// With track-based RNG, should produce different results across tracks
+	// With Seed=0 ("random"), should use track RNG and produce different results across tracks
 	results1 := make([]int, 5)
 	results2 := make([]int, 5)
 
@@ -255,7 +289,7 @@ func TestQuantizeToScale(t *testing.T) {
 }
 
 func TestSeedBehavior(t *testing.T) {
-	// Test that Seed=0 is treated as fixed seed, not "none"
+	// Test that Seed=0 is treated as "random" (time seeding), not fixed seed
 	settings0 := ModulateSettings{
 		Seed:      0,
 		IRandom:   10,
@@ -265,18 +299,23 @@ func TestSeedBehavior(t *testing.T) {
 		Scale:     "all",
 	}
 
-	// Create a test RNG (seed doesn't matter since we're using fixed seed in settings)
-	rng := rand.New(rand.NewSource(1))
+	// Create different RNGs to simulate different tracks/timing
+	rng1 := rand.New(rand.NewSource(1))
+	rng2 := rand.New(rand.NewSource(2))
 
-	// Should produce consistent results with Seed=0
-	result1 := ApplyModulation(60, settings0, rng)
-	result2 := ApplyModulation(60, settings0, rng)
+	// With Seed=0 ("random"), should use the provided RNG and potentially produce different results
+	result1 := ApplyModulation(60, settings0, rng1)
+	result2 := ApplyModulation(60, settings0, rng2)
 
-	if result1 != result2 {
-		t.Errorf("Seed=0 should produce consistent results, got %d and %d", result1, result2)
+	// Results should be within IRandom range (0-10)
+	if result1 < 0 || result1 > 10 {
+		t.Errorf("Result %d should be within IRandom range 0-10", result1)
+	}
+	if result2 < 0 || result2 > 10 {
+		t.Errorf("Result %d should be within IRandom range 0-10", result2)
 	}
 
-	// Test that different fixed seeds produce different results
+	// Test that fixed seeds still produce consistent results
 	settings1 := ModulateSettings{
 		Seed:      1,
 		IRandom:   10,
@@ -286,19 +325,20 @@ func TestSeedBehavior(t *testing.T) {
 		Scale:     "all",
 	}
 
-	result3 := ApplyModulation(60, settings1, rng)
+	result3 := ApplyModulation(60, settings1, rng1)
+	result4 := ApplyModulation(60, settings1, rng2)
 
-	// Different seeds should likely produce different results
-	// (not guaranteed, but very likely with different seeds)
-	if result1 == result3 {
-		t.Logf("Warning: Different seeds produced same result (%d), this is possible but unlikely", result1)
+	// Fixed seed should produce same results regardless of RNG
+	if result3 != result4 {
+		t.Errorf("Fixed seed should produce consistent results, got %d and %d", result3, result4)
 	}
 }
 
 func TestTrackIsolation(t *testing.T) {
 	// Test that different tracks with separate RNGs produce independent random sequences
+	// Updated to use seed=0 ("random") since seed=-1 ("none") no longer does randomization
 	settings := ModulateSettings{
-		Seed:      -1, // Use track RNG (not fixed seed)
+		Seed:      0, // Use "random" seeding (not "none")
 		IRandom:   20,
 		Sub:       0,
 		Add:       0,

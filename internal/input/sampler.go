@@ -297,12 +297,16 @@ func ModifyModulateValue(m *model.Model, baseDelta float32) {
 			newSeed = 128
 		}
 		oldSeedValue := "none"
-		if settings.Seed >= 0 {
+		if settings.Seed == 0 {
+			oldSeedValue = "random"
+		} else if settings.Seed > 0 {
 			oldSeedValue = fmt.Sprintf("%d", settings.Seed)
 		}
 		settings.Seed = newSeed
 		newSeedValue := "none"
-		if settings.Seed >= 0 {
+		if settings.Seed == 0 {
+			newSeedValue = "random"
+		} else if settings.Seed > 0 {
 			newSeedValue = fmt.Sprintf("%d", settings.Seed)
 		}
 		log.Printf("Modified modulate %02X Seed: %s -> %s", m.ModulateEditingIndex, oldSeedValue, newSeedValue)

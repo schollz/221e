@@ -318,7 +318,7 @@ type TimestrechSettings struct {
 }
 
 type ModulateSettings struct {
-	Seed      int    `json:"seed"`      // Random seed: -1 for "none", 0-128 for fixed seed
+	Seed      int    `json:"seed"`      // Random seed: -1 for "none" (no randomization), 0 for "random" (time seeding), 1-128 for fixed seed
 	IRandom   int    `json:"irandom"`   // Random range: 0-128 (0 means no randomization)
 	Sub       int    `json:"sub"`       // Subtract value: 0-120
 	Add       int    `json:"add"`       // Add value: 0-120

@@ -33,7 +33,9 @@ func RenderModulateView(m *model.Model) string {
 	// Seed setting
 	seedLabel := "Seed:"
 	seedValue := "none"
-	if settings.Seed >= 0 {
+	if settings.Seed == 0 {
+		seedValue = "random"
+	} else if settings.Seed > 0 {
 		seedValue = fmt.Sprintf("%d", settings.Seed)
 	}
 	var seedCell string
