@@ -93,10 +93,11 @@ func DoSave(m *model.Model) {
 		LastPhraseRow:         m.LastPhraseRow,
 		LastPhraseCol:         m.LastPhraseCol,
 		RecordingEnabled:      m.RecordingEnabled,
-		RetriggerSettings:     m.RetriggerSettings,
-		TimestrechSettings:    m.TimestrechSettings,
-		ModulateSettings:      m.ModulateSettings,
-		ArpeggioSettings:      m.ArpeggioSettings,
+		RetriggerSettings:          m.RetriggerSettings,
+		TimestrechSettings:         m.TimestrechSettings,
+		InstrumentModulateSettings: m.InstrumentModulateSettings,
+		SamplerModulateSettings:    m.SamplerModulateSettings,
+		ArpeggioSettings:           m.ArpeggioSettings,
 		MidiSettings:          m.MidiSettings,
 		SoundMakerSettings:    m.SoundMakerSettings,
 		SongData:              m.SongData,
@@ -196,16 +197,35 @@ func LoadState(m *model.Model, oscPort int, saveFolder string) error {
 	m.RecordingEnabled = saveData.RecordingEnabled
 	m.RetriggerSettings = saveData.RetriggerSettings
 	m.TimestrechSettings = saveData.TimestrechSettings
-	m.ModulateSettings = saveData.ModulateSettings
+	
+	// Handle modulation settings with backward compatibility
+	if len(saveData.InstrumentModulateSettings) > 0 || len(saveData.SamplerModulateSettings) > 0 {
+		// New format with separate pools
+		m.InstrumentModulateSettings = saveData.InstrumentModulateSettings
+		m.SamplerModulateSettings = saveData.SamplerModulateSettings
+	} else {
+		// Old format - copy legacy ModulateSettings to both pools for backward compatibility
+		m.InstrumentModulateSettings = saveData.ModulateSettings
+		m.SamplerModulateSettings = saveData.ModulateSettings
+	}
 	
 	// Fix any ModulateSettings that have Seed=0 when they should be -1 for "none"
 	// This handles save files from before proper seed initialization
-	for i := 0; i < len(m.ModulateSettings); i++ {
-		settings := &m.ModulateSettings[i]
+	for i := 0; i < len(m.InstrumentModulateSettings); i++ {
+		settings := &m.InstrumentModulateSettings[i]
 		// If seed is 0 and all other values are defaults, this should be "none" (-1)
 		if settings.Seed == 0 && settings.IRandom == 0 && settings.Sub == 0 && 
 		   settings.Add == 0 && settings.ScaleRoot == 0 && settings.Scale == "all" {
 			settings.Seed = -1
+		}
+	}
+	for i := 0; i < len(m.SamplerModulateSettings); i++ {
+		settings := &m.SamplerModulateSettings[i]
+		// If seed is 0 and all other values are defaults, this should be "none" (-1)
+		if settings.Seed == 0 && settings.IRandom == 0 && settings.Sub == 0 && 
+		   settings.Add == 0 && settings.ScaleRoot == 0 && settings.Scale == "all" {
+			settings.Seed = -1
+		}
 		}
 	}
 	

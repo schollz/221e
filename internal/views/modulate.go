@@ -28,7 +28,7 @@ func RenderModulateView(m *model.Model) string {
 	content.WriteString("\n")
 
 	// Get current modulate settings
-	settings := m.ModulateSettings[m.ModulateEditingIndex]
+	settings := (*m.GetCurrentModulateSettings())[m.ModulateEditingIndex]
 
 	// Seed setting
 	seedLabel := "Seed:"

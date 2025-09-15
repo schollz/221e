@@ -35,6 +35,16 @@ func GetChainsDataForTrack(m *model.Model, track int) *[][]int {
 	return &m.SamplerChainsData
 }
 
+// GetModulateSettingsForTrack returns the appropriate modulate settings based on track type
+func GetModulateSettingsForTrack(m *model.Model, track int) *[255]types.ModulateSettings {
+	if track >= 0 && track < 8 && !m.TrackTypes[track] {
+		// TrackTypes[track] = false means Instrument
+		return &m.InstrumentModulateSettings
+	}
+	// TrackTypes[track] = true means Sampler (or invalid track defaults to Sampler)
+	return &m.SamplerModulateSettings
+}
+
 // ValueModifier represents a function that modifies a value with bounds checking
 type ValueModifier struct {
 	GetValue         func() interface{}
@@ -636,7 +646,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 
 	// Apply modulation if there's a modulate setting active on this row
 	if rawModulate != -1 && rawModulate >= 0 && rawModulate < 255 && effectiveNote != -1 {
-		modulateSettings := m.ModulateSettings[rawModulate]
+		modulateSettings := (*GetModulateSettingsForTrack(m, trackId))[rawModulate]
 		originalNote := effectiveNote
 
 		// Get track-specific RNG for modulation

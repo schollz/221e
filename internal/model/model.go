@@ -89,9 +89,10 @@ type Model struct {
 	// Timestretch settings management
 	TimestrechSettings     [255]types.TimestrechSettings // Array of timestretch settings (00-FE)
 	TimestrechEditingIndex int                           // Currently editing timestretch index
-	// Modulate settings management
-	ModulateSettings     [255]types.ModulateSettings // Array of modulate settings (00-FE)
-	ModulateEditingIndex int                         // Currently editing modulate index
+	// Modulate settings management (separate pools for instrument and sampler tracks)
+	InstrumentModulateSettings [255]types.ModulateSettings // Array of modulate settings for instrument tracks (00-FE)
+	SamplerModulateSettings    [255]types.ModulateSettings // Array of modulate settings for sampler tracks (00-FE)
+	ModulateEditingIndex       int                         // Currently editing modulate index
 	// Arpeggio settings management
 	ArpeggioSettings       [255]types.ArpeggioSettings   // Array of arpeggio settings (00-FE)
 	ArpeggioEditingIndex   int                           // Currently editing arpeggio index
@@ -163,6 +164,14 @@ func (m *Model) AppendPhrasesFile(filename string) int {
 	}
 	m.SamplerPhrasesFiles = append(m.SamplerPhrasesFiles, filename)
 	return len(m.SamplerPhrasesFiles) - 1
+}
+
+// GetCurrentModulateSettings returns the appropriate modulate settings based on current track type
+func (m *Model) GetCurrentModulateSettings() *[255]types.ModulateSettings {
+	if m.GetPhraseViewType() == types.InstrumentPhraseView {
+		return &m.InstrumentModulateSettings
+	}
+	return &m.SamplerModulateSettings
 }
 
 // GetCurrentPhrasesData returns the appropriate phrases data based on current track
@@ -785,9 +794,9 @@ func (m *Model) initializeDefaultData() {
 			Probability: 100, // Default 100% probability
 		}
 	}
-	// Initialize modulate settings with defaults
+	// Initialize modulate settings with defaults for both instrument and sampler tracks
 	for i := 0; i < 255; i++ {
-		m.ModulateSettings[i] = types.ModulateSettings{
+		defaultSettings := types.ModulateSettings{
 			Seed:      -1,    // Default to "none"
 			IRandom:   0,     // Default no randomization
 			Sub:       0,     // Default no subtraction
@@ -795,6 +804,8 @@ func (m *Model) initializeDefaultData() {
 			ScaleRoot: 0,     // Default to C
 			Scale:     "all", // Default to all notes
 		}
+		m.InstrumentModulateSettings[i] = defaultSettings
+		m.SamplerModulateSettings[i] = defaultSettings
 	}
 
 	// Initialize arpeggio settings with defaults

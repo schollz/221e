@@ -511,10 +511,12 @@ type SaveData struct {
 	LastPhraseRow         int                     `json:"lastPhraseRow"`
 	LastPhraseCol         int                     `json:"lastPhraseCol"`
 	RecordingEnabled      bool                    `json:"recordingEnabled"`
-	RetriggerSettings     [255]RetriggerSettings  `json:"retriggerSettings"`
-	TimestrechSettings    [255]TimestrechSettings `json:"timestrechSettings"`
-	ModulateSettings      [255]ModulateSettings   `json:"modulateSettings"`
-	ArpeggioSettings      [255]ArpeggioSettings   `json:"arpeggioSettings"`
+	RetriggerSettings           [255]RetriggerSettings  `json:"retriggerSettings"`
+	TimestrechSettings          [255]TimestrechSettings `json:"timestrechSettings"`
+	ModulateSettings            [255]ModulateSettings   `json:"modulateSettings"`            // Legacy field for backward compatibility
+	InstrumentModulateSettings  [255]ModulateSettings   `json:"instrumentModulateSettings"` // New separate pools
+	SamplerModulateSettings     [255]ModulateSettings   `json:"samplerModulateSettings"`    // New separate pools
+	ArpeggioSettings            [255]ArpeggioSettings   `json:"arpeggioSettings"`
 	MidiSettings          [255]MidiSettings       `json:"midiSettings"`
 	SoundMakerSettings    [255]SoundMakerSettings `json:"soundMakerSettings"`
 	SongData              [8][16]int              `json:"songData"`
