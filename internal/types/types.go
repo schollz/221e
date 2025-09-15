@@ -491,42 +491,42 @@ type SaveData struct {
 	ChainsData    [][]int      `json:"chainsData"`
 	PhrasesData   [255][][]int `json:"phrasesData"`
 	// New separate data pools for Instruments and Samplers
-	InstrumentChainsData  [][]int                 `json:"instrumentChainsData"`
-	InstrumentPhrasesData [255][][]int            `json:"instrumentPhrasesData"`
-	SamplerChainsData     [][]int                 `json:"samplerChainsData"`
-	SamplerPhrasesData    [255][][]int            `json:"samplerPhrasesData"`
-	SamplerPhrasesFiles   []string                `json:"samplerPhrasesFiles"`
-	LastEditRow           int                     `json:"lastEditRow"`
-	PhrasesFiles          []string                `json:"phrasesFiles"`
-	CurrentDir            string                  `json:"currentDir"`
-	BPM                   float32                 `json:"bpm"`
-	PPQ                   int                     `json:"ppq"`
-	PregainDB             float32                 `json:"pregainDB"`
-	PostgainDB            float32                 `json:"postgainDB"`
-	BiasDB                float32                 `json:"biasDB"`
-	SaturationDB          float32                 `json:"saturationDB"`
-	DriveDB               float32                 `json:"driveDB"`
-	FileMetadata          map[string]FileMetadata `json:"fileMetadata"`
-	LastChainRow          int                     `json:"lastChainRow"`
-	LastPhraseRow         int                     `json:"lastPhraseRow"`
-	LastPhraseCol         int                     `json:"lastPhraseCol"`
-	RecordingEnabled      bool                    `json:"recordingEnabled"`
-	RetriggerSettings           [255]RetriggerSettings  `json:"retriggerSettings"`
-	TimestrechSettings          [255]TimestrechSettings `json:"timestrechSettings"`
-	ModulateSettings            [255]ModulateSettings   `json:"modulateSettings"`            // Legacy field for backward compatibility
-	InstrumentModulateSettings  [255]ModulateSettings   `json:"instrumentModulateSettings"` // New separate pools
-	SamplerModulateSettings     [255]ModulateSettings   `json:"samplerModulateSettings"`    // New separate pools
-	ArpeggioSettings            [255]ArpeggioSettings   `json:"arpeggioSettings"`
-	MidiSettings          [255]MidiSettings       `json:"midiSettings"`
-	SoundMakerSettings    [255]SoundMakerSettings `json:"soundMakerSettings"`
-	SongData              [8][16]int              `json:"songData"`
-	LastSongRow           int                     `json:"lastSongRow"`
-	LastSongTrack         int                     `json:"lastSongTrack"`
-	CurrentChain          int                     `json:"currentChain"`
-	CurrentTrack          int                     `json:"currentTrack"`
-	TrackSetLevels        [9]float32              `json:"trackSetLevels"`
-	TrackTypes            [9]bool                 `json:"trackTypes"`
-	CurrentMixerTrack     int                     `json:"currentMixerTrack"`
+	InstrumentChainsData       [][]int                 `json:"instrumentChainsData"`
+	InstrumentPhrasesData      [255][][]int            `json:"instrumentPhrasesData"`
+	SamplerChainsData          [][]int                 `json:"samplerChainsData"`
+	SamplerPhrasesData         [255][][]int            `json:"samplerPhrasesData"`
+	SamplerPhrasesFiles        []string                `json:"samplerPhrasesFiles"`
+	LastEditRow                int                     `json:"lastEditRow"`
+	PhrasesFiles               []string                `json:"phrasesFiles"`
+	CurrentDir                 string                  `json:"currentDir"`
+	BPM                        float32                 `json:"bpm"`
+	PPQ                        int                     `json:"ppq"`
+	PregainDB                  float32                 `json:"pregainDB"`
+	PostgainDB                 float32                 `json:"postgainDB"`
+	BiasDB                     float32                 `json:"biasDB"`
+	SaturationDB               float32                 `json:"saturationDB"`
+	DriveDB                    float32                 `json:"driveDB"`
+	FileMetadata               map[string]FileMetadata `json:"fileMetadata"`
+	LastChainRow               int                     `json:"lastChainRow"`
+	LastPhraseRow              int                     `json:"lastPhraseRow"`
+	LastPhraseCol              int                     `json:"lastPhraseCol"`
+	RecordingEnabled           bool                    `json:"recordingEnabled"`
+	RetriggerSettings          [255]RetriggerSettings  `json:"retriggerSettings"`
+	TimestrechSettings         [255]TimestrechSettings `json:"timestrechSettings"`
+	ModulateSettings           [255]ModulateSettings   `json:"modulateSettings"`           // Legacy field for backward compatibility
+	InstrumentModulateSettings [255]ModulateSettings   `json:"instrumentModulateSettings"` // New separate pools
+	SamplerModulateSettings    [255]ModulateSettings   `json:"samplerModulateSettings"`    // New separate pools
+	ArpeggioSettings           [255]ArpeggioSettings   `json:"arpeggioSettings"`
+	MidiSettings               [255]MidiSettings       `json:"midiSettings"`
+	SoundMakerSettings         [255]SoundMakerSettings `json:"soundMakerSettings"`
+	SongData                   [8][16]int              `json:"songData"`
+	LastSongRow                int                     `json:"lastSongRow"`
+	LastSongTrack              int                     `json:"lastSongTrack"`
+	CurrentChain               int                     `json:"currentChain"`
+	CurrentTrack               int                     `json:"currentTrack"`
+	TrackSetLevels             [9]float32              `json:"trackSetLevels"`
+	TrackTypes                 [9]bool                 `json:"trackTypes"`
+	CurrentMixerTrack          int                     `json:"currentMixerTrack"`
 }
 
 const SaveFile = "tracker-save.json"

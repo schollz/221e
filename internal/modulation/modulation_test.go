@@ -61,7 +61,7 @@ func TestApplyModulationNoneDoesNothing(t *testing.T) {
 		Scale:     "all",
 	}
 
-	// Create a test RNG 
+	// Create a test RNG
 	rng := rand.New(rand.NewSource(1))
 
 	// With Seed=-1 ("none"), should skip randomization and apply Sub and Add only
@@ -70,7 +70,7 @@ func TestApplyModulationNoneDoesNothing(t *testing.T) {
 	if result != expected {
 		t.Errorf("Expected %d, got %d", expected, result)
 	}
-	
+
 	// Should get same result multiple times since no randomization
 	result2 := ApplyModulation(60, settings, rng)
 	if result != result2 {

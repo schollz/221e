@@ -20,23 +20,23 @@ func TestRunProjectSelectorSignature(t *testing.T) {
 func TestProjectNameInputCreation(t *testing.T) {
 	// Test that we can create a ProjectNameInput
 	input := NewProjectNameInput()
-	
+
 	if input == nil {
 		t.Fatal("NewProjectNameInput returned nil")
 	}
-	
+
 	if input.projectName != "" {
 		t.Errorf("Expected empty project name, got %q", input.projectName)
 	}
-	
+
 	if input.cursor != 0 {
 		t.Errorf("Expected cursor at 0, got %d", input.cursor)
 	}
-	
+
 	if input.done {
 		t.Error("Expected done to be false initially")
 	}
-	
+
 	if input.cancelled {
 		t.Error("Expected cancelled to be false initially")
 	}
