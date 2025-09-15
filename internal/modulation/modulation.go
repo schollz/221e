@@ -7,7 +7,7 @@ import (
 
 // ModulateSettings represents the settings for a single modulation entry
 type ModulateSettings struct {
-	Seed      int    `json:"seed"`      // Random seed: -1 for "none", 0-128 for fixed seed
+	Seed      int    `json:"seed"`      // Random seed: -1 for "none" (no randomization), 0 for "random" (time seeding), 1-128 for fixed seed
 	IRandom   int    `json:"irandom"`   // Random range: 0-128 (0 means no randomization)
 	Sub       int    `json:"sub"`       // Subtract value: 0-120
 	Add       int    `json:"add"`       // Add value: 0-120
@@ -83,24 +83,26 @@ func ApplyModulation(originalNote int, settings ModulateSettings, rng *rand.Rand
 	result := originalNote
 	log.Printf("DEBUG: Start with originalNote=%d", result)
 
-	// Step 1: Apply random variation if IRandom > 0
-	if settings.IRandom > 0 {
+	// Step 1: Apply random variation if IRandom > 0 and Seed != -1 (none)
+	if settings.IRandom > 0 && settings.Seed != -1 {
 		var randomValue int
 
-		// Use seed if specified (>= 0), otherwise use the provided RNG
+		// Use fixed seed if specified (> 0), or time seeding for seed=0 ("random")
 		if settings.Seed > 0 {
 			// Create a new random source with the specified seed for reproducible results
 			seedRng := rand.New(rand.NewSource(int64(settings.Seed)))
 			randomValue = seedRng.Intn(settings.IRandom + 1)
 			log.Printf("DEBUG: Using fixed seed %d, got random %d", settings.Seed, randomValue)
-		} else {
-			// Seed is negative (including -1 for "none") - use provided track-specific RNG
+		} else if settings.Seed == 0 {
+			// Seed 0 means "random" - use provided track-specific RNG for time seeding
 			randomValue = rng.Intn(settings.IRandom + 1)
-			log.Printf("DEBUG: Using track RNG with seed %d, got random %d", settings.Seed, randomValue)
+			log.Printf("DEBUG: Using random seeding (seed=0), got random %d", randomValue)
 		}
 
 		result = randomValue
 		log.Printf("DEBUG: After IRandom, result=%d", result)
+	} else if settings.Seed == -1 {
+		log.Printf("DEBUG: Seed is 'none' (-1), skipping randomization")
 	}
 
 	// Step 2: Subtract the Sub value
