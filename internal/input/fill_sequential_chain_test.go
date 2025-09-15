@@ -17,8 +17,8 @@ func TestFillSequentialChain(t *testing.T) {
 
 		// Set existing phrases
 		chainsData := m.GetCurrentChainsData()
-		(*chainsData)[0][0] = 0  // phrase 00 at row 0
-		(*chainsData)[0][1] = 1  // phrase 01 at row 1
+		(*chainsData)[0][0] = 0 // phrase 00 at row 0
+		(*chainsData)[0][1] = 1 // phrase 01 at row 1
 		// rows 2-5 should be -1 (empty)
 
 		// Execute Ctrl+F
@@ -62,7 +62,7 @@ func TestFillSequentialChain(t *testing.T) {
 
 		// Set existing phrase
 		chainsData := m.GetCurrentChainsData()
-		(*chainsData)[0][0] = 5  // phrase 05 at row 0
+		(*chainsData)[0][0] = 5 // phrase 05 at row 0
 
 		// Execute Ctrl+F
 		FillSequentialChain(m)
@@ -82,7 +82,7 @@ func TestFillSequentialChain(t *testing.T) {
 
 		// Set existing phrase
 		chainsData := m.GetCurrentChainsData()
-		(*chainsData)[0][2] = 10  // phrase 10 at row 2
+		(*chainsData)[0][2] = 10 // phrase 10 at row 2
 
 		// Execute Ctrl+F
 		FillSequentialChain(m)
@@ -105,8 +105,8 @@ func TestFillSequentialChain(t *testing.T) {
 
 		// Set existing phrases as shown in user's chain view
 		chainsData := m.GetCurrentChainsData()
-		(*chainsData)[0][0] = 0  // phrase 00 at row 0
-		(*chainsData)[0][1] = 1  // phrase 01 at row 1
+		(*chainsData)[0][0] = 0 // phrase 00 at row 0
+		(*chainsData)[0][1] = 1 // phrase 01 at row 1
 		// rows 2-5 should be -1 (shown as "--" in UI)
 
 		// Execute Ctrl+F (what user pressed)

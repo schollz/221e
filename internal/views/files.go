@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/schollz/collidertracker/internal/input"
 	"github.com/schollz/collidertracker/internal/model"
 	"github.com/schollz/collidertracker/internal/types"
 )
@@ -53,7 +54,7 @@ func RenderFileMetadataView(m *model.Model) string {
 		content.WriteString("\n\n")
 
 		return content.String()
-	}, "Up/Down: Navigate | Ctrl+Arrow: Adjust values | Shift+Down: Back to File Browser", 7)
+	}, fmt.Sprintf("Up/Down: Navigate | %s+Arrow: Adjust values | Shift+Down: Back to File Browser", input.GetModifierKey()), 7)
 }
 
 func RenderFileView(m *model.Model) string {
@@ -92,5 +93,5 @@ func RenderFileView(m *model.Model) string {
 		}
 
 		return content.String()
-	}, "SPACE: Select file | Ctrl+Right: Play/Stop | Shift+Left: Back to phrase", m.GetVisibleRows())
+	}, fmt.Sprintf("SPACE: Select file | %s+Right: Play/Stop | Shift+Left: Back to phrase", input.GetModifierKey()), m.GetVisibleRows())
 }

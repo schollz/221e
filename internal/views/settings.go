@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/schollz/collidertracker/internal/input"
 	"github.com/schollz/collidertracker/internal/model"
 )
 
@@ -133,5 +134,5 @@ func RenderSettingsView(m *model.Model) string {
 		)
 
 		return content
-	}, "Up/Down/Left/Right: Navigate | Ctrl+Arrow: Adjust values | Shift+Down: Back to Chain view", 13)
+	}, fmt.Sprintf("Up/Down/Left/Right: Navigate | %s+Arrow: Adjust values | Shift+Down: Back to Chain view", input.GetModifierKey()), 13)
 }

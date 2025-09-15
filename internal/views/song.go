@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/schollz/collidertracker/internal/input"
 	"github.com/schollz/collidertracker/internal/model"
 	"github.com/schollz/collidertracker/internal/ticks"
 	"github.com/schollz/collidertracker/internal/types"
@@ -196,6 +197,6 @@ func GetSongStatusMessage(m *model.Model) string {
 		statusMsg += " | Stopped"
 	}
 
-	statusMsg += " | Shift+Right: Enter | Ctrl+Arrows: Edit"
+	statusMsg += fmt.Sprintf(" | Shift+Right: Enter | %s+Arrows: Edit", input.GetModifierKey())
 	return statusMsg
 }

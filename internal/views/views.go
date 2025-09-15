@@ -8,6 +8,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 
+	"github.com/schollz/collidertracker/internal/input"
 	"github.com/schollz/collidertracker/internal/model"
 	"github.com/schollz/collidertracker/internal/types"
 )
@@ -176,7 +177,7 @@ func GetChainStatusMessage(m *model.Model) string {
 		statusMsg = fmt.Sprintf("Chain %02X Row %02X: Phrase %02X", m.CurrentChain, m.CurrentRow, phraseID)
 	}
 
-	statusMsg += " | Shift+Right: Enter phrase | Ctrl+Arrow: Edit phrase"
+	statusMsg += fmt.Sprintf(" | Shift+Right: Enter phrase | %s+Arrow: Edit phrase", input.GetModifierKey())
 	return statusMsg
 }
 

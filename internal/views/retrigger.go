@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/schollz/collidertracker/internal/input"
 	"github.com/schollz/collidertracker/internal/model"
 )
 
@@ -177,7 +178,7 @@ func RenderRetriggerView(m *model.Model) string {
 	content.WriteString("\n\n")
 
 	// Footer with status
-	statusMsg := "Up/Down: Navigate | Ctrl+Arrow: Adjust values | Shift+Left: Back to Phrase view"
+	statusMsg := fmt.Sprintf("Up/Down: Navigate | %s+Arrow: Adjust values | Shift+Left: Back to Phrase view", input.GetModifierKey())
 	content.WriteString(RenderFooter(m, 13, statusMsg))
 
 	// Apply container padding

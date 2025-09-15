@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/schollz/collidertracker/internal/input"
 	"github.com/schollz/collidertracker/internal/model"
 	"github.com/schollz/collidertracker/internal/types"
 )
@@ -27,7 +28,7 @@ func GetMidiStatusMessage(m *model.Model) string {
 		}
 	}
 
-	baseMsg := "Up/Down: Navigate | SPACE: Select device | Ctrl+Arrow: Adjust values | Shift+Left: Back to Phrase view"
+	baseMsg := fmt.Sprintf("Up/Down: Navigate | SPACE: Select device | %s+Arrow: Adjust values | Shift+Left: Back to Phrase view", input.GetModifierKey())
 	return fmt.Sprintf("%s | %s", columnStatus, baseMsg)
 }
 

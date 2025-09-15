@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 	"time"
@@ -146,7 +147,11 @@ func (pni *ProjectNameInput) View() string {
 		input = "│"
 	}
 
-	instructions := "Enter: Confirm  •  Esc/Ctrl+Q: Cancel"
+	modifierKey := "Ctrl"
+	if runtime.GOOS == "darwin" {
+		modifierKey = "Alt"
+	}
+	instructions := fmt.Sprintf("Enter: Confirm  •  Esc/%s+Q: Cancel", modifierKey)
 	hint := "(Leave empty for 'save')"
 
 	// Create styles

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/schollz/collidertracker/internal/input"
 	"github.com/schollz/collidertracker/internal/model"
 	"github.com/schollz/collidertracker/internal/types"
 )
@@ -37,7 +38,7 @@ func GetArpeggioStatusMessage(m *model.Model) string {
 		columnStatus = fmt.Sprintf("Divisor /%s", divisorText)
 	}
 
-	baseMsg := "Up/Down: Navigate rows | Left/Right: Navigate columns | Ctrl+Arrow: Adjust values | Shift+Left: Back to Phrase view"
+	baseMsg := fmt.Sprintf("Up/Down: Navigate rows | Left/Right: Navigate columns | %s+Arrow: Adjust values | Shift+Left: Back to Phrase view", input.GetModifierKey())
 	return fmt.Sprintf("%s | %s", columnStatus, baseMsg)
 }
 

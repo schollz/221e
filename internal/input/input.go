@@ -3,6 +3,7 @@ package input
 import (
 	"log"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -160,10 +161,18 @@ func soundMakerViewConfig() ViewSwitchConfig {
 
 type TickMsg time.Time
 
+// GetModifierKey returns "Alt" on macOS, "Ctrl" on other platforms
+func GetModifierKey() string {
+	if runtime.GOOS == "darwin" {
+		return "Alt"
+	}
+	return "Ctrl"
+}
+
 func HandleKeyInput(m *model.Model, msg tea.KeyMsg) tea.Cmd {
 	log.Printf("key: %s, %+v", msg.String(), msg)
 	switch msg.String() {
-	case "ctrl+q":
+	case "ctrl+q", "alt+q":
 		return tea.Quit
 
 	case "esc":
@@ -197,19 +206,19 @@ func HandleKeyInput(m *model.Model, msg tea.KeyMsg) tea.Cmd {
 	case "right":
 		return handleRight(m)
 
-	case "ctrl+up":
+	case "ctrl+up", "alt+up":
 		return handleCtrlUp(m)
 
-	case "ctrl+s":
+	case "ctrl+s", "alt+s":
 		return handleCtrlS(m)
 
-	case "ctrl+down":
+	case "ctrl+down", "alt+down":
 		return handleCtrlDown(m)
 
-	case "ctrl+left":
+	case "ctrl+left", "alt+left":
 		return handleCtrlLeft(m)
 
-	case "ctrl+right":
+	case "ctrl+right", "alt+right":
 		return handleCtrlRight(m)
 
 	case "s":
@@ -218,25 +227,25 @@ func HandleKeyInput(m *model.Model, msg tea.KeyMsg) tea.Cmd {
 	case "c":
 		return handleC(m)
 
-	case "ctrl+c":
+	case "ctrl+c", "alt+c":
 		return handleCtrlC(m)
 
-	case "ctrl+x":
+	case "ctrl+x", "alt+x":
 		return handleCtrlX(m)
 
-	case "ctrl+v":
+	case "ctrl+v", "alt+v":
 		return handleCtrlV(m)
 
 	case "w":
 		return handleCtrlV(m)
 
-	case "ctrl+d":
+	case "ctrl+d", "alt+d":
 		return handleCtrlD(m)
 
 	case " ":
 		return handleSpace(m)
 
-	case "ctrl+@":
+	case "ctrl+@", "alt+@":
 		return handleCtrlSpace(m)
 
 	case "backspace":
@@ -245,13 +254,13 @@ func HandleKeyInput(m *model.Model, msg tea.KeyMsg) tea.Cmd {
 	case "x":
 		return handleBackspace(m)
 
-	case "ctrl+h":
+	case "ctrl+h", "alt+h":
 		return handleCtrlH(m)
 
-	case "ctrl+r":
+	case "ctrl+r", "alt+r":
 		return handleCtrlR(m)
 
-	case "ctrl+f":
+	case "ctrl+f", "alt+f":
 		return handleCtrlF(m)
 
 	case "p":
@@ -266,7 +275,7 @@ func HandleKeyInput(m *model.Model, msg tea.KeyMsg) tea.Cmd {
 	case "pgup":
 		return handlePgUp(m)
 
-	case "ctrl+o":
+	case "ctrl+o", "alt+o":
 		return handleCtrlO(m)
 	}
 

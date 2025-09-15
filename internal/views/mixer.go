@@ -7,6 +7,7 @@ import (
 
 	"github.com/lucasb-eyer/go-colorful"
 	"github.com/muesli/termenv"
+	"github.com/schollz/collidertracker/internal/input"
 	"github.com/schollz/collidertracker/internal/model"
 )
 
@@ -150,7 +151,7 @@ func getMixerStatusMessage(m *model.Model) string {
 
 	statusMsg := fmt.Sprintf("%s: Set %.1fdB (Hex %02X)",
 		trackLabel, setLevel, dbToHex(setLevel))
-	statusMsg += " | Left/Right: Select │ Ctrl+Arrow: Adjust │ Shift+Up: Back"
+	statusMsg += fmt.Sprintf(" | Left/Right: Select │ %s+Arrow: Adjust │ Shift+Up: Back", input.GetModifierKey())
 
 	return statusMsg
 }

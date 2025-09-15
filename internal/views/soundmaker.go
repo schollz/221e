@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/schollz/collidertracker/internal/input"
 	"github.com/schollz/collidertracker/internal/model"
 	"github.com/schollz/collidertracker/internal/supercollider"
 	"github.com/schollz/collidertracker/internal/types"
@@ -77,7 +78,7 @@ func GetSoundMakerStatusMessage(m *model.Model) string {
 		}
 	}
 
-	baseMsg := "Up/Down: Navigate | SPACE: Select SoundMaker | Ctrl+Arrow: Adjust values | Shift+Left: Back to Phrase view"
+	baseMsg := fmt.Sprintf("Up/Down: Navigate | SPACE: Select SoundMaker | %s+Arrow: Adjust values | Shift+Left: Back to Phrase view", input.GetModifierKey())
 	return fmt.Sprintf("%s | %s", columnStatus, baseMsg)
 }
 
