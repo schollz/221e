@@ -246,6 +246,15 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "NOT",
 			}
+		case int(types.InstrumentColMO): // MO - modulation column
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColModulate),
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "MO",
+			}
 		case int(types.InstrumentColC): // C - chord column
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColChord),
