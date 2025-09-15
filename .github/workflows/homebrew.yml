@@ -100,10 +100,10 @@ jobs:
           mkdir -p tap/Formula
           
           # Copy the formula
-          cp tune.rb tap/Formula/tune.rb
+          cp collidertracker.rb tap/Formula/collidertracker.rb
           
           # Commit and push
           cd tap
-          git add Formula/tune.rb
-          git commit -m "Update tune to ${{ steps.release_info.outputs.version }}" || exit 0
+          git add Formula/collidertracker.rb
+          git commit -m "Update collidertracker to ${{ steps.release_info.outputs.version }}" || exit 0
           git push
