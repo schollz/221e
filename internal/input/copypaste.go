@@ -182,9 +182,12 @@ func CutRowToClipboard(m *model.Model) {
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColNote)] = -1                               // Clear note
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColPitch)] = -1                              // Clear pitch (displays "--", behaves as 80)
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColDeltaTime)] = -1                          // Clear deltatime (clears playback for both views)
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColVelocity)] = -1                           // Clear velocity
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColGate)] = -1                               // Clear gate (displays "--", behaves as 80)
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColRetrigger)] = -1                          // Clear retrigger
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColTimestretch)] = -1                        // Clear timestretch
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColModulate)] = -1                           // Clear modulation
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColEffectReverse)] = -1                      // Clear effect reverse
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColPan)] = -1                                // Clear pan
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColFilename)] = -1                           // Clear filename
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColChord)] = int(types.ChordNone)            // Clear chord type
