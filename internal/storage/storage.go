@@ -73,41 +73,41 @@ func DoSave(m *model.Model) {
 		ChainsData:    m.ChainsData,
 		PhrasesData:   m.PhrasesData,
 		// New separate data pools
-		InstrumentChainsData:  m.InstrumentChainsData,
-		InstrumentPhrasesData: m.InstrumentPhrasesData,
-		SamplerChainsData:     m.SamplerChainsData,
-		SamplerPhrasesData:    m.SamplerPhrasesData,
-		SamplerPhrasesFiles:   relativePaths, // Use relative paths in save data
-		LastEditRow:           m.LastEditRow,
-		PhrasesFiles:          m.PhrasesFiles,
-		CurrentDir:            m.CurrentDir,
-		BPM:                   m.BPM,
-		PPQ:                   m.PPQ,
-		PregainDB:             m.PregainDB,
-		PostgainDB:            m.PostgainDB,
-		BiasDB:                m.BiasDB,
-		SaturationDB:          m.SaturationDB,
-		DriveDB:               m.DriveDB,
-		FileMetadata:          m.FileMetadata,
-		LastChainRow:          m.LastChainRow,
-		LastPhraseRow:         m.LastPhraseRow,
-		LastPhraseCol:         m.LastPhraseCol,
-		RecordingEnabled:      m.RecordingEnabled,
+		InstrumentChainsData:       m.InstrumentChainsData,
+		InstrumentPhrasesData:      m.InstrumentPhrasesData,
+		SamplerChainsData:          m.SamplerChainsData,
+		SamplerPhrasesData:         m.SamplerPhrasesData,
+		SamplerPhrasesFiles:        relativePaths, // Use relative paths in save data
+		LastEditRow:                m.LastEditRow,
+		PhrasesFiles:               m.PhrasesFiles,
+		CurrentDir:                 m.CurrentDir,
+		BPM:                        m.BPM,
+		PPQ:                        m.PPQ,
+		PregainDB:                  m.PregainDB,
+		PostgainDB:                 m.PostgainDB,
+		BiasDB:                     m.BiasDB,
+		SaturationDB:               m.SaturationDB,
+		DriveDB:                    m.DriveDB,
+		FileMetadata:               m.FileMetadata,
+		LastChainRow:               m.LastChainRow,
+		LastPhraseRow:              m.LastPhraseRow,
+		LastPhraseCol:              m.LastPhraseCol,
+		RecordingEnabled:           m.RecordingEnabled,
 		RetriggerSettings:          m.RetriggerSettings,
 		TimestrechSettings:         m.TimestrechSettings,
 		InstrumentModulateSettings: m.InstrumentModulateSettings,
 		SamplerModulateSettings:    m.SamplerModulateSettings,
 		ArpeggioSettings:           m.ArpeggioSettings,
-		MidiSettings:          m.MidiSettings,
-		SoundMakerSettings:    m.SoundMakerSettings,
-		SongData:              m.SongData,
-		LastSongRow:           m.LastSongRow,
-		LastSongTrack:         m.LastSongTrack,
-		CurrentChain:          m.CurrentChain,
-		CurrentTrack:          m.CurrentTrack,
-		TrackSetLevels:        m.TrackSetLevels,
-		TrackTypes:            m.TrackTypes,
-		CurrentMixerTrack:     m.CurrentMixerTrack,
+		MidiSettings:               m.MidiSettings,
+		SoundMakerSettings:         m.SoundMakerSettings,
+		SongData:                   m.SongData,
+		LastSongRow:                m.LastSongRow,
+		LastSongTrack:              m.LastSongTrack,
+		CurrentChain:               m.CurrentChain,
+		CurrentTrack:               m.CurrentTrack,
+		TrackSetLevels:             m.TrackSetLevels,
+		TrackTypes:                 m.TrackTypes,
+		CurrentMixerTrack:          m.CurrentMixerTrack,
 	}
 
 	data, err := json.Marshal(saveData)
@@ -197,7 +197,7 @@ func LoadState(m *model.Model, oscPort int, saveFolder string) error {
 	m.RecordingEnabled = saveData.RecordingEnabled
 	m.RetriggerSettings = saveData.RetriggerSettings
 	m.TimestrechSettings = saveData.TimestrechSettings
-	
+
 	// Handle modulation settings with backward compatibility
 	if len(saveData.InstrumentModulateSettings) > 0 || len(saveData.SamplerModulateSettings) > 0 {
 		// New format with separate pools
@@ -208,27 +208,26 @@ func LoadState(m *model.Model, oscPort int, saveFolder string) error {
 		m.InstrumentModulateSettings = saveData.ModulateSettings
 		m.SamplerModulateSettings = saveData.ModulateSettings
 	}
-	
+
 	// Fix any ModulateSettings that have Seed=0 when they should be -1 for "none"
 	// This handles save files from before proper seed initialization
 	for i := 0; i < len(m.InstrumentModulateSettings); i++ {
 		settings := &m.InstrumentModulateSettings[i]
 		// If seed is 0 and all other values are defaults, this should be "none" (-1)
-		if settings.Seed == 0 && settings.IRandom == 0 && settings.Sub == 0 && 
-		   settings.Add == 0 && settings.ScaleRoot == 0 && settings.Scale == "all" {
+		if settings.Seed == 0 && settings.IRandom == 0 && settings.Sub == 0 &&
+			settings.Add == 0 && settings.ScaleRoot == 0 && settings.Scale == "all" {
 			settings.Seed = -1
 		}
 	}
 	for i := 0; i < len(m.SamplerModulateSettings); i++ {
 		settings := &m.SamplerModulateSettings[i]
 		// If seed is 0 and all other values are defaults, this should be "none" (-1)
-		if settings.Seed == 0 && settings.IRandom == 0 && settings.Sub == 0 && 
-		   settings.Add == 0 && settings.ScaleRoot == 0 && settings.Scale == "all" {
+		if settings.Seed == 0 && settings.IRandom == 0 && settings.Sub == 0 &&
+			settings.Add == 0 && settings.ScaleRoot == 0 && settings.Scale == "all" {
 			settings.Seed = -1
 		}
-		}
 	}
-	
+
 	m.ArpeggioSettings = saveData.ArpeggioSettings
 	m.MidiSettings = saveData.MidiSettings
 	m.SoundMakerSettings = saveData.SoundMakerSettings
@@ -581,4 +580,3 @@ func SaveMetadataForFile(filePath string, fileMetadata map[string]types.FileMeta
 	}
 	return nil
 }
-
