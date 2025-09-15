@@ -644,40 +644,43 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 	effectiveNote := GetEffectiveValueForTrack(m, phrase, row, int(types.ColNote), trackId)
 	rawNoteModulated := rawNote
 
-	// Apply modulation if there's a modulate setting active on this row
-	if rawModulate != -1 && rawModulate >= 0 && rawModulate < 255 && effectiveNote != -1 {
-		modulateSettings := (*GetModulateSettingsForTrack(m, trackId))[rawModulate]
-		originalNote := effectiveNote
+	// For sampler tracks, apply modulation as before (current behavior)
+	if !isInstrumentTrack(m, trackId) {
+		// Apply modulation if there's a modulate setting active on this row
+		if rawModulate != -1 && rawModulate >= 0 && rawModulate < 255 && effectiveNote != -1 {
+			modulateSettings := (*GetModulateSettingsForTrack(m, trackId))[rawModulate]
+			originalNote := effectiveNote
 
-		// Get track-specific RNG for modulation
-		var trackRng *rand.Rand
-		if trackId >= 0 && trackId < 8 {
-			trackRng = m.ModulateRngs[trackId]
-		} else {
-			// Fallback to creating a temporary RNG for invalid track IDs
-			trackRng = rand.New(rand.NewSource(time.Now().UnixNano()))
+			// Get track-specific RNG for modulation
+			var trackRng *rand.Rand
+			if trackId >= 0 && trackId < 8 {
+				trackRng = m.ModulateRngs[trackId]
+			} else {
+				// Fallback to creating a temporary RNG for invalid track IDs
+				trackRng = rand.New(rand.NewSource(time.Now().UnixNano()))
+			}
+
+			modulatedNote := modulation.ApplyModulation(originalNote, modulation.ModulateSettings{
+				Seed:      modulateSettings.Seed,
+				IRandom:   modulateSettings.IRandom,
+				Sub:       modulateSettings.Sub,
+				Add:       modulateSettings.Add,
+				ScaleRoot: modulateSettings.ScaleRoot,
+				Scale:     modulateSettings.Scale,
+			}, trackRng)
+			// modulat rawNote
+			rawNoteModulated = modulation.ApplyModulation(rawNote, modulation.ModulateSettings{
+				Seed:      modulateSettings.Seed,
+				IRandom:   modulateSettings.IRandom,
+				Sub:       modulateSettings.Sub,
+				Add:       modulateSettings.Add,
+				ScaleRoot: modulateSettings.ScaleRoot,
+				Scale:     modulateSettings.Scale,
+			}, trackRng)
+			log.Printf("Applied modulation %02X: NN %02X -> %02X (Seed=%d, IRandom=%d, Sub=%d, Add=%d, Scale=%s)",
+				rawModulate, originalNote, modulatedNote, modulateSettings.Seed, modulateSettings.IRandom, modulateSettings.Sub, modulateSettings.Add, modulateSettings.Scale)
+			effectiveNote = modulatedNote
 		}
-
-		modulatedNote := modulation.ApplyModulation(originalNote, modulation.ModulateSettings{
-			Seed:      modulateSettings.Seed,
-			IRandom:   modulateSettings.IRandom,
-			Sub:       modulateSettings.Sub,
-			Add:       modulateSettings.Add,
-			ScaleRoot: modulateSettings.ScaleRoot,
-			Scale:     modulateSettings.Scale,
-		}, trackRng)
-		// modulat rawNote
-		rawNoteModulated = modulation.ApplyModulation(rawNote, modulation.ModulateSettings{
-			Seed:      modulateSettings.Seed,
-			IRandom:   modulateSettings.IRandom,
-			Sub:       modulateSettings.Sub,
-			Add:       modulateSettings.Add,
-			ScaleRoot: modulateSettings.ScaleRoot,
-			Scale:     modulateSettings.Scale,
-		}, trackRng)
-		log.Printf("Applied modulation %02X: NN %02X -> %02X (Seed=%d, IRandom=%d, Sub=%d, Add=%d, Scale=%s)",
-			rawModulate, originalNote, modulatedNote, modulateSettings.Seed, modulateSettings.IRandom, modulateSettings.Sub, modulateSettings.Add, modulateSettings.Scale)
-		effectiveNote = modulatedNote
 	}
 
 	effectiveDeltaTime := GetEffectiveValueForTrack(m, phrase, row, int(types.ColDeltaTime), trackId)
@@ -1164,12 +1167,47 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 			rawMidi,
 			rawSoundMaker,
 		)
-		// add notes
+		// Generate chord notes and apply modulation according to user specification
 		midiNotes := types.GetChordNotes(rowData[types.ColNote], types.ChordType(rawChord), types.ChordAddition(rawChordAdd), types.ChordTransposition(rawChordTrans))
 		instrumentParams.Notes = make([]float32, len(midiNotes))
-		for i, note := range midiNotes {
-			// TODO: future add detuning things to this?
-			instrumentParams.Notes[i] = float32(note)
+		
+		// Apply modulation to notes according to the new logic for instrument view:
+		// - If there is an arpeggio: apply modulation to each note in the arpeggio INCLUDING the root note
+		// - If it is not an arpeggio and not a chord: apply modulation to the main note
+		// - If it is a chord but no arpeggio: apply modulation to all notes
+		
+		hasArpeggio := rawArpeggio != -1
+		hasChord := rawChord != int(types.ChordNone)
+		hasModulation := rawModulate != -1 && rawModulate >= 0 && rawModulate < 255
+		
+		if hasModulation {
+			modulateSettings := (*GetModulateSettingsForTrack(m, trackId))[rawModulate]
+			
+			// Get track-specific RNG for modulation
+			var trackRng *rand.Rand
+			if trackId >= 0 && trackId < 8 {
+				trackRng = m.ModulateRngs[trackId]
+			} else {
+				trackRng = rand.New(rand.NewSource(time.Now().UnixNano()))
+			}
+			
+			for i, note := range midiNotes {
+				modulatedNote := modulation.ApplyModulation(note, modulation.ModulateSettings{
+					Seed:      modulateSettings.Seed,
+					IRandom:   modulateSettings.IRandom,
+					Sub:       modulateSettings.Sub,
+					Add:       modulateSettings.Add,
+					ScaleRoot: modulateSettings.ScaleRoot,
+					Scale:     modulateSettings.Scale,
+				}, trackRng)
+				instrumentParams.Notes[i] = float32(modulatedNote)
+				log.Printf("Applied modulation to instrument note %d: %d -> %d (hasArpeggio=%v, hasChord=%v)", i, note, modulatedNote, hasArpeggio, hasChord)
+			}
+		} else {
+			// No modulation - copy notes as-is
+			for i, note := range midiNotes {
+				instrumentParams.Notes[i] = float32(note)
+			}
 		}
 		// Set update flag for instrument params if this is an update
 		if shouldUpdate {
