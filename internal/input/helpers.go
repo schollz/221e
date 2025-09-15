@@ -5,6 +5,7 @@ import (
 	"log"
 	"math"
 	"math/rand"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 
@@ -631,22 +632,34 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 
 	// Effective/inherited values
 	effectiveNote := GetEffectiveValueForTrack(m, phrase, row, int(types.ColNote), trackId)
-	
+
 	// Apply modulation if there's a modulate setting active on this row
 	if rawModulate != -1 && rawModulate >= 0 && rawModulate < 255 && effectiveNote != -1 {
 		modulateSettings := m.ModulateSettings[rawModulate]
 		originalNote := effectiveNote
+
+		// Get track-specific RNG for modulation
+		var trackRng *rand.Rand
+		if trackId >= 0 && trackId < 8 {
+			trackRng = m.ModulateRngs[trackId]
+		} else {
+			// Fallback to creating a temporary RNG for invalid track IDs
+			trackRng = rand.New(rand.NewSource(time.Now().UnixNano()))
+		}
+
 		modulatedNote := modulation.ApplyModulation(originalNote, modulation.ModulateSettings{
-			IRandom: modulateSettings.IRandom,
-			Sub:     modulateSettings.Sub,
-			Add:     modulateSettings.Add,
-			Scale:   modulateSettings.Scale,
-		})
-		log.Printf("Applied modulation %02X: NN %02X -> %02X (IRandom=%d, Sub=%d, Add=%d, Scale=%s)", 
-			rawModulate, originalNote, modulatedNote, modulateSettings.IRandom, modulateSettings.Sub, modulateSettings.Add, modulateSettings.Scale)
+			Seed:      modulateSettings.Seed,
+			IRandom:   modulateSettings.IRandom,
+			Sub:       modulateSettings.Sub,
+			Add:       modulateSettings.Add,
+			ScaleRoot: modulateSettings.ScaleRoot,
+			Scale:     modulateSettings.Scale,
+		}, trackRng)
+		log.Printf("Applied modulation %02X: NN %02X -> %02X (Seed=%d, IRandom=%d, Sub=%d, Add=%d, Scale=%s)",
+			rawModulate, originalNote, modulatedNote, modulateSettings.Seed, modulateSettings.IRandom, modulateSettings.Sub, modulateSettings.Add, modulateSettings.Scale)
 		effectiveNote = modulatedNote
 	}
-	
+
 	effectiveDeltaTime := GetEffectiveValueForTrack(m, phrase, row, int(types.ColDeltaTime), trackId)
 	effectiveFilenameIndex := GetEffectiveValueForTrack(m, phrase, row, int(types.ColFilename), trackId)
 	effectiveFilename := GetEffectiveFilenameForTrack(m, phrase, row, trackId)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"sort"
@@ -265,6 +266,14 @@ func LoadState(m *model.Model, oscPort int, saveFolder string) error {
 	// Send track set levels to OSC on load
 	for track := 0; track < 8; track++ {
 		m.SendOSCTrackSetLevelMessage(track)
+	}
+
+	// Initialize per-track RNGs for modulation (if not already initialized)
+	if m.ModulateRngs[0] == nil {
+		for i := 0; i < 8; i++ {
+			m.ModulateRngs[i] = rand.New(rand.NewSource(time.Now().UnixNano() + int64(i)))
+		}
+		log.Printf("Initialized per-track modulation RNGs on load")
 	}
 
 	return nil
