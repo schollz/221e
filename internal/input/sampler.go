@@ -277,7 +277,7 @@ func ModifyModulateValue(m *model.Model, baseDelta float32) {
 	}
 
 	// Get current settings
-	settings := m.ModulateSettings[m.ModulateEditingIndex]
+	settings := (*m.GetCurrentModulateSettings())[m.ModulateEditingIndex]
 
 	if m.CurrentRow == 0 { // Seed
 		// Use different increments: 5 for coarse, 1 for fine
@@ -420,6 +420,6 @@ func ModifyModulateValue(m *model.Model, baseDelta float32) {
 	}
 
 	// Save the modified settings back to the model
-	m.ModulateSettings[m.ModulateEditingIndex] = settings
+	(*m.GetCurrentModulateSettings())[m.ModulateEditingIndex] = settings
 	storage.AutoSave(m)
 }

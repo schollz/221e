@@ -29,8 +29,8 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 	// Content builder
 	var content strings.Builder
 
-	// Render header for Instrument view (row, playback, note, and chord columns)
-	columnHeader := "  SL  DT  NOT  CAT  VE  GT A D S R   RE  CO  PA  LP  HP  AR  MI  SO"
+	// Render header for Instrument view (row, playback, note, modulation, and chord columns)
+	columnHeader := "  SL  DT  NOT  MO  C A T VE  GT A D S R   RE  CO  PA  LP  HP  AR  MI  SO"
 	phrasesData := m.GetCurrentPhrasesData()
 	totalTicks := ticks.CalculatePhraseTicks(phrasesData, m.CurrentPhrase)
 	phraseHeader := fmt.Sprintf("Instrument %02X (%d ticks)", m.CurrentPhrase, totalTicks)
@@ -110,12 +110,32 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 			noteCell = normalStyle.Render(fmt.Sprintf("%3s", noteText))
 		}
 
+		// Modulation (MO) - display modulation index
+		modulateValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColModulate]
+		modulateText := "--"
+		if modulateValue != -1 {
+			modulateText = fmt.Sprintf("%02X", modulateValue)
+		}
+
+		var modulateCell string
+		if m.CurrentRow == dataIndex && m.CurrentCol == int(types.InstrumentColMO) { // Column 3 is the MO column
+			modulateCell = selectedStyle.Render(fmt.Sprintf("%2s", modulateText))
+		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
+			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == int(types.InstrumentColMO)) {
+				modulateCell = copiedStyle.Render(fmt.Sprintf("%2s", modulateText))
+			} else {
+				modulateCell = normalStyle.Render(fmt.Sprintf("%2s", modulateText))
+			}
+		} else {
+			modulateCell = normalStyle.Render(fmt.Sprintf("%2s", modulateText))
+		}
+
 		// Chord (C) - display chord type
 		chordValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColChord]
 		chordText := types.ChordTypeToString(types.ChordType(chordValue))
 
 		var chordCell string
-		if m.CurrentRow == dataIndex && m.CurrentCol == int(types.InstrumentColC) { // Column 3 is the C column
+		if m.CurrentRow == dataIndex && m.CurrentCol == int(types.InstrumentColC) { // Column 4 is the C column
 			chordCell = selectedStyle.Render(fmt.Sprintf("%1s", chordText))
 		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
 			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == int(types.InstrumentColC)) {
@@ -169,7 +189,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 		}
 
 		var velocityCell string
-		if m.CurrentRow == dataIndex && m.CurrentCol == int(types.InstrumentColVE) { // Column 6 is the VE column
+		if m.CurrentRow == dataIndex && m.CurrentCol == int(types.InstrumentColVE) { // Column 7 is the VE column
 			velocityCell = selectedStyle.Render(fmt.Sprintf("%2s", velocityText))
 		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
 			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == int(types.InstrumentColVE)) {
@@ -189,7 +209,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 		}
 
 		var gateCell string
-		if m.CurrentRow == dataIndex && m.CurrentCol == int(types.InstrumentColGT) { // Column 7 is the GT column
+		if m.CurrentRow == dataIndex && m.CurrentCol == int(types.InstrumentColGT) { // Column 8 is the GT column
 			gateCell = selectedStyle.Render(fmt.Sprintf("%2s", gateText))
 		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
 			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == int(types.InstrumentColGT)) {
@@ -209,7 +229,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 		}
 
 		var attackCell string
-		if m.CurrentRow == dataIndex && m.CurrentCol == int(types.InstrumentColATK) { // Column 8 is the A column
+		if m.CurrentRow == dataIndex && m.CurrentCol == int(types.InstrumentColATK) { // Column 9 is the A column
 			attackCell = selectedStyle.Render(fmt.Sprintf("%2s", attackText))
 		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
 			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == int(types.InstrumentColATK)) {
@@ -229,7 +249,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 		}
 
 		var decayCell string
-		if m.CurrentRow == dataIndex && m.CurrentCol == int(types.InstrumentColDECAY) { // Column 9 is the D column
+		if m.CurrentRow == dataIndex && m.CurrentCol == int(types.InstrumentColDECAY) { // Column 10 is the D column
 			decayCell = selectedStyle.Render(fmt.Sprintf("%2s", decayText))
 		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
 			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == int(types.InstrumentColDECAY)) {
@@ -249,7 +269,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 		}
 
 		var sustainCell string
-		if m.CurrentRow == dataIndex && m.CurrentCol == int(types.InstrumentColSUS) { // Column 10 is the S column
+		if m.CurrentRow == dataIndex && m.CurrentCol == int(types.InstrumentColSUS) { // Column 11 is the S column
 			sustainCell = selectedStyle.Render(fmt.Sprintf("%2s", sustainText))
 		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
 			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == int(types.InstrumentColSUS)) {
@@ -269,7 +289,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 		}
 
 		var releaseCell string
-		if m.CurrentRow == dataIndex && m.CurrentCol == int(types.InstrumentColREL) { // Column 11 is the R column
+		if m.CurrentRow == dataIndex && m.CurrentCol == int(types.InstrumentColREL) { // Column 12 is the R column
 			releaseCell = selectedStyle.Render(fmt.Sprintf("%2s", releaseText))
 		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
 			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == int(types.InstrumentColREL)) {
@@ -389,7 +409,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 		}
 
 		var arpeggioCell string
-		if m.CurrentRow == dataIndex && m.CurrentCol == int(types.InstrumentColAR) { // Column 17 is the AR column
+		if m.CurrentRow == dataIndex && m.CurrentCol == int(types.InstrumentColAR) { // Column 18 is the AR column
 			arpeggioCell = selectedStyle.Render(fmt.Sprintf("%2s", arpeggioText))
 		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
 			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == int(types.InstrumentColAR)) {
@@ -409,7 +429,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 		}
 
 		var midiCell string
-		if m.CurrentRow == dataIndex && m.CurrentCol == int(types.InstrumentColMI) { // Column 18 is the MI column
+		if m.CurrentRow == dataIndex && m.CurrentCol == int(types.InstrumentColMI) { // Column 19 is the MI column
 			midiCell = selectedStyle.Render(fmt.Sprintf("%2s", midiText))
 		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
 			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == int(types.InstrumentColMI)) {
@@ -429,7 +449,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 		}
 
 		var soundMakerCell string
-		if m.CurrentRow == dataIndex && m.CurrentCol == int(types.InstrumentColSO) { // Column 19 is the SO column
+		if m.CurrentRow == dataIndex && m.CurrentCol == int(types.InstrumentColSO) { // Column 20 is the SO column
 			soundMakerCell = selectedStyle.Render(fmt.Sprintf("%2s", soundMakerText))
 		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
 			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == int(types.InstrumentColSO)) {
@@ -441,7 +461,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 			soundMakerCell = normalStyle.Render(fmt.Sprintf("%2s", soundMakerText))
 		}
 
-		row := fmt.Sprintf("%s %-3s  %s  %s  %s%s%s  %s  %s %s%s%s%s  %s  %s  %s  %s  %s  %s  %s  %s", arrow, sliceCell, dtCell, noteCell, chordCell, chordAddCell, chordTransCell, velocityCell, gateCell, attackCell, decayCell, sustainCell, releaseCell, reverbCell, combCell, panCell, lpCell, hpCell, arpeggioCell, midiCell, soundMakerCell)
+		row := fmt.Sprintf("%s %-3s  %s  %s  %s  %s%s%s  %s  %s %s%s%s%s  %s  %s  %s  %s  %s  %s  %s  %s", arrow, sliceCell, dtCell, noteCell, modulateCell, chordCell, chordAddCell, chordTransCell, velocityCell, gateCell, attackCell, decayCell, sustainCell, releaseCell, reverbCell, combCell, panCell, lpCell, hpCell, arpeggioCell, midiCell, soundMakerCell)
 		content.WriteString(row)
 		content.WriteString("\n")
 	}
@@ -524,6 +544,14 @@ func GetInstrumentPhraseStatusMessage(m *model.Model) string {
 			}
 		} else {
 			statusMsg = "No note selected"
+		}
+	} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColModulate) { // MO column
+		// Show Modulation info
+		modulateValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColModulate]
+		if modulateValue >= 0 && modulateValue < 255 {
+			statusMsg = fmt.Sprintf("Modulate: %02X", modulateValue)
+		} else {
+			statusMsg = "No modulate selected"
 		}
 	} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColDeltaTime) { // DT column
 		// Show DT playback info

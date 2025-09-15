@@ -159,23 +159,24 @@ const (
 	InstrumentColSL    InstrumentUIColumn = 0  // SL - Slice (display only)
 	InstrumentColDT    InstrumentUIColumn = 1  // DT - Delta Time
 	InstrumentColNOT   InstrumentUIColumn = 2  // NOT - Note
-	InstrumentColC     InstrumentUIColumn = 3  // C - Chord
-	InstrumentColA     InstrumentUIColumn = 4  // A - Chord Addition
-	InstrumentColT     InstrumentUIColumn = 5  // T - Chord Transposition
-	InstrumentColVE    InstrumentUIColumn = 6  // VE - Velocity
-	InstrumentColGT    InstrumentUIColumn = 7  // GT - Gate
-	InstrumentColATK   InstrumentUIColumn = 8  // A - Attack
-	InstrumentColDECAY InstrumentUIColumn = 9  // D - Decay
-	InstrumentColSUS   InstrumentUIColumn = 10 // S - Sustain
-	InstrumentColREL   InstrumentUIColumn = 11 // R - Release
-	InstrumentColRE    InstrumentUIColumn = 12 // RE - Reverb
-	InstrumentColCO    InstrumentUIColumn = 13 // CO - Comb
-	InstrumentColPA    InstrumentUIColumn = 14 // PA - Pan
-	InstrumentColLP    InstrumentUIColumn = 15 // LP - LowPass
-	InstrumentColHP    InstrumentUIColumn = 16 // HP - HighPass
-	InstrumentColAR    InstrumentUIColumn = 17 // AR - Arpeggio
-	InstrumentColMI    InstrumentUIColumn = 18 // MI - MIDI
-	InstrumentColSO    InstrumentUIColumn = 19 // SO - SoundMaker
+	InstrumentColMO    InstrumentUIColumn = 3  // MO - Modulation
+	InstrumentColC     InstrumentUIColumn = 4  // C - Chord
+	InstrumentColA     InstrumentUIColumn = 5  // A - Chord Addition
+	InstrumentColT     InstrumentUIColumn = 6  // T - Chord Transposition
+	InstrumentColVE    InstrumentUIColumn = 7  // VE - Velocity
+	InstrumentColGT    InstrumentUIColumn = 8  // GT - Gate
+	InstrumentColATK   InstrumentUIColumn = 9  // A - Attack
+	InstrumentColDECAY InstrumentUIColumn = 10 // D - Decay
+	InstrumentColSUS   InstrumentUIColumn = 11 // S - Sustain
+	InstrumentColREL   InstrumentUIColumn = 12 // R - Release
+	InstrumentColRE    InstrumentUIColumn = 13 // RE - Reverb
+	InstrumentColCO    InstrumentUIColumn = 14 // CO - Comb
+	InstrumentColPA    InstrumentUIColumn = 15 // PA - Pan
+	InstrumentColLP    InstrumentUIColumn = 16 // LP - LowPass
+	InstrumentColHP    InstrumentUIColumn = 17 // HP - HighPass
+	InstrumentColAR    InstrumentUIColumn = 18 // AR - Arpeggio
+	InstrumentColMI    InstrumentUIColumn = 19 // MI - MIDI
+	InstrumentColSO    InstrumentUIColumn = 20 // SO - SoundMaker
 )
 
 // UI Column positions for Sampler Phrase View - to prevent hardcoding issues
@@ -510,10 +511,12 @@ type SaveData struct {
 	LastPhraseRow         int                     `json:"lastPhraseRow"`
 	LastPhraseCol         int                     `json:"lastPhraseCol"`
 	RecordingEnabled      bool                    `json:"recordingEnabled"`
-	RetriggerSettings     [255]RetriggerSettings  `json:"retriggerSettings"`
-	TimestrechSettings    [255]TimestrechSettings `json:"timestrechSettings"`
-	ModulateSettings      [255]ModulateSettings   `json:"modulateSettings"`
-	ArpeggioSettings      [255]ArpeggioSettings   `json:"arpeggioSettings"`
+	RetriggerSettings           [255]RetriggerSettings  `json:"retriggerSettings"`
+	TimestrechSettings          [255]TimestrechSettings `json:"timestrechSettings"`
+	ModulateSettings            [255]ModulateSettings   `json:"modulateSettings"`            // Legacy field for backward compatibility
+	InstrumentModulateSettings  [255]ModulateSettings   `json:"instrumentModulateSettings"` // New separate pools
+	SamplerModulateSettings     [255]ModulateSettings   `json:"samplerModulateSettings"`    // New separate pools
+	ArpeggioSettings            [255]ArpeggioSettings   `json:"arpeggioSettings"`
 	MidiSettings          [255]MidiSettings       `json:"midiSettings"`
 	SoundMakerSettings    [255]SoundMakerSettings `json:"soundMakerSettings"`
 	SongData              [8][16]int              `json:"songData"`
