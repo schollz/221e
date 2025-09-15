@@ -2448,14 +2448,48 @@ func FillSequentialPhrase(m *model.Model) {
 			(*phrasesData)[m.CurrentPhrase][row][colIndex] = referenceValue
 		}
 	} else if colIndex == int(types.ColEffectReverse) {
-		// Reverse probability column (0-15) - hex range
-		maxValue := 15
-		for row := startRow; row <= currentRow; row++ {
-			value := startValue + (row - startRow)
-			if value > maxValue {
-				value = value % (maxValue + 1) // Wrap: 0-15, 0-15, ...
+		// Special Ctrl+F logic for Reverse column - similar to DT toggle behavior
+		currentValue := (*phrasesData)[m.CurrentPhrase][currentRow][colIndex]
+
+		if currentValue == -1 {
+			// Current cell is empty: Find last non-empty value and repeat it, or fill incrementally
+			lastNonEmptyValue := -1
+			fillStartRow := 0
+
+			// Find the last non-empty value going upward
+			for row := currentRow - 1; row >= 0; row-- {
+				cellValue := (*phrasesData)[m.CurrentPhrase][row][colIndex]
+				if cellValue != -1 {
+					lastNonEmptyValue = cellValue
+					fillStartRow = row + 1
+					break
+				}
 			}
-			(*phrasesData)[m.CurrentPhrase][row][colIndex] = value
+
+			if lastNonEmptyValue != -1 {
+				// Found a reference value - repeat it
+				for row := fillStartRow; row <= currentRow; row++ {
+					(*phrasesData)[m.CurrentPhrase][row][colIndex] = lastNonEmptyValue
+				}
+			} else {
+				// No reference value found - fill incrementally (0-15, wrapping)
+				for row := startRow; row <= currentRow; row++ {
+					value := startValue + (row - startRow)
+					if value > 15 {
+						value = value % 16 // Wrap: 0-15, 0-15, ...
+					}
+					(*phrasesData)[m.CurrentPhrase][row][colIndex] = value
+				}
+			}
+		} else {
+			// Current cell has value (0-15): Toggle/erase this value and matching values above
+			for row := currentRow; row >= 0; row-- {
+				cellValue := (*phrasesData)[m.CurrentPhrase][row][colIndex]
+				if cellValue != currentValue {
+					break // Stop at first cell that doesn't match current value
+				}
+				(*phrasesData)[m.CurrentPhrase][row][colIndex] = -1 // Set to empty
+			}
 		}
 	} else if colIndex == int(types.ColPitch) {
 		// Pitch column has default of 128, not -1
