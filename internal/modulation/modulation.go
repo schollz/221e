@@ -3,7 +3,6 @@ package modulation
 import (
 	"log"
 	"math/rand"
-	"time"
 )
 
 // ModulateSettings represents the settings for a single modulation entry
@@ -75,8 +74,8 @@ func GetNoteNames() []string {
 	return NoteNames
 }
 
-// ApplyModulation applies modulation to a MIDI note value
-func ApplyModulation(originalNote int, settings ModulateSettings) int {
+// ApplyModulation applies modulation to a MIDI note value using the provided RNG
+func ApplyModulation(originalNote int, settings ModulateSettings, rng *rand.Rand) int {
 	log.Printf("DEBUG: ApplyModulation - Seed=%d, IRandom=%d, Sub=%d, Add=%d",
 		settings.Seed, settings.IRandom, settings.Sub, settings.Add)
 
@@ -88,19 +87,18 @@ func ApplyModulation(originalNote int, settings ModulateSettings) int {
 	if settings.IRandom > 0 {
 		var randomValue int
 
-		// Use seed if specified (>= 0), otherwise use time-based seed
+		// Use seed if specified (>= 0), otherwise use the provided RNG
 		if settings.Seed > 0 {
 			// Create a new random source with the specified seed for reproducible results
-			rand.Seed(int64(settings.Seed))
+			seedRng := rand.New(rand.NewSource(int64(settings.Seed)))
+			randomValue = seedRng.Intn(settings.IRandom + 1)
 			log.Printf("DEBUG: Using fixed seed %d, got random %d", settings.Seed, randomValue)
 		} else {
-			// Seed is negative (including -1 for "none") - use current time for unpredictable results
-			nanoTime := time.Now().UnixNano()
-			rand.Seed(nanoTime)
-			log.Printf("DEBUG: Using time seed %d, got random %d", settings.Seed, randomValue)
+			// Seed is negative (including -1 for "none") - use provided track-specific RNG
+			randomValue = rng.Intn(settings.IRandom + 1)
+			log.Printf("DEBUG: Using track RNG with seed %d, got random %d", settings.Seed, randomValue)
 		}
 
-		randomValue = rand.Intn(settings.IRandom + 1)
 		result = randomValue
 		log.Printf("DEBUG: After IRandom, result=%d", result)
 	}
@@ -185,9 +183,4 @@ func NewModulateSettings() ModulateSettings {
 		ScaleRoot: 0, // Default to C
 		Scale:     "all",
 	}
-}
-
-// InitializeRandom initializes the random number generator
-func init() {
-	rand.Seed(time.Now().UnixNano())
 }

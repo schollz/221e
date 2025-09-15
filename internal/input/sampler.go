@@ -367,12 +367,12 @@ func ModifyModulateValue(m *model.Model, baseDelta float32) {
 		// Cycle through note names (C, C#, D, D#, E, F, F#, G, G#, A, A#, B)
 		noteNames := []string{"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"}
 		currentIndex := settings.ScaleRoot
-		
+
 		// Ensure current index is within valid range
 		if currentIndex < 0 || currentIndex >= len(noteNames) {
 			currentIndex = 0
 		}
-		
+
 		// Move to next/previous note
 		var newIndex int
 		if baseDelta > 0 {
@@ -380,7 +380,7 @@ func ModifyModulateValue(m *model.Model, baseDelta float32) {
 		} else {
 			newIndex = (currentIndex - 1 + len(noteNames)) % len(noteNames)
 		}
-		
+
 		oldNote := noteNames[currentIndex]
 		settings.ScaleRoot = newIndex
 		log.Printf("Modified modulate %02X ScaleRoot: %s -> %s", m.ModulateEditingIndex, oldNote, noteNames[newIndex])
@@ -388,7 +388,7 @@ func ModifyModulateValue(m *model.Model, baseDelta float32) {
 		// Cycle through available scales
 		availableScales := []string{"all", "major", "minor", "dorian", "mixolydian", "pentatonic", "blues", "chromatic"}
 		currentIndex := -1
-		
+
 		// Find current scale index
 		for i, scale := range availableScales {
 			if settings.Scale == scale {
@@ -396,12 +396,12 @@ func ModifyModulateValue(m *model.Model, baseDelta float32) {
 				break
 			}
 		}
-		
+
 		// If current scale not found, default to "all"
 		if currentIndex == -1 {
 			currentIndex = 0
 		}
-		
+
 		// Move to next/previous scale
 		var newIndex int
 		if baseDelta > 0 {
@@ -409,7 +409,7 @@ func ModifyModulateValue(m *model.Model, baseDelta float32) {
 		} else {
 			newIndex = (currentIndex - 1 + len(availableScales)) % len(availableScales)
 		}
-		
+
 		oldScale := settings.Scale
 		settings.Scale = availableScales[newIndex]
 		log.Printf("Modified modulate %02X Scale: %s -> %s", m.ModulateEditingIndex, oldScale, settings.Scale)

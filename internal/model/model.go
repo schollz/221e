@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -138,6 +139,8 @@ type Model struct {
 	arpeggioContexts     map[int32]context.CancelFunc // Per-track cancellation functions
 	arpeggioCurrentNotes map[int32][]float32          // Currently playing arpeggio notes for each track
 	arpeggioMutex        sync.Mutex                   // Mutex for safe access to arpeggio tracking
+	// Per-track random number generators for modulation
+	ModulateRngs [8]*rand.Rand // Per-track RNG for modulation (one per track)
 }
 
 // Methods for modifying data structures
@@ -617,6 +620,8 @@ func NewModel(oscPort int, saveFolder string) *Model {
 		m.TrackVolumes[i] = -96.0  // Start with silence (-96 dB)
 		m.TrackSetLevels[i] = -6.0 // Default set level (-6 dB)
 		m.TrackTypes[i] = true     // Default to Sampler (SA)
+		// Initialize per-track RNG for modulation
+		m.ModulateRngs[i] = rand.New(rand.NewSource(time.Now().UnixNano() + int64(i)))
 	}
 	m.CurrentMixerRow = 0   // Start on level row
 	m.CurrentMixerTrack = 0 // Default to track 0
@@ -774,12 +779,12 @@ func (m *Model) initializeDefaultData() {
 	// Initialize modulate settings with defaults
 	for i := 0; i < 255; i++ {
 		m.ModulateSettings[i] = types.ModulateSettings{
-			Seed:      -1,     // Default to "none"
-			IRandom:   0,      // Default no randomization
-			Sub:       0,      // Default no subtraction
-			Add:       0,      // Default no addition
-			ScaleRoot: 0,      // Default to C
-			Scale:     "all",  // Default to all notes
+			Seed:      -1,    // Default to "none"
+			IRandom:   0,     // Default no randomization
+			Sub:       0,     // Default no subtraction
+			Add:       0,     // Default no addition
+			ScaleRoot: 0,     // Default to C
+			Scale:     "all", // Default to all notes
 		}
 	}
 
