@@ -632,6 +632,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 
 	// Effective/inherited values
 	effectiveNote := GetEffectiveValueForTrack(m, phrase, row, int(types.ColNote), trackId)
+	rawNoteModulated := rawNote
 
 	// Apply modulation if there's a modulate setting active on this row
 	if rawModulate != -1 && rawModulate >= 0 && rawModulate < 255 && effectiveNote != -1 {
@@ -648,6 +649,15 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 		}
 
 		modulatedNote := modulation.ApplyModulation(originalNote, modulation.ModulateSettings{
+			Seed:      modulateSettings.Seed,
+			IRandom:   modulateSettings.IRandom,
+			Sub:       modulateSettings.Sub,
+			Add:       modulateSettings.Add,
+			ScaleRoot: modulateSettings.ScaleRoot,
+			Scale:     modulateSettings.Scale,
+		}, trackRng)
+		// modulat rawNote
+		rawNoteModulated = modulation.ApplyModulation(rawNote, modulation.ModulateSettings{
 			Seed:      modulateSettings.Seed,
 			IRandom:   modulateSettings.IRandom,
 			Sub:       modulateSettings.Sub,
@@ -801,7 +811,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 		sliceCount = fileMetadata.Slices
 		bpmSource = fileMetadata.BPM
 	}
-	sliceNumber := rawNote % sliceCount
+	sliceNumber := rawNoteModulated % sliceCount
 
 	// Get effective gate value (handles sticky behavior and virtual defaults)
 	effectiveGate := GetEffectiveValueForTrack(m, phrase, row, int(types.ColGate), trackId)

@@ -3,6 +3,7 @@ package modulation
 import (
 	"log"
 	"math/rand"
+	"time"
 )
 
 // ModulateSettings represents the settings for a single modulation entry
@@ -83,26 +84,20 @@ func ApplyModulation(originalNote int, settings ModulateSettings, rng *rand.Rand
 	result := originalNote
 	log.Printf("DEBUG: Start with originalNote=%d", result)
 
-	// Step 1: Apply random variation if IRandom > 0 and Seed != -1 (none)
-	if settings.IRandom > 0 && settings.Seed != -1 {
-		var randomValue int
+	// Step 1: Apply random variation if IRandom > 0
+	if settings.IRandom > 0 {
 
 		// Use fixed seed if specified (> 0), or time seeding for seed=0 ("random")
 		if settings.Seed > 0 {
 			// Create a new random source with the specified seed for reproducible results
-			seedRng := rand.New(rand.NewSource(int64(settings.Seed)))
-			randomValue = seedRng.Intn(settings.IRandom + 1)
-			log.Printf("DEBUG: Using fixed seed %d, got random %d", settings.Seed, randomValue)
+			rng.Seed(int64(settings.Seed))
 		} else if settings.Seed == 0 {
-			// Seed 0 means "random" - use provided track-specific RNG for time seeding
-			randomValue = rng.Intn(settings.IRandom + 1)
-			log.Printf("DEBUG: Using random seeding (seed=0), got random %d", randomValue)
+			// time based seed
+			rng.Seed(time.Now().UnixNano())
 		}
 
-		result = randomValue
+		result += rng.Intn(settings.IRandom + 1)
 		log.Printf("DEBUG: After IRandom, result=%d", result)
-	} else if settings.Seed == -1 {
-		log.Printf("DEBUG: Seed is 'none' (-1), skipping randomization")
 	}
 
 	// Step 2: Subtract the Sub value
@@ -116,13 +111,6 @@ func ApplyModulation(originalNote int, settings ModulateSettings, rng *rand.Rand
 	// Step 4: Apply scale quantization if a scale is selected
 	if settings.Scale != "all" && settings.Scale != "" {
 		result = quantizeToScale(result, settings.Scale, settings.ScaleRoot)
-	}
-
-	// Ensure result is within valid MIDI range (0-127)
-	if result < 0 {
-		result = 0
-	} else if result > 127 {
-		result = 127
 	}
 
 	return result
