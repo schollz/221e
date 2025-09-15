@@ -2342,26 +2342,27 @@ func FillSequentialSong(m *model.Model) {
 // FillSequentialChain fills phrase IDs in chain view
 func FillSequentialChain(m *model.Model) {
 	currentRow := m.CurrentRow
+	chainsData := m.GetCurrentChainsData()
 
-	// Find the last non-null value going upward
+	// Find where to start filling - look for the last non-empty row above current position
 	var startValue int = 0
 	var startRow int = 0
 
 	for row := currentRow - 1; row >= 0; row-- {
-		if m.ChainsData[m.CurrentChain][row] != -1 {
-			startValue = m.ChainsData[m.CurrentChain][row] + 1
+		if (*chainsData)[m.CurrentChain][row] != -1 {
+			startValue = (*chainsData)[m.CurrentChain][row] + 1
 			startRow = row + 1
 			break
 		}
 	}
 
-	// Fill from startRow to currentRow
+	// Fill from startRow to currentRow with sequential values
 	for row := startRow; row <= currentRow; row++ {
 		value := startValue + (row - startRow)
 		if value > 254 {
 			value = value % 255 // Wrap around (0-254)
 		}
-		m.ChainsData[m.CurrentChain][row] = value
+		(*chainsData)[m.CurrentChain][row] = value
 	}
 
 	log.Printf("Filled chain %02X from row %d to %d, starting with %d", m.CurrentChain, startRow, currentRow, startValue)
@@ -2433,15 +2434,17 @@ func FillSequentialPhrase(m *model.Model) {
 		// RT and TS columns should keep the reference value constant
 		// Find the last non-null value and fill all cells with that same value
 		referenceValue := 0
+		fillStartRow := 0
 		for row := currentRow - 1; row >= 0; row-- {
 			cellValue := (*phrasesData)[m.CurrentPhrase][row][colIndex]
 			if cellValue != -1 {
 				referenceValue = cellValue
+				fillStartRow = row + 1
 				break
 			}
 		}
 		// Fill from the found starting row to current row with the same reference value
-		for row := startRow; row <= currentRow; row++ {
+		for row := fillStartRow; row <= currentRow; row++ {
 			(*phrasesData)[m.CurrentPhrase][row][colIndex] = referenceValue
 		}
 	} else if colIndex == int(types.ColEffectReverse) {

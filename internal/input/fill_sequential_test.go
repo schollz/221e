@@ -20,7 +20,7 @@ func TestFillSequentialRT(t *testing.T) {
 	(*phrasesData)[0][0][types.ColRetrigger] = 5
 
 	// Position cursor on RT column, row 4
-	m.CurrentCol = 6 // RT column in sampler view
+	m.CurrentCol = int(types.SamplerColRT) // RT column in sampler view
 	m.CurrentRow = 4
 
 	// Execute Ctrl+F
@@ -47,7 +47,7 @@ func TestFillSequentialTS(t *testing.T) {
 	(*phrasesData)[0][1][types.ColTimestretch] = 3
 
 	// Position cursor on TS column, row 5
-	m.CurrentCol = 7 // TS column in sampler view
+	m.CurrentCol = int(types.SamplerColTS) // TS column in sampler view
 	m.CurrentRow = 5
 
 	// Execute Ctrl+F
@@ -74,7 +74,7 @@ func TestFillSequentialRTNoReferenceValue(t *testing.T) {
 	// No RT value set anywhere - all rows are -1
 
 	// Position cursor on RT column, row 3
-	m.CurrentCol = 6 // RT column in sampler view
+	m.CurrentCol = int(types.SamplerColRT) // RT column in sampler view
 	m.CurrentRow = 3
 
 	// Execute Ctrl+F
@@ -99,7 +99,7 @@ func TestFillSequentialTSNoReferenceValue(t *testing.T) {
 	// No TS value set anywhere - all rows are -1
 
 	// Position cursor on TS column, row 2
-	m.CurrentCol = 7 // TS column in sampler view
+	m.CurrentCol = int(types.SamplerColTS) // TS column in sampler view
 	m.CurrentRow = 2
 
 	// Execute Ctrl+F
