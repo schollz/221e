@@ -65,18 +65,18 @@ Grab the latest build from **[Releases](https://github.com/schollz/collidertrack
 3. Run collidertracker with the `--skip-sc` flag:
 
 ```bash
-./collidertracker --skip-sc
+./collidertracker -s
 ```
 
 ### Command-line Options
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--project <dir>` | `save` | Project directory for songs and audio files |
-| `-p, --port <port>` | `57120` | OSC port for SuperCollider communication |
-| `--record` | `false` | Enable automatic session recording |
-| `--skip-sc` | `false` | Skip SuperCollider management (assume SC running) |
-| `--log <file>` | - | Write debug logs to specified file |
+| `-p, --project <dir>` | `save` | Project directory for songs and audio files |
+| `--port <port>` | `57120` | OSC port for SuperCollider communication |
+| `-r, --record` | `false` | Enable automatic session recording (entire session to SuperCollider recordings folder) |
+| `-s, --skip-sc` | `false` | Skip SuperCollider management (assume SC running) |
+| `-l, --log <file>` | - | Write debug logs to specified file |
 
 ## Keyboard — Quick Reference
 
@@ -110,9 +110,19 @@ Grab the latest build from **[Releases](https://github.com/schollz/collidertrack
 
 ## Recording Features
 
-- **Session Recording**: Use `--record` flag or press **Ctrl+R** to toggle recording mode
-- **Context-Aware Recording**: Records current track (Chain/Phrase view) or all active tracks (Song view)
+ColliderTracker offers two types of recording:
+
+### Session Recording (`-r, --record` flag)
+- Records the **entire session** from start to finish
+- Output saved to SuperCollider's default recordings folder
+- Captures everything: all tracks, effects, and audio output
+- Automatic recording begins when the program starts
+
+### Multitrack Recording (**Ctrl+R** in program)
+- **Context-aware recording** of active tracks only
+- Records current track (Chain/Phrase view) or all active tracks (Song view)
 - **Output**: Generates master mix + individual track stems with timestamps
+- Toggle recording on/off during playback for selective capture
 
 ### Value Editing
 

@@ -59,15 +59,15 @@ Features:
 }
 
 func init() {
-	rootCmd.PersistentFlags().IntVarP(&config.port, "port", "p", 57120,
+	rootCmd.PersistentFlags().IntVar(&config.port, "port", 57120,
 		"OSC port for SuperCollider communication")
-	rootCmd.PersistentFlags().StringVar(&config.project, "project", "save",
+	rootCmd.PersistentFlags().StringVarP(&config.project, "project", "p", "save",
 		"Project directory for songs and audio files")
-	rootCmd.PersistentFlags().BoolVar(&config.record, "record", false,
+	rootCmd.PersistentFlags().BoolVarP(&config.record, "record", "r", false,
 		"Enable automatic session recording")
-	rootCmd.PersistentFlags().StringVar(&config.debug, "log", "",
+	rootCmd.PersistentFlags().StringVarP(&config.debug, "log", "l", "",
 		"Write debug logs to specified file (empty disables)")
-	rootCmd.PersistentFlags().BoolVar(&config.skipSC, "skip-sc", false,
+	rootCmd.PersistentFlags().BoolVarP(&config.skipSC, "skip-sc", "s", false,
 		"Skip SuperCollider management (assume SC is already running)")
 
 	// Set up a callback to track when --project is explicitly provided
