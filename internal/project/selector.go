@@ -67,7 +67,7 @@ func (pni *ProjectNameInput) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "esc", "ctrl+c":
+		case "esc", "ctrl+c", "ctrl+q":
 			pni.cancelled = true
 			pni.done = true
 			return pni, tea.Quit
@@ -146,7 +146,7 @@ func (pni *ProjectNameInput) View() string {
 		input = "│"
 	}
 
-	instructions := "Enter: Confirm  •  Esc: Cancel"
+	instructions := "Enter: Confirm  •  Esc/Ctrl+Q: Cancel"
 	hint := "(Leave empty for 'save')"
 
 	// Create styles
@@ -358,6 +358,12 @@ func (ps *ProjectSelector) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Select the first project by default
 			if len(ps.projects) > 0 {
 				ps.selectedIndex = 0
+			} else {
+				// No projects found, automatically transition to create new project
+				nameInput := NewProjectNameInput()
+				nameInput.width = ps.width
+				nameInput.height = ps.height
+				return nameInput, nameInput.Init()
 			}
 		}
 

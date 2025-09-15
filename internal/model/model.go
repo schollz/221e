@@ -577,7 +577,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 func NewModel(oscPort int, saveFolder string) *Model {
 	m := &Model{
 		CurrentRow:        0,
-		CurrentCol:        1,              // Start at phrase column in chain view
+		CurrentCol:        0,              // Start at first track in song view
 		ViewMode:          types.SongView, // Start with song view
 		CurrentPhrase:     0,
 		LastEditRow:       -1,    // No row edited yet

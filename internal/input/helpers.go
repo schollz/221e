@@ -1170,19 +1170,19 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 		// Generate chord notes and apply modulation according to user specification
 		midiNotes := types.GetChordNotes(rowData[types.ColNote], types.ChordType(rawChord), types.ChordAddition(rawChordAdd), types.ChordTransposition(rawChordTrans))
 		instrumentParams.Notes = make([]float32, len(midiNotes))
-		
+
 		// Apply modulation to notes according to the new logic for instrument view:
 		// - If there is an arpeggio: apply modulation to each note in the arpeggio INCLUDING the root note
 		// - If it is not an arpeggio and not a chord: apply modulation to the main note
 		// - If it is a chord but no arpeggio: apply modulation to all notes
-		
+
 		hasArpeggio := rawArpeggio != -1
 		hasChord := rawChord != int(types.ChordNone)
 		hasModulation := rawModulate != -1 && rawModulate >= 0 && rawModulate < 255
-		
+
 		if hasModulation {
 			modulateSettings := (*GetModulateSettingsForTrack(m, trackId))[rawModulate]
-			
+
 			// Get track-specific RNG for modulation
 			var trackRng *rand.Rand
 			if trackId >= 0 && trackId < 8 {
@@ -1190,7 +1190,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 			} else {
 				trackRng = rand.New(rand.NewSource(time.Now().UnixNano()))
 			}
-			
+
 			for i, note := range midiNotes {
 				modulatedNote := modulation.ApplyModulation(note, modulation.ModulateSettings{
 					Seed:      modulateSettings.Seed,

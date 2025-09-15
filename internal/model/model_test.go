@@ -13,7 +13,7 @@ func TestNewModel(t *testing.T) {
 
 	// Test default initialization
 	assert.Equal(t, 0, m.CurrentRow)
-	assert.Equal(t, 1, m.CurrentCol) // Starts at phrase column in chain view
+	assert.Equal(t, 0, m.CurrentCol) // Starts at first track in song view
 	assert.Equal(t, 0, m.ScrollOffset)
 	assert.Equal(t, types.SongView, m.ViewMode) // Starts with song view
 	assert.False(t, m.IsPlaying)

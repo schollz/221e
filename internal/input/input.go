@@ -327,7 +327,7 @@ func handleShiftRight(m *model.Model) tea.Cmd {
 			// Set appropriate starting column based on view type
 			phraseViewType := m.GetPhraseViewType()
 			if phraseViewType == types.InstrumentPhraseView {
-				m.CurrentCol = int(types.InstrumentColDT) // Instrument: Start on DT column
+				m.CurrentCol = int(types.InstrumentColNOT) // Instrument: Start on Note column
 			} else {
 				m.CurrentCol = int(types.SamplerColNN) // Sampler: Start on Note column
 			}

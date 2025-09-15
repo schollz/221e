@@ -30,7 +30,7 @@ func RenderSamplerPhraseView(m *model.Model) string {
 	var content strings.Builder
 
 	// Render header (Я is a single-character column)
-	columnHeader := "  SL  DT  NN  VE  PI  GT  RT  TS  MO  Я  PA  LP  HP  CO  RE  FI"
+	columnHeader := "  SL  DT  NN  MO  VE  PI  GT  RT  TS  Я  PA  LP  HP  CO  RE  FI"
 	phrasesData := m.GetCurrentPhrasesData()
 	totalTicks := ticks.CalculatePhraseTicks(phrasesData, m.CurrentPhrase)
 	phraseHeader := fmt.Sprintf("Phrase %02X (%d ticks)", m.CurrentPhrase, totalTicks)
@@ -108,16 +108,34 @@ func RenderSamplerPhraseView(m *model.Model) string {
 			noteCell = normalStyle.Render(noteText)
 		}
 
-		// Velocity (VE) - now at position 3
+		// Modulate (MO) - now at position 3
+		moText := "--"
+		if (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColModulate] != -1 {
+			moText = fmt.Sprintf("%02X", (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColModulate])
+		}
+		var moCell string
+		if m.CurrentRow == dataIndex && m.CurrentCol == 3 {
+			moCell = selectedStyle.Render(moText)
+		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
+			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == 3) {
+				moCell = copiedStyle.Render(moText)
+			} else {
+				moCell = normalStyle.Render(moText)
+			}
+		} else {
+			moCell = normalStyle.Render(moText)
+		}
+
+		// Velocity (VE) - now at position 4
 		velocityText := "--"
 		if (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColVelocity] != -1 {
 			velocityText = fmt.Sprintf("%02X", (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColVelocity])
 		}
 		var velocityCell string
-		if m.CurrentRow == dataIndex && m.CurrentCol == 3 {
+		if m.CurrentRow == dataIndex && m.CurrentCol == 4 {
 			velocityCell = selectedStyle.Render(velocityText)
 		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
-			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == 3) {
+			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == 4) {
 				velocityCell = copiedStyle.Render(velocityText)
 			} else {
 				velocityCell = normalStyle.Render(velocityText)
@@ -126,16 +144,16 @@ func RenderSamplerPhraseView(m *model.Model) string {
 			velocityCell = normalStyle.Render(velocityText)
 		}
 
-		// Pitch (PI) - now at position 4
+		// Pitch (PI) - now at position 5
 		pitchText := "--"
 		if (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColPitch] != -1 {
 			pitchText = fmt.Sprintf("%02X", (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColPitch])
 		}
 		var pitchCell string
-		if m.CurrentRow == dataIndex && m.CurrentCol == 4 {
+		if m.CurrentRow == dataIndex && m.CurrentCol == 5 {
 			pitchCell = selectedStyle.Render(pitchText)
 		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
-			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == 4) {
+			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == 5) {
 				pitchCell = copiedStyle.Render(pitchText)
 			} else {
 				pitchCell = normalStyle.Render(pitchText)
@@ -144,16 +162,16 @@ func RenderSamplerPhraseView(m *model.Model) string {
 			pitchCell = normalStyle.Render(pitchText)
 		}
 
-		// Gate (GT) - now at position 5
+		// Gate (GT) - now at position 6
 		gtText := "--"
 		if (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColGate] != -1 {
 			gtText = fmt.Sprintf("%02X", (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColGate])
 		}
 		var gtCell string
-		if m.CurrentRow == dataIndex && m.CurrentCol == 5 {
+		if m.CurrentRow == dataIndex && m.CurrentCol == 6 {
 			gtCell = selectedStyle.Render(gtText)
 		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
-			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == 5) {
+			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == 6) {
 				gtCell = copiedStyle.Render(gtText)
 			} else {
 				gtCell = normalStyle.Render(gtText)
@@ -162,16 +180,16 @@ func RenderSamplerPhraseView(m *model.Model) string {
 			gtCell = normalStyle.Render(gtText)
 		}
 
-		// Retrigger (RT) - now at position 6
+		// Retrigger (RT) - now at position 7
 		rtText := "--"
 		if (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColRetrigger] != -1 {
 			rtText = fmt.Sprintf("%02X", (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColRetrigger])
 		}
 		var rtCell string
-		if m.CurrentRow == dataIndex && m.CurrentCol == 6 {
+		if m.CurrentRow == dataIndex && m.CurrentCol == 7 {
 			rtCell = selectedStyle.Render(rtText)
 		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
-			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == 6) {
+			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == 7) {
 				rtCell = copiedStyle.Render(rtText)
 			} else {
 				rtCell = normalStyle.Render(rtText)
@@ -180,40 +198,22 @@ func RenderSamplerPhraseView(m *model.Model) string {
 			rtCell = normalStyle.Render(rtText)
 		}
 
-		// Timestretch (TS) - now at position 7
+		// Timestretch (TS) - now at position 8
 		tsText := "--"
 		if (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColTimestretch] != -1 {
 			tsText = fmt.Sprintf("%02X", (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColTimestretch])
 		}
 		var tsCell string
-		if m.CurrentRow == dataIndex && m.CurrentCol == 7 {
+		if m.CurrentRow == dataIndex && m.CurrentCol == 8 {
 			tsCell = selectedStyle.Render(tsText)
 		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
-			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == 7) {
+			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == 8) {
 				tsCell = copiedStyle.Render(tsText)
 			} else {
 				tsCell = normalStyle.Render(tsText)
 			}
 		} else {
 			tsCell = normalStyle.Render(tsText)
-		}
-
-		// Modulate (MO) - now at position 8
-		moText := "--"
-		if (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColModulate] != -1 {
-			moText = fmt.Sprintf("%02X", (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColModulate])
-		}
-		var moCell string
-		if m.CurrentRow == dataIndex && m.CurrentCol == 8 {
-			moCell = selectedStyle.Render(moText)
-		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
-			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == 8) {
-				moCell = copiedStyle.Render(moText)
-			} else {
-				moCell = normalStyle.Render(moText)
-			}
-		} else {
-			moCell = normalStyle.Render(moText)
 		}
 
 		// Я (EffectReverse) — hex char: "-", "0" to "F" - now at position 9
@@ -352,7 +352,7 @@ func RenderSamplerPhraseView(m *model.Model) string {
 
 		// NOTE the %-1s for Я to keep it one character wide
 		row := fmt.Sprintf("%s %-3s  %-3s  %-3s  %-3s  %-3s  %-3s  %-3s  %-3s  %-3s  %-1s  %-3s  %-3s  %-3s  %-3s  %-3s  %-8s",
-			arrow, sliceCell, dtCell, noteCell, velocityCell, pitchCell, gtCell, rtCell, tsCell, moCell, revCell, paCell, lpCell, hpCell, combCell, reverbCell, fiCell)
+			arrow, sliceCell, dtCell, noteCell, moCell, velocityCell, pitchCell, gtCell, rtCell, tsCell, revCell, paCell, lpCell, hpCell, combCell, reverbCell, fiCell)
 		content.WriteString(row)
 		content.WriteString("\n")
 	}
