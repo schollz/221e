@@ -94,6 +94,7 @@ func DoSave(m *model.Model) {
 		RecordingEnabled:      m.RecordingEnabled,
 		RetriggerSettings:     m.RetriggerSettings,
 		TimestrechSettings:    m.TimestrechSettings,
+		ModulateSettings:      m.ModulateSettings,
 		ArpeggioSettings:      m.ArpeggioSettings,
 		MidiSettings:          m.MidiSettings,
 		SoundMakerSettings:    m.SoundMakerSettings,
@@ -194,6 +195,19 @@ func LoadState(m *model.Model, oscPort int, saveFolder string) error {
 	m.RecordingEnabled = saveData.RecordingEnabled
 	m.RetriggerSettings = saveData.RetriggerSettings
 	m.TimestrechSettings = saveData.TimestrechSettings
+	m.ModulateSettings = saveData.ModulateSettings
+	
+	// Fix any ModulateSettings that have Seed=0 when they should be -1 for "none"
+	// This handles save files from before proper seed initialization
+	for i := 0; i < len(m.ModulateSettings); i++ {
+		settings := &m.ModulateSettings[i]
+		// If seed is 0 and all other values are defaults, this should be "none" (-1)
+		if settings.Seed == 0 && settings.IRandom == 0 && settings.Sub == 0 && 
+		   settings.Add == 0 && settings.ScaleRoot == 0 && settings.Scale == "all" {
+			settings.Seed = -1
+		}
+	}
+	
 	m.ArpeggioSettings = saveData.ArpeggioSettings
 	m.MidiSettings = saveData.MidiSettings
 	m.SoundMakerSettings = saveData.SoundMakerSettings
@@ -538,3 +552,4 @@ func SaveMetadataForFile(filePath string, fileMetadata map[string]types.FileMeta
 	}
 	return nil
 }
+

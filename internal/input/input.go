@@ -379,6 +379,24 @@ func handleShiftRight(m *model.Model) tea.Cmd {
 			m.ScrollOffset = 0
 			storage.AutoSave(m)
 			return nil
+		} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColModulate) {
+			// Navigate to modulate view - if no modulate is selected, use index 00
+			phrasesData := m.GetCurrentPhrasesData()
+			modulateIndex := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColModulate]
+			if modulateIndex == -1 {
+				// If no modulate is selected, default to index 00 for settings
+				modulateIndex = 0
+			}
+			// Save current phrase view position
+			m.LastPhraseRow = m.CurrentRow
+			m.LastPhraseCol = m.CurrentCol
+			m.ModulateEditingIndex = modulateIndex
+			m.ViewMode = types.ModulateView
+			m.CurrentRow = 0 // Start at first setting
+			m.CurrentCol = 0
+			m.ScrollOffset = 0
+			storage.AutoSave(m)
+			return nil
 		} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColArpeggio) {
 			// Navigate to arpeggio view only if an arpeggio is selected (not -1)
 			phrasesData := m.GetCurrentPhrasesData()
@@ -668,6 +686,9 @@ func handleShiftLeft(m *model.Model) tea.Cmd {
 	} else if m.ViewMode == types.TimestrechView {
 		// Navigate back to phrase view - return to the original column
 		switchToViewWithVisibilityCheck(m, phraseViewConfig(m.LastPhraseRow, m.LastPhraseCol))
+	} else if m.ViewMode == types.ModulateView {
+		// Navigate back to phrase view - return to the original column
+		switchToViewWithVisibilityCheck(m, phraseViewConfig(m.LastPhraseRow, m.LastPhraseCol))
 	} else if m.ViewMode == types.ArpeggioView {
 		// Navigate back to phrase view - find the UI column for AR
 		var arColumn int
@@ -713,6 +734,10 @@ func handleUp(m *model.Model) tea.Cmd {
 			m.CurrentRow = m.CurrentRow - 1
 		}
 	} else if m.ViewMode == types.TimestrechView {
+		if m.CurrentRow > 0 {
+			m.CurrentRow = m.CurrentRow - 1
+		}
+	} else if m.ViewMode == types.ModulateView {
 		if m.CurrentRow > 0 {
 			m.CurrentRow = m.CurrentRow - 1
 		}
@@ -794,6 +819,10 @@ func handleDown(m *model.Model) tea.Cmd {
 		}
 	} else if m.ViewMode == types.TimestrechView {
 		if m.CurrentRow < int(types.TimestrechSettingsRowProbability) { // Start(0) to Probability(4)
+			m.CurrentRow = m.CurrentRow + 1
+		}
+	} else if m.ViewMode == types.ModulateView {
+		if m.CurrentRow < int(types.ModulateSettingsRowScale) { // IRandom(0) to Scale(3)
 			m.CurrentRow = m.CurrentRow + 1
 		}
 	} else if m.ViewMode == types.ArpeggioView {
@@ -1027,6 +1056,8 @@ func handleCtrlUp(m *model.Model) tea.Cmd {
 		ModifyRetriggerValue(m, 1.0)
 	} else if m.ViewMode == types.TimestrechView {
 		ModifyTimestrechValue(m, 1.0)
+	} else if m.ViewMode == types.ModulateView {
+		ModifyModulateValue(m, 1.0)
 	} else if m.ViewMode == types.ArpeggioView {
 		ModifyArpeggioValue(m, 1.0)
 	} else if m.ViewMode == types.MidiView {
@@ -1060,6 +1091,8 @@ func handleCtrlDown(m *model.Model) tea.Cmd {
 		ModifyRetriggerValue(m, -1.0)
 	} else if m.ViewMode == types.TimestrechView {
 		ModifyTimestrechValue(m, -1.0)
+	} else if m.ViewMode == types.ModulateView {
+		ModifyModulateValue(m, -1.0)
 	} else if m.ViewMode == types.ArpeggioView {
 		ModifyArpeggioValue(m, -1.0)
 	} else if m.ViewMode == types.MidiView {
@@ -1092,6 +1125,8 @@ func handleCtrlLeft(m *model.Model) tea.Cmd {
 		ModifyRetriggerValue(m, -0.05)
 	} else if m.ViewMode == types.TimestrechView {
 		ModifyTimestrechValue(m, -0.05)
+	} else if m.ViewMode == types.ModulateView {
+		ModifyModulateValue(m, -0.05)
 	} else if m.ViewMode == types.ArpeggioView {
 		ModifyArpeggioValue(m, -0.05)
 	} else if m.ViewMode == types.MidiView {
@@ -1126,6 +1161,8 @@ func handleCtrlRight(m *model.Model) tea.Cmd {
 		ModifyRetriggerValue(m, 0.05)
 	} else if m.ViewMode == types.TimestrechView {
 		ModifyTimestrechValue(m, 0.05)
+	} else if m.ViewMode == types.ModulateView {
+		ModifyModulateValue(m, 0.05)
 	} else if m.ViewMode == types.ArpeggioView {
 		ModifyArpeggioValue(m, 0.05)
 	} else if m.ViewMode == types.MidiView {
@@ -1258,6 +1295,8 @@ func handleC(m *model.Model) tea.Cmd {
 	} else if m.ViewMode == types.RetriggerView {
 		EmitLastSelectedPhraseRowData(m)
 	} else if m.ViewMode == types.TimestrechView {
+		EmitLastSelectedPhraseRowData(m)
+	} else if m.ViewMode == types.ModulateView {
 		EmitLastSelectedPhraseRowData(m)
 	} else if m.ViewMode == types.ArpeggioView {
 		// Play the last edited phrase row from Instrument view
@@ -1580,6 +1619,8 @@ func handlePgDown(m *model.Model) tea.Cmd {
 			maxRow = int(types.RetriggerSettingsRowProbability) // Times(0) to Probability(9)
 		case types.TimestrechView:
 			maxRow = int(types.TimestrechSettingsRowProbability) // Start(0) to Probability(4)
+		case types.ModulateView:
+			maxRow = int(types.ModulateSettingsRowScale) // Seed(0) to Scale(5)
 		case types.FileMetadataView:
 			maxRow = int(types.FileMetadataRowSlices) // BPM(0) to Slices(1)
 		default:

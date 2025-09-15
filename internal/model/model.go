@@ -88,6 +88,9 @@ type Model struct {
 	// Timestretch settings management
 	TimestrechSettings     [255]types.TimestrechSettings // Array of timestretch settings (00-FE)
 	TimestrechEditingIndex int                           // Currently editing timestretch index
+	// Modulate settings management
+	ModulateSettings     [255]types.ModulateSettings // Array of modulate settings (00-FE)
+	ModulateEditingIndex int                         // Currently editing modulate index
 	// Arpeggio settings management
 	ArpeggioSettings       [255]types.ArpeggioSettings   // Array of arpeggio settings (00-FE)
 	ArpeggioEditingIndex   int                           // Currently editing arpeggio index
@@ -397,8 +400,8 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 			return nil // Invalid column
 		}
 	} else {
-		// Sampler view: Custom mapping after adding VE column
-		// New order: SL (0), DT (1), NN (2), VE (3), PI (4), GT (5), RT (6), TS (7), Я (8), PA (9), LP (10), HP (11), CO (12), RE (13), FI (14)
+		// Sampler view: Custom mapping after adding VE and MO columns
+		// New order: SL (0), DT (1), NN (2), VE (3), PI (4), GT (5), RT (6), TS (7), MO (8), Я (9), PA (10), LP (11), HP (12), CO (13), RE (14), FI (15)
 		switch uiColumn {
 		case int(types.SamplerColSL): // SL - display only
 			return &ColumnMapping{
@@ -472,9 +475,18 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "TS",
 			}
+		case int(types.SamplerColMO): // MO - Modulate
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColModulate), // Now index 6
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "MO",
+			}
 		case int(types.SamplerColREV): // Я - Reverse
 			return &ColumnMapping{
-				DataColumnIndex: int(types.ColEffectReverse), // Now index 6
+				DataColumnIndex: int(types.ColEffectReverse), // Now index 7
 				IsEditable:      true,
 				IsCopyable:      true,
 				IsPasteable:     true,
@@ -483,7 +495,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 			}
 		case int(types.SamplerColPA): // PA - Pan
 			return &ColumnMapping{
-				DataColumnIndex: int(types.ColPan), // Now index 7
+				DataColumnIndex: int(types.ColPan), // Now index 8
 				IsEditable:      true,
 				IsCopyable:      true,
 				IsPasteable:     true,
@@ -492,7 +504,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 			}
 		case int(types.SamplerColLP): // LP - Low Pass Filter
 			return &ColumnMapping{
-				DataColumnIndex: int(types.ColLowPassFilter), // Now index 8
+				DataColumnIndex: int(types.ColLowPassFilter), // Now index 9
 				IsEditable:      true,
 				IsCopyable:      true,
 				IsPasteable:     true,
@@ -501,7 +513,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 			}
 		case int(types.SamplerColHP): // HP - High Pass Filter
 			return &ColumnMapping{
-				DataColumnIndex: int(types.ColHighPassFilter), // Now index 9
+				DataColumnIndex: int(types.ColHighPassFilter), // Now index 10
 				IsEditable:      true,
 				IsCopyable:      true,
 				IsPasteable:     true,
@@ -510,7 +522,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 			}
 		case int(types.SamplerColCO): // CO - Comb
 			return &ColumnMapping{
-				DataColumnIndex: int(types.ColEffectComb), // Now index 10
+				DataColumnIndex: int(types.ColEffectComb), // Now index 11
 				IsEditable:      true,
 				IsCopyable:      true,
 				IsPasteable:     true,
@@ -519,7 +531,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 			}
 		case int(types.SamplerColRE): // RE - Reverb
 			return &ColumnMapping{
-				DataColumnIndex: int(types.ColEffectReverb), // Now index 11
+				DataColumnIndex: int(types.ColEffectReverb), // Now index 12
 				IsEditable:      true,
 				IsCopyable:      true,
 				IsPasteable:     true,
@@ -528,7 +540,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 			}
 		case int(types.SamplerColFI): // FI - Filename
 			return &ColumnMapping{
-				DataColumnIndex: int(types.ColFilename), // Now index 12
+				DataColumnIndex: int(types.ColFilename), // Now index 13
 				IsEditable:      true,
 				IsCopyable:      true,
 				IsPasteable:     true,
@@ -576,6 +588,8 @@ func NewModel(oscPort int, saveFolder string) *Model {
 		RetriggerEditingIndex: 0,
 		// Initialize timestretch settings
 		TimestrechEditingIndex: 0,
+		// Initialize modulate settings
+		ModulateEditingIndex: 0,
 		// Initialize arpeggio settings
 		ArpeggioEditingIndex: 0,
 		// Initialize MIDI settings
@@ -639,6 +653,7 @@ func (m *Model) initializeDefaultData() {
 			m.PhrasesData[p][i][types.ColGate] = -1                // Gate value (-1 displays "--", behaves as 80)
 			m.PhrasesData[p][i][types.ColRetrigger] = -1           // Retrigger index (-1 means no retrigger)
 			m.PhrasesData[p][i][types.ColTimestretch] = -1         // Timestretch index (-1 means no timestretch)
+			m.PhrasesData[p][i][types.ColModulate] = -1            // Modulate index (-1 means no modulate)
 			m.PhrasesData[p][i][types.ColEffectReverse] = -1       // Reverse effect (-1 means no effect)
 			m.PhrasesData[p][i][types.ColPan] = -1                 // Pan (-1 = null, will use effective value or default to center)
 			m.PhrasesData[p][i][types.ColLowPassFilter] = -1       // Low pass filter (-1 means no filter/20kHz)
@@ -668,6 +683,7 @@ func (m *Model) initializeDefaultData() {
 			m.InstrumentPhrasesData[p][i][types.ColChordAddition] = int(types.ChordAddNone)        // Default: "-"
 			m.InstrumentPhrasesData[p][i][types.ColChordTransposition] = int(types.ChordTransNone) // Default: "-"
 			m.InstrumentPhrasesData[p][i][types.ColArpeggio] = -1                                  // Default: "--" (no arpeggio)
+			m.InstrumentPhrasesData[p][i][types.ColModulate] = -1                                  // Default: "--" (no modulate)
 			m.InstrumentPhrasesData[p][i][types.ColMidi] = -1                                      // Default: "--" (sticky)
 			m.InstrumentPhrasesData[p][i][types.ColSoundMaker] = -1                                // Default: "--" (sticky)
 			// Initialize ADSR columns (all sticky, default to undefined)
@@ -697,6 +713,7 @@ func (m *Model) initializeDefaultData() {
 			m.SamplerPhrasesData[p][i][types.ColGate] = -1           // Gate value (-1 displays "--", behaves as 80)
 			m.SamplerPhrasesData[p][i][types.ColRetrigger] = -1      // Retrigger index (-1 means no retrigger)
 			m.SamplerPhrasesData[p][i][types.ColTimestretch] = -1    // Timestretch index (-1 means no timestretch)
+			m.SamplerPhrasesData[p][i][types.ColModulate] = -1       // Modulate index (-1 means no modulate)
 			m.SamplerPhrasesData[p][i][types.ColEffectReverse] = -1  // Reverse effect (-1 means no effect)
 			m.SamplerPhrasesData[p][i][types.ColPan] = -1            // Pan (-1 = null, will use effective value or default to center)
 			m.SamplerPhrasesData[p][i][types.ColLowPassFilter] = -1  // Low pass filter (-1 means no filter/20kHz)
@@ -752,6 +769,17 @@ func (m *Model) initializeDefaultData() {
 			Beats:       0,   // Default beats
 			Every:       1,   // Default every step (1)
 			Probability: 100, // Default 100% probability
+		}
+	}
+	// Initialize modulate settings with defaults
+	for i := 0; i < 255; i++ {
+		m.ModulateSettings[i] = types.ModulateSettings{
+			Seed:      -1,     // Default to "none"
+			IRandom:   0,      // Default no randomization
+			Sub:       0,      // Default no subtraction
+			Add:       0,      // Default no addition
+			ScaleRoot: 0,      // Default to C
+			Scale:     "all",  // Default to all notes
 		}
 	}
 

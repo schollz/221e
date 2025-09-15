@@ -1,6 +1,7 @@
 package input
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/schollz/collidertracker/internal/model"
@@ -267,5 +268,154 @@ func ModifyTimestrechValue(m *model.Model, baseDelta float32) {
 
 	// Store back the modified settings
 	m.TimestrechSettings[m.TimestrechEditingIndex] = settings
+	storage.AutoSave(m)
+}
+
+func ModifyModulateValue(m *model.Model, baseDelta float32) {
+	if m.ModulateEditingIndex < 0 || m.ModulateEditingIndex >= 255 {
+		return
+	}
+
+	// Get current settings
+	settings := m.ModulateSettings[m.ModulateEditingIndex]
+
+	if m.CurrentRow == 0 { // Seed
+		// Use different increments: 5 for coarse, 1 for fine
+		var delta int
+		if baseDelta == 1.0 || baseDelta == -1.0 {
+			delta = int(baseDelta) * 5 // Coarse control: +/-5
+		} else if baseDelta == 0.05 || baseDelta == -0.05 {
+			delta = int(baseDelta / 0.05) // Fine control: +/-1
+		} else {
+			delta = int(baseDelta) // Fallback
+		}
+
+		newSeed := settings.Seed + delta
+		if newSeed < -1 {
+			newSeed = -1 // "none"
+		} else if newSeed > 128 {
+			newSeed = 128
+		}
+		oldSeedValue := "none"
+		if settings.Seed >= 0 {
+			oldSeedValue = fmt.Sprintf("%d", settings.Seed)
+		}
+		settings.Seed = newSeed
+		newSeedValue := "none"
+		if settings.Seed >= 0 {
+			newSeedValue = fmt.Sprintf("%d", settings.Seed)
+		}
+		log.Printf("Modified modulate %02X Seed: %s -> %s", m.ModulateEditingIndex, oldSeedValue, newSeedValue)
+	} else if m.CurrentRow == 1 { // IRandom
+		// Use different increments: 5 for coarse, 1 for fine
+		var delta int
+		if baseDelta == 1.0 || baseDelta == -1.0 {
+			delta = int(baseDelta) * 5 // Coarse control: +/-5
+		} else if baseDelta == 0.05 || baseDelta == -0.05 {
+			delta = int(baseDelta / 0.05) // Fine control: +/-1
+		} else {
+			delta = int(baseDelta) // Fallback
+		}
+
+		newIRandom := settings.IRandom + delta
+		if newIRandom < 0 {
+			newIRandom = 0
+		} else if newIRandom > 128 {
+			newIRandom = 128
+		}
+		settings.IRandom = newIRandom
+		log.Printf("Modified modulate %02X IRandom: %d -> %d (delta: %d)", m.ModulateEditingIndex, settings.IRandom-delta, settings.IRandom, delta)
+	} else if m.CurrentRow == 2 { // Sub
+		// Use different increments: 5 for coarse, 1 for fine
+		var delta int
+		if baseDelta == 1.0 || baseDelta == -1.0 {
+			delta = int(baseDelta) * 5 // Coarse control: +/-5
+		} else if baseDelta == 0.05 || baseDelta == -0.05 {
+			delta = int(baseDelta / 0.05) // Fine control: +/-1
+		} else {
+			delta = int(baseDelta) // Fallback
+		}
+
+		newSub := settings.Sub + delta
+		if newSub < 0 {
+			newSub = 0
+		} else if newSub > 120 {
+			newSub = 120
+		}
+		settings.Sub = newSub
+		log.Printf("Modified modulate %02X Sub: %d -> %d (delta: %d)", m.ModulateEditingIndex, settings.Sub-delta, settings.Sub, delta)
+	} else if m.CurrentRow == 3 { // Add
+		// Use different increments: 5 for coarse, 1 for fine
+		var delta int
+		if baseDelta == 1.0 || baseDelta == -1.0 {
+			delta = int(baseDelta) * 5 // Coarse control: +/-5
+		} else if baseDelta == 0.05 || baseDelta == -0.05 {
+			delta = int(baseDelta / 0.05) // Fine control: +/-1
+		} else {
+			delta = int(baseDelta) // Fallback
+		}
+
+		newAdd := settings.Add + delta
+		if newAdd < 0 {
+			newAdd = 0
+		} else if newAdd > 120 {
+			newAdd = 120
+		}
+		settings.Add = newAdd
+		log.Printf("Modified modulate %02X Add: %d -> %d (delta: %d)", m.ModulateEditingIndex, settings.Add-delta, settings.Add, delta)
+	} else if m.CurrentRow == 4 { // ScaleRoot
+		// Cycle through note names (C, C#, D, D#, E, F, F#, G, G#, A, A#, B)
+		noteNames := []string{"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"}
+		currentIndex := settings.ScaleRoot
+		
+		// Ensure current index is within valid range
+		if currentIndex < 0 || currentIndex >= len(noteNames) {
+			currentIndex = 0
+		}
+		
+		// Move to next/previous note
+		var newIndex int
+		if baseDelta > 0 {
+			newIndex = (currentIndex + 1) % len(noteNames)
+		} else {
+			newIndex = (currentIndex - 1 + len(noteNames)) % len(noteNames)
+		}
+		
+		oldNote := noteNames[currentIndex]
+		settings.ScaleRoot = newIndex
+		log.Printf("Modified modulate %02X ScaleRoot: %s -> %s", m.ModulateEditingIndex, oldNote, noteNames[newIndex])
+	} else if m.CurrentRow == 5 { // Scale
+		// Cycle through available scales
+		availableScales := []string{"all", "major", "minor", "dorian", "mixolydian", "pentatonic", "blues", "chromatic"}
+		currentIndex := -1
+		
+		// Find current scale index
+		for i, scale := range availableScales {
+			if settings.Scale == scale {
+				currentIndex = i
+				break
+			}
+		}
+		
+		// If current scale not found, default to "all"
+		if currentIndex == -1 {
+			currentIndex = 0
+		}
+		
+		// Move to next/previous scale
+		var newIndex int
+		if baseDelta > 0 {
+			newIndex = (currentIndex + 1) % len(availableScales)
+		} else {
+			newIndex = (currentIndex - 1 + len(availableScales)) % len(availableScales)
+		}
+		
+		oldScale := settings.Scale
+		settings.Scale = availableScales[newIndex]
+		log.Printf("Modified modulate %02X Scale: %s -> %s", m.ModulateEditingIndex, oldScale, settings.Scale)
+	}
+
+	// Save the modified settings back to the model
+	m.ModulateSettings[m.ModulateEditingIndex] = settings
 	storage.AutoSave(m)
 }

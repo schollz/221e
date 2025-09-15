@@ -586,6 +586,8 @@ func (tm TrackerModel) View() string {
 		return views.RenderRetriggerView(tm.model)
 	case types.TimestrechView:
 		return views.RenderTimestrechView(tm.model)
+	case types.ModulateView:
+		return views.RenderModulateView(tm.model)
 	case types.ArpeggioView:
 		return views.RenderArpeggioView(tm.model)
 	case types.MidiView:

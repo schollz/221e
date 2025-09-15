@@ -9,6 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/schollz/collidertracker/internal/model"
+	"github.com/schollz/collidertracker/internal/modulation"
 	"github.com/schollz/collidertracker/internal/storage"
 	"github.com/schollz/collidertracker/internal/types"
 )
@@ -602,6 +603,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 	rawGate := rowData[types.ColGate]
 	rawRetrigger := rowData[types.ColRetrigger]
 	rawTimestretch := rowData[types.ColTimestretch]
+	rawModulate := rowData[types.ColModulate]
 	rawFilenameIndex := rowData[types.ColFilename]
 
 	// Effect columns (may be -1) - get both raw and effective values
@@ -629,6 +631,22 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 
 	// Effective/inherited values
 	effectiveNote := GetEffectiveValueForTrack(m, phrase, row, int(types.ColNote), trackId)
+	
+	// Apply modulation if there's a modulate setting active on this row
+	if rawModulate != -1 && rawModulate >= 0 && rawModulate < 255 && effectiveNote != -1 {
+		modulateSettings := m.ModulateSettings[rawModulate]
+		originalNote := effectiveNote
+		modulatedNote := modulation.ApplyModulation(originalNote, modulation.ModulateSettings{
+			IRandom: modulateSettings.IRandom,
+			Sub:     modulateSettings.Sub,
+			Add:     modulateSettings.Add,
+			Scale:   modulateSettings.Scale,
+		})
+		log.Printf("Applied modulation %02X: NN %02X -> %02X (IRandom=%d, Sub=%d, Add=%d, Scale=%s)", 
+			rawModulate, originalNote, modulatedNote, modulateSettings.IRandom, modulateSettings.Sub, modulateSettings.Add, modulateSettings.Scale)
+		effectiveNote = modulatedNote
+	}
+	
 	effectiveDeltaTime := GetEffectiveValueForTrack(m, phrase, row, int(types.ColDeltaTime), trackId)
 	effectiveFilenameIndex := GetEffectiveValueForTrack(m, phrase, row, int(types.ColFilename), trackId)
 	effectiveFilename := GetEffectiveFilenameForTrack(m, phrase, row, trackId)

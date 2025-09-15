@@ -15,6 +15,7 @@ const (
 	FileMetadataView
 	RetriggerView
 	TimestrechView
+	ModulateView
 	MixerView
 	ArpeggioView
 	MidiView
@@ -51,24 +52,25 @@ const (
 	ColGate                                   // Column 3: Gate value (hex, default 80/0x50, sticky)
 	ColRetrigger                              // Column 4: Retrigger setting index (hex, 00-FE)
 	ColTimestretch                            // Column 5: Timestretch setting index (hex, 00-FE)
-	ColEffectReverse                          // Column 6: Я (reverse) 0-F (0-15, probability where F=100%, 0=0%)
-	ColPan                                    // Column 7: PA (pan) (hex, default 128/0x80, 00-FE maps -1.0 to 1.0)
-	ColLowPassFilter                          // Column 8: LP (low pass filter) (hex, default FE/20kHz, 00-FE maps 20Hz to 20kHz exponentially)
-	ColHighPassFilter                         // Column 9: HP (high pass filter) (hex, default -1/null, 00-FE maps 20Hz to 20kHz exponentially)
-	ColEffectComb                             // Column 10: CO (00-FE)
-	ColEffectReverb                           // Column 11: VE (00-FE)
-	ColFilename                               // Column 12: Filename index
-	ColChord                                  // Column 13: Chord (Instrument view only: "-", "M", "m", "d")
-	ColChordAddition                          // Column 14: Chord Addition (Instrument view only: "-", "7", "9", "4")
-	ColChordTransposition                     // Column 15: Chord Transposition (Instrument view only: "-", "0"-"F")
-	ColArpeggio                               // Column 16: Arpeggio (Instrument view only: 00-FE)
-	ColMidi                                   // Column 17: MIDI (Instrument view only: 00-FE, sticky)
-	ColSoundMaker                             // Column 18: SoundMaker (Instrument view only: 00-FE, sticky)
-	ColAttack                                 // Column 19: Attack (Instrument view only: 00-FE, 0.02-30s exponential, default -1, sticky)
-	ColDecay                                  // Column 20: Decay (Instrument view only: 00-FE, 0.0-30.0s linear, default -1, sticky)
-	ColSustain                                // Column 21: Sustain (Instrument view only: 00-FE, 0.0-1.0 linear, default -1, sticky)
-	ColRelease                                // Column 22: Release (Instrument view only: 00-FE, 0.02-30s exponential, default -1, sticky)
-	ColVelocity                               // Column 23: Velocity (VE) (00-7F, 0-127)
+	ColModulate                               // Column 6: Modulate setting index (hex, 00-FE)
+	ColEffectReverse                          // Column 7: Я (reverse) 0-F (0-15, probability where F=100%, 0=0%)
+	ColPan                                    // Column 8: PA (pan) (hex, default 128/0x80, 00-FE maps -1.0 to 1.0)
+	ColLowPassFilter                          // Column 9: LP (low pass filter) (hex, default FE/20kHz, 00-FE maps 20Hz to 20kHz exponentially)
+	ColHighPassFilter                         // Column 10: HP (high pass filter) (hex, default -1/null, 00-FE maps 20Hz to 20kHz exponentially)
+	ColEffectComb                             // Column 11: CO (00-FE)
+	ColEffectReverb                           // Column 12: VE (00-FE)
+	ColFilename                               // Column 13: Filename index
+	ColChord                                  // Column 14: Chord (Instrument view only: "-", "M", "m", "d")
+	ColChordAddition                          // Column 15: Chord Addition (Instrument view only: "-", "7", "9", "4")
+	ColChordTransposition                     // Column 16: Chord Transposition (Instrument view only: "-", "0"-"F")
+	ColArpeggio                               // Column 17: Arpeggio (Instrument view only: 00-FE)
+	ColMidi                                   // Column 18: MIDI (Instrument view only: 00-FE, sticky)
+	ColSoundMaker                             // Column 19: SoundMaker (Instrument view only: 00-FE, sticky)
+	ColAttack                                 // Column 20: Attack (Instrument view only: 00-FE, 0.02-30s exponential, default -1, sticky)
+	ColDecay                                  // Column 21: Decay (Instrument view only: 00-FE, 0.0-30.0s linear, default -1, sticky)
+	ColSustain                                // Column 22: Sustain (Instrument view only: 00-FE, 0.0-1.0 linear, default -1, sticky)
+	ColRelease                                // Column 23: Release (Instrument view only: 00-FE, 0.02-30s exponential, default -1, sticky)
+	ColVelocity                               // Column 24: Velocity (VE) (00-7F, 0-127)
 	ColCount                                  // Total number of columns
 )
 
@@ -188,13 +190,14 @@ const (
 	SamplerColGT  SamplerUIColumn = 5  // GT - Gate
 	SamplerColRT  SamplerUIColumn = 6  // RT - Retrigger
 	SamplerColTS  SamplerUIColumn = 7  // TS - Timestretch
-	SamplerColREV SamplerUIColumn = 8  // Я - Reverse
-	SamplerColPA  SamplerUIColumn = 9  // PA - Pan
-	SamplerColLP  SamplerUIColumn = 10 // LP - Low Pass Filter
-	SamplerColHP  SamplerUIColumn = 11 // HP - High Pass Filter
-	SamplerColCO  SamplerUIColumn = 12 // CO - Comb
-	SamplerColRE  SamplerUIColumn = 13 // RE - Reverb
-	SamplerColFI  SamplerUIColumn = 14 // FI - Filename
+	SamplerColMO  SamplerUIColumn = 8  // MO - Modulate
+	SamplerColREV SamplerUIColumn = 9  // Я - Reverse
+	SamplerColPA  SamplerUIColumn = 10 // PA - Pan
+	SamplerColLP  SamplerUIColumn = 11 // LP - Low Pass Filter
+	SamplerColHP  SamplerUIColumn = 12 // HP - High Pass Filter
+	SamplerColCO  SamplerUIColumn = 13 // CO - Comb
+	SamplerColRE  SamplerUIColumn = 14 // RE - Reverb
+	SamplerColFI  SamplerUIColumn = 15 // FI - Filename
 )
 
 // UI Column positions for Arpeggio View - to prevent hardcoding issues
@@ -314,6 +317,15 @@ type TimestrechSettings struct {
 	Probability int     `json:"probability"` // Probability percentage (0-100, default 100) - chance of activation after Every check
 }
 
+type ModulateSettings struct {
+	Seed      int    `json:"seed"`      // Random seed: -1 for "none", 0-128 for fixed seed
+	IRandom   int    `json:"irandom"`   // Random range: 0-128 (0 means no randomization)
+	Sub       int    `json:"sub"`       // Subtract value: 0-120
+	Add       int    `json:"add"`       // Add value: 0-120
+	ScaleRoot int    `json:"scaleRoot"` // Scale root note: 0-11 (C, C#, D, D#, E, F, F#, G, G#, A, A#, B)
+	Scale     string `json:"scale"`     // Scale selection: "all", "major", "minor", etc.
+}
+
 // ArpeggioDirection represents different arpeggio directions
 type ArpeggioDirection int
 
@@ -408,6 +420,18 @@ const (
 	TimestrechSettingsRowProbability                              // 4: Probability
 )
 
+// ModulateSettingsRow represents different rows in the modulate settings view
+type ModulateSettingsRow int
+
+const (
+	ModulateSettingsRowSeed      ModulateSettingsRow = iota // 0: Seed
+	ModulateSettingsRowIRandom                              // 1: IRandom
+	ModulateSettingsRowSub                                  // 2: Sub
+	ModulateSettingsRowAdd                                  // 3: Add
+	ModulateSettingsRowScaleRoot                            // 4: ScaleRoot
+	ModulateSettingsRowScale                                // 5: Scale
+)
+
 type ArpeggioRow struct {
 	Direction int `json:"direction"` // Direction: 0="--", 1="u-", 2="d-"
 	Count     int `json:"count"`     // Count: -1="--", 0-254 for hex values 00-FE
@@ -488,6 +512,7 @@ type SaveData struct {
 	RecordingEnabled      bool                    `json:"recordingEnabled"`
 	RetriggerSettings     [255]RetriggerSettings  `json:"retriggerSettings"`
 	TimestrechSettings    [255]TimestrechSettings `json:"timestrechSettings"`
+	ModulateSettings      [255]ModulateSettings   `json:"modulateSettings"`
 	ArpeggioSettings      [255]ArpeggioSettings   `json:"arpeggioSettings"`
 	MidiSettings          [255]MidiSettings       `json:"midiSettings"`
 	SoundMakerSettings    [255]SoundMakerSettings `json:"soundMakerSettings"`
