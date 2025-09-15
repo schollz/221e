@@ -190,12 +190,12 @@ func GetSongStatusMessage(m *model.Model) string {
 			}
 			statusMsg += fmt.Sprintf(" | Song playing (%d tracks) (SPACE to stop)", activeTracksCount)
 		} else {
-			statusMsg += " | Chain/Phrase playing (SPACE to stop)"
+			statusMsg += " | Playing"
 		}
 	} else {
-		statusMsg += " | Stopped (SPACE to play)"
+		statusMsg += " | Stopped"
 	}
 
-	statusMsg += " | Shift+Right: Enter Chain | Ctrl+Arrows: Edit chain"
+	statusMsg += " | Shift+Right: Enter | Ctrl+Arrows: Edit"
 	return statusMsg
 }

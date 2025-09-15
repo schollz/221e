@@ -150,7 +150,7 @@ func getMixerStatusMessage(m *model.Model) string {
 
 	statusMsg := fmt.Sprintf("%s: Set %.1fdB (Hex %02X)",
 		trackLabel, setLevel, dbToHex(setLevel))
-	statusMsg += " | Left/Right: Select track │ Ctrl+Arrow: Adjust set level │ Shift+Up: Back to previous view"
+	statusMsg += " | Left/Right: Select │ Ctrl+Arrow: Adjust │ Shift+Up: Back"
 
 	return statusMsg
 }
@@ -250,5 +250,5 @@ func RenderMixerView(m *model.Model) string {
 		content.WriteString("\n\n")
 
 		return content.String()
-	}, getMixerStatusMessage(m), 14)
+	}, getMixerStatusMessage(m), 12)
 }

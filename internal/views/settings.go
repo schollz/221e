@@ -133,5 +133,5 @@ func RenderSettingsView(m *model.Model) string {
 		)
 
 		return content
-	}, "Up/Down/Left/Right: Navigate | Ctrl+Arrow: Adjust values | Shift+Down: Back to Chain view", 12)
+	}, "Up/Down/Left/Right: Navigate | Ctrl+Arrow: Adjust values | Shift+Down: Back to Chain view", 13)
 }

@@ -122,7 +122,7 @@ func RenderModulateView(m *model.Model) string {
 
 	// Footer with status
 	statusMsg := "Up/Down: Navigate | Ctrl+Arrow: Adjust values | Shift+Left: Back to Phrase view"
-	content.WriteString(RenderFooter(m, 7, statusMsg))
+	content.WriteString(RenderFooter(m, 9, statusMsg))
 
 	// Apply container padding
 	return containerStyle.Render(content.String())

@@ -92,5 +92,5 @@ func RenderFileView(m *model.Model) string {
 		}
 
 		return content.String()
-	}, "SPACE: Select file | Ctrl+Right: Play/Stop | Shift+Left: Back to phrase", m.GetVisibleRows()+1)
+	}, "SPACE: Select file | Ctrl+Right: Play/Stop | Shift+Left: Back to phrase", m.GetVisibleRows())
 }
