@@ -388,6 +388,7 @@ func GetPhraseStatusMessage(m *model.Model) string {
 
 	// Use correct sampler UI column indices
 	rtUI := int(types.SamplerColRT)
+	tsUI := int(types.SamplerColTS)
 	moUI := int(types.SamplerColMO)
 	duUI := int(types.SamplerColDU)
 	fiUI := int(types.SamplerColFI)
@@ -580,6 +581,15 @@ func GetPhraseStatusMessage(m *model.Model) string {
 		statusMsg += " | Stopped (SPACE to play)"
 	}
 
-	statusMsg += " | Shift+Right: File browser | Shift+Left: Back to chain view"
+	// Add context-sensitive Shift+Right action based on current column
+	if m.CurrentCol == rtUI {
+		statusMsg += " | Shift+Right: Retrigger | Shift+Left: Back to chain view"
+	} else if m.CurrentCol == tsUI {
+		statusMsg += " | Shift+Right: Timestretch | Shift+Left: Back to chain view"
+	} else if m.CurrentCol == duUI {
+		statusMsg += " | Shift+Right: Ducking | Shift+Left: Back to chain view"
+	} else {
+		statusMsg += " | Shift+Right: File browser | Shift+Left: Back to chain view"
+	}
 	return statusMsg
 }
