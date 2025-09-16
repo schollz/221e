@@ -694,6 +694,7 @@ func (m *Model) initializeDefaultData() {
 			m.PhrasesData[p][i][types.ColHighPassFilter] = -1      // High pass filter (-1 means no filter/20Hz)
 			m.PhrasesData[p][i][types.ColEffectComb] = -1          // Comb effect (-1 means no effect)
 			m.PhrasesData[p][i][types.ColEffectReverb] = -1        // Reverb effect (-1 means no effect)
+			m.PhrasesData[p][i][types.ColEffectDucking] = -1       // Ducking effect (-1 means no effect)
 			m.PhrasesData[p][i][types.ColFilename] = -1            // Filename index (-1 means no file selected)
 			m.PhrasesData[p][i][types.ColVelocity] = -1            // Velocity (-1 displays "--", behaves as 64)
 		}
@@ -731,6 +732,7 @@ func (m *Model) initializeDefaultData() {
 			m.InstrumentPhrasesData[p][i][types.ColHighPassFilter] = -1 // High pass filter (-1 means no filter/20Hz)
 			m.InstrumentPhrasesData[p][i][types.ColEffectComb] = -1     // Comb effect (-1 means no effect)
 			m.InstrumentPhrasesData[p][i][types.ColEffectReverb] = -1   // Reverb effect (-1 means no effect)
+			m.InstrumentPhrasesData[p][i][types.ColEffectDucking] = -1  // Ducking effect (-1 means no effect)
 			m.InstrumentPhrasesData[p][i][types.ColVelocity] = -1       // Velocity (-1 displays "--", behaves as 64)
 			// Other columns can stay -1 (unused for instruments)
 		}
@@ -754,6 +756,7 @@ func (m *Model) initializeDefaultData() {
 			m.SamplerPhrasesData[p][i][types.ColHighPassFilter] = -1 // High pass filter (-1 means no filter/20Hz)
 			m.SamplerPhrasesData[p][i][types.ColEffectComb] = -1     // Comb effect (-1 means no effect)
 			m.SamplerPhrasesData[p][i][types.ColEffectReverb] = -1   // Reverb effect (-1 means no effect)
+			m.SamplerPhrasesData[p][i][types.ColEffectDucking] = -1  // Ducking effect (-1 means no effect)
 			m.SamplerPhrasesData[p][i][types.ColFilename] = -1       // Filename index (-1 means no file selected)
 			m.SamplerPhrasesData[p][i][types.ColVelocity] = -1       // Velocity (-1 displays "--", behaves as 64)
 		}
@@ -850,6 +853,17 @@ func (m *Model) initializeDefaultData() {
 		// Initialize parameters for the default "None" instrument (no parameters)
 		settings.InitializeParameters()
 		m.SoundMakerSettings[i] = settings
+	}
+
+	// Initialize ducking settings with defaults
+	for i := 0; i < 255; i++ {
+		m.DuckingSettings[i] = types.DuckingSettings{
+			Type:    0,   // Default to "none"
+			Bus:     0,   // Default bus 0
+			Attack:  0.0, // Default attack 0.0 seconds
+			Release: 0.0, // Default release 0.0 seconds
+			Depth:   0.0, // Default depth 0.0
+		}
 	}
 
 	// Initialize song data (8 tracks × 16 rows, all empty initially)
