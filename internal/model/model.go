@@ -858,11 +858,12 @@ func (m *Model) initializeDefaultData() {
 	// Initialize ducking settings with defaults
 	for i := 0; i < 255; i++ {
 		m.DuckingSettings[i] = types.DuckingSettings{
-			Type:    0,   // Default to "none"
-			Bus:     0,   // Default bus 0
-			Attack:  0.0, // Default attack 0.0 seconds
-			Release: 0.0, // Default release 0.0 seconds
-			Depth:   0.0, // Default depth 0.0
+			Type:    0,    // Default to "none"
+			Bus:     0,    // Default bus 0
+			Attack:  0.0,  // Default attack 0.0 seconds
+			Release: 0.0,  // Default release 0.0 seconds
+			Depth:   0.0,  // Default depth 0.0
+			Thresh:  0.02, // Default threshold 0.02
 		}
 	}
 
@@ -1614,6 +1615,8 @@ func (m *Model) SendOSCSamplerMessage(params SamplerOSCParams) {
 		msg.Append(float32(ds.Release))
 		msg.Append("duckingDepth")
 		msg.Append(float32(ds.Depth))
+		msg.Append("duckingThresh")
+		msg.Append(float32(ds.Thresh))
 	}
 
 	// Add update parameter when this is an update to a playing row

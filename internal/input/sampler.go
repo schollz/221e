@@ -529,6 +529,25 @@ func ModifyDuckingValue(m *model.Model, baseDelta float32) {
 		}
 		settings.Depth = newDepth
 		log.Printf("Modified ducking %02X Depth: %.2f -> %.2f (delta: %.2f)", m.DuckingEditingIndex, settings.Depth-delta, settings.Depth, delta)
+	} else if m.CurrentRow == 5 { // Thresh
+		// Use different increments: 0.1 for coarse, 0.01 for fine (based on Ctrl+Up/Down vs Ctrl+Left/Right)
+		var delta float32
+		if baseDelta == 1.0 || baseDelta == -1.0 {
+			delta = baseDelta * 0.1 // Coarse control (Ctrl+Up/Down): +/-0.1
+		} else if baseDelta == 0.05 || baseDelta == -0.05 {
+			delta = baseDelta * 0.2 // Fine control (Ctrl+Left/Right): +/-0.01
+		} else {
+			delta = baseDelta * 0.1 // Fallback
+		}
+
+		newThresh := settings.Thresh + delta
+		if newThresh < 0.0 {
+			newThresh = 0.0
+		} else if newThresh > 1.0 {
+			newThresh = 1.0
+		}
+		settings.Thresh = newThresh
+		log.Printf("Modified ducking %02X Thresh: %.2f -> %.2f (delta: %.2f)", m.DuckingEditingIndex, settings.Thresh-delta, settings.Thresh, delta)
 	}
 
 	// Store back the modified settings

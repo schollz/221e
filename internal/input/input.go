@@ -893,7 +893,7 @@ func handleDown(m *model.Model) tea.Cmd {
 			}
 		}
 	} else if m.ViewMode == types.DuckingView {
-		if m.CurrentRow < int(types.DuckingSettingsRowDepth) { // Type(0) to Depth(4)
+		if m.CurrentRow < int(types.DuckingSettingsRowThresh) { // Type(0) to Thresh(5)
 			m.CurrentRow = m.CurrentRow + 1
 		}
 	} else if m.ViewMode == types.MixerView {
