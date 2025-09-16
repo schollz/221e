@@ -462,6 +462,26 @@ func handleShiftRight(m *model.Model) tea.Cmd {
 			m.ScrollOffset = 0
 			storage.AutoSave(m)
 			return nil
+		} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColEffectDucking) {
+			// Navigate to ducking view - if no ducking is selected, use 00
+			phrasesData := m.GetCurrentPhrasesData()
+			duckingIndex := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColEffectDucking]
+			if duckingIndex == -1 {
+				// If no ducking is selected, default to index 00 for settings
+				duckingIndex = 0
+				// Also set the value in the cell to 00 so it shows when we return
+				(*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColEffectDucking] = 0
+			}
+			// Save current phrase view position
+			m.LastPhraseRow = m.CurrentRow
+			m.LastPhraseCol = m.CurrentCol
+			m.DuckingEditingIndex = duckingIndex
+			m.ViewMode = types.DuckingView
+			m.CurrentRow = 0 // Start at first setting
+			m.CurrentCol = 0
+			m.ScrollOffset = 0
+			storage.AutoSave(m)
+			return nil
 		}
 
 		// Check if we're in Instrument view - implement fallback navigation for non-navigable columns
@@ -714,6 +734,9 @@ func handleShiftLeft(m *model.Model) tea.Cmd {
 	} else if m.ViewMode == types.SoundMakerView {
 		// Navigate back to phrase view - use saved column position
 		switchToViewWithVisibilityCheck(m, phraseViewConfig(m.LastPhraseRow, m.LastPhraseCol))
+	} else if m.ViewMode == types.DuckingView {
+		// Navigate back to phrase view - use saved column position
+		switchToViewWithVisibilityCheck(m, phraseViewConfig(m.LastPhraseRow, m.LastPhraseCol))
 	}
 	return nil
 }
@@ -767,6 +790,10 @@ func handleUp(m *model.Model) tea.Cmd {
 			if m.CurrentRow < m.ScrollOffset {
 				m.ScrollOffset = m.CurrentRow
 			}
+		}
+	} else if m.ViewMode == types.DuckingView {
+		if m.CurrentRow > 0 {
+			m.CurrentRow = m.CurrentRow - 1
 		}
 	} else if m.ViewMode == types.MixerView {
 		if m.CurrentMixerRow > 0 {
@@ -864,6 +891,10 @@ func handleDown(m *model.Model) tea.Cmd {
 			if m.CurrentRow >= m.ScrollOffset+visibleRows {
 				m.ScrollOffset = m.CurrentRow - visibleRows + 1
 			}
+		}
+	} else if m.ViewMode == types.DuckingView {
+		if m.CurrentRow < int(types.DuckingSettingsRowDepth) { // Type(0) to Depth(4)
+			m.CurrentRow = m.CurrentRow + 1
 		}
 	} else if m.ViewMode == types.MixerView {
 		// Only row 0 (set level) exists now, no navigation needed
@@ -1073,6 +1104,8 @@ func handleCtrlUp(m *model.Model) tea.Cmd {
 		ModifyMidiValue(m, 1.0)
 	} else if m.ViewMode == types.SoundMakerView {
 		ModifySoundMakerValue(m, 1.0)
+	} else if m.ViewMode == types.DuckingView {
+		ModifyDuckingValue(m, 1.0)
 	} else if m.ViewMode == types.MixerView {
 		if m.CurrentMixerRow == 0 {
 			ModifyMixerSetLevel(m, 1.0) // Coarse increment for set level
@@ -1108,6 +1141,8 @@ func handleCtrlDown(m *model.Model) tea.Cmd {
 		ModifyMidiValue(m, -1.0)
 	} else if m.ViewMode == types.SoundMakerView {
 		ModifySoundMakerValue(m, -1.0)
+	} else if m.ViewMode == types.DuckingView {
+		ModifyDuckingValue(m, -1.0)
 	} else if m.ViewMode == types.MixerView {
 		if m.CurrentMixerRow == 0 {
 			ModifyMixerSetLevel(m, -1.0) // Coarse decrement for set level
@@ -1142,6 +1177,8 @@ func handleCtrlLeft(m *model.Model) tea.Cmd {
 		ModifyMidiValue(m, -0.05)
 	} else if m.ViewMode == types.SoundMakerView {
 		ModifySoundMakerValue(m, -0.05)
+	} else if m.ViewMode == types.DuckingView {
+		ModifyDuckingValue(m, -0.05)
 	} else if m.ViewMode == types.MixerView {
 		if m.CurrentMixerRow == 0 {
 			ModifyMixerSetLevel(m, -0.05) // Fine decrement for set level
@@ -1178,6 +1215,8 @@ func handleCtrlRight(m *model.Model) tea.Cmd {
 		ModifyMidiValue(m, 0.05)
 	} else if m.ViewMode == types.SoundMakerView {
 		ModifySoundMakerValue(m, 0.05)
+	} else if m.ViewMode == types.DuckingView {
+		ModifyDuckingValue(m, 0.05)
 	} else if m.ViewMode == types.MixerView {
 		if m.CurrentMixerRow == 0 {
 			ModifyMixerSetLevel(m, 0.05) // Fine increment for set level
@@ -1446,12 +1485,13 @@ func handleCtrlH(m *model.Model) tea.Cmd {
 		phraseViewType := m.GetPhraseViewType()
 		if phraseViewType == types.InstrumentPhraseView {
 		}
-		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColNote)] = -1      // Clear note
-		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColPitch)] = -1     // Clear pitch (displays "--", behaves as 80)
-		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColDeltaTime)] = -1 // Clear deltatime (for samplers this also clears playback)
-		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColGate)] = -1      // Clear gate (displays "--", behaves as 80)
-		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColRetrigger)] = -1 // Clear retrigger
-		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColFilename)] = -1  // Clear filename
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColNote)] = -1          // Clear note
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColPitch)] = -1         // Clear pitch (displays "--", behaves as 80)
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColDeltaTime)] = -1     // Clear deltatime (for samplers this also clears playback)
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColGate)] = -1          // Clear gate (displays "--", behaves as 80)
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColRetrigger)] = -1     // Clear retrigger
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColEffectDucking)] = -1 // Clear ducking
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColFilename)] = -1      // Clear filename
 		log.Printf("Deleted phrase %d row %d (cleared all columns)", m.CurrentPhrase, m.CurrentRow)
 		storage.AutoSave(m)
 	}

@@ -100,6 +100,8 @@ type Model struct {
 	MidiEditingIndex       int                           // Currently editing MIDI index
 	SoundMakerSettings     [255]types.SoundMakerSettings // Array of SoundMaker settings (00-FE)
 	SoundMakerEditingIndex int                           // Currently editing SoundMaker index
+	DuckingSettings        [255]types.DuckingSettings    // Array of ducking settings (00-FE)
+	DuckingEditingIndex    int                           // Currently editing ducking index
 	// View navigation state
 	LastChainRow  int // Last selected row in chain view
 	LastPhraseRow int // Last selected row in phrase view
@@ -422,7 +424,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 		}
 	} else {
 		// Sampler view: Custom mapping after adding VE and MO columns
-		// New order: SL (0), DT (1), NN (2), VE (3), PI (4), GT (5), RT (6), TS (7), MO (8), Я (9), PA (10), LP (11), HP (12), CO (13), RE (14), FI (15)
+		// New order: SL (0), DT (1), NN (2), VE (3), PI (4), GT (5), RT (6), TS (7), MO (8), Я (9), PA (10), LP (11), HP (12), CO (13), RE (14), DU (15), FI (16)
 		switch uiColumn {
 		case int(types.SamplerColSL): // SL - display only
 			return &ColumnMapping{
@@ -559,9 +561,18 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "RE",
 			}
+		case int(types.SamplerColDU): // DU - Ducking
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColEffectDucking), // Now index 13
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "DU",
+			}
 		case int(types.SamplerColFI): // FI - Filename
 			return &ColumnMapping{
-				DataColumnIndex: int(types.ColFilename), // Now index 13
+				DataColumnIndex: int(types.ColFilename), // Now index 14
 				IsEditable:      true,
 				IsCopyable:      true,
 				IsPasteable:     true,
@@ -683,6 +694,7 @@ func (m *Model) initializeDefaultData() {
 			m.PhrasesData[p][i][types.ColHighPassFilter] = -1      // High pass filter (-1 means no filter/20Hz)
 			m.PhrasesData[p][i][types.ColEffectComb] = -1          // Comb effect (-1 means no effect)
 			m.PhrasesData[p][i][types.ColEffectReverb] = -1        // Reverb effect (-1 means no effect)
+			m.PhrasesData[p][i][types.ColEffectDucking] = -1       // Ducking effect (-1 means no effect)
 			m.PhrasesData[p][i][types.ColFilename] = -1            // Filename index (-1 means no file selected)
 			m.PhrasesData[p][i][types.ColVelocity] = -1            // Velocity (-1 displays "--", behaves as 64)
 		}
@@ -720,6 +732,7 @@ func (m *Model) initializeDefaultData() {
 			m.InstrumentPhrasesData[p][i][types.ColHighPassFilter] = -1 // High pass filter (-1 means no filter/20Hz)
 			m.InstrumentPhrasesData[p][i][types.ColEffectComb] = -1     // Comb effect (-1 means no effect)
 			m.InstrumentPhrasesData[p][i][types.ColEffectReverb] = -1   // Reverb effect (-1 means no effect)
+			m.InstrumentPhrasesData[p][i][types.ColEffectDucking] = -1  // Ducking effect (-1 means no effect)
 			m.InstrumentPhrasesData[p][i][types.ColVelocity] = -1       // Velocity (-1 displays "--", behaves as 64)
 			// Other columns can stay -1 (unused for instruments)
 		}
@@ -743,6 +756,7 @@ func (m *Model) initializeDefaultData() {
 			m.SamplerPhrasesData[p][i][types.ColHighPassFilter] = -1 // High pass filter (-1 means no filter/20Hz)
 			m.SamplerPhrasesData[p][i][types.ColEffectComb] = -1     // Comb effect (-1 means no effect)
 			m.SamplerPhrasesData[p][i][types.ColEffectReverb] = -1   // Reverb effect (-1 means no effect)
+			m.SamplerPhrasesData[p][i][types.ColEffectDucking] = -1  // Ducking effect (-1 means no effect)
 			m.SamplerPhrasesData[p][i][types.ColFilename] = -1       // Filename index (-1 means no file selected)
 			m.SamplerPhrasesData[p][i][types.ColVelocity] = -1       // Velocity (-1 displays "--", behaves as 64)
 		}
@@ -841,6 +855,17 @@ func (m *Model) initializeDefaultData() {
 		m.SoundMakerSettings[i] = settings
 	}
 
+	// Initialize ducking settings with defaults
+	for i := 0; i < 255; i++ {
+		m.DuckingSettings[i] = types.DuckingSettings{
+			Type:    0,   // Default to "none"
+			Bus:     0,   // Default bus 0
+			Attack:  0.0, // Default attack 0.0 seconds
+			Release: 0.0, // Default release 0.0 seconds
+			Depth:   0.0, // Default depth 0.0
+		}
+	}
+
 	// Initialize song data (8 tracks × 16 rows, all empty initially)
 	for track := 0; track < 8; track++ {
 		for row := 0; row < 16; row++ {
@@ -913,6 +938,7 @@ type SamplerOSCParams struct {
 	HighPassFilter        float32 // Frequency in Hz (20Hz to 20kHz) or -1 for no filter
 	EffectComb            float32 // 0.0 .. 1.0
 	EffectReverb          float32 // 0.0 .. 1.0
+	DuckingIndex          int     // Ducking settings index (DU parameter)
 	Velocity              int     // 0 .. 127 (0x00-0x7F)
 	Update                int     // 1 if this is an update to a playing row, 0 otherwise
 }
@@ -972,7 +998,8 @@ func NewSamplerOSCParams(filename string, trackId int, sliceCount, sliceNumber i
 		EffectComb:            0,
 		EffectReverb:          0,
 		Velocity:              velocity,
-		Update:                0, // Default is not an update
+		Update:                0,  // Default is not an update
+		DuckingIndex:          -1, // Default no ducking,
 	}
 }
 
@@ -1009,6 +1036,7 @@ func NewSamplerOSCParamsWithRetrigger(filename string, trackId, sliceCount, slic
 		Velocity:              velocity,
 		DeltaTime:             deltaTime, // Delta time in seconds
 		Update:                0,         // Default is not an update
+		DuckingIndex:          -1,        // Default no ducking,
 	}
 }
 
@@ -1572,6 +1600,22 @@ func (m *Model) SendOSCSamplerMessage(params SamplerOSCParams) {
 	msg.Append(int32(params.Velocity))
 	msg.Append("deltaTime")
 	msg.Append(float32(params.DeltaTime))
+	if params.DuckingIndex >= 0 && params.DuckingIndex < 255 {
+		ds := m.DuckingSettings[params.DuckingIndex] // Type/Bus/Attack/Release/Depth live here
+		msg.Append("duckingType")
+		msg.Append(int32(ds.Type))
+		msg.Append("duckingBusIn")
+		msg.Append(int32(ds.Bus))
+		msg.Append("duckingBusOut")
+		msg.Append(int32(ds.Bus))
+		msg.Append("duckingAttack")
+		msg.Append(float32(ds.Attack))
+		msg.Append("duckingRelease")
+		msg.Append(float32(ds.Release))
+		msg.Append("duckingDepth")
+		msg.Append(float32(ds.Depth))
+	}
+
 	// Add update parameter when this is an update to a playing row
 	if params.Update == 1 {
 		msg.Append("update")

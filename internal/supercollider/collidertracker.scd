@@ -193,6 +193,8 @@ s.waitForBoot({
 				var beatDuration = 60 / bpmTarget;
 				var retrigCountFeedback = 0;
 				var timestretchPos, timestretchRate, effectTimestretch;
+				var duckingAmp, duckingDepth, duckingGain;
+				var side, atk, rel, depth, slopeAbove, thresh, ducked;
 
 				sliceNum = sliceNum.mod(sliceCount);
 				// convert slice beat to seconds
@@ -308,6 +310,49 @@ s.waitForBoot({
 				// volume
 				snd = snd * trackVolume.dbamp * \velocity.kr(100).min(127).max(0).linlin(0,127,-24,24).dbamp;
 
+				// check if signal is ducked
+
+				// --- sidechain ducking with Compander ---
+				side        = LeakDC.ar(In.ar(\duckingBusIn.kr(0), 1));   // the sidechain control signal
+				atk         = \duckingAttack.kr(0.02);
+				rel         = \duckingRelease.kr(0.20);
+
+				// map your 0..0.99 depth to a compander slope:
+				//   slopeAbove: 1.0 = no reduction, 0.0 = infinite reduction
+				depth       = \duckingDepth.kr(0).clip(0, 0.99);
+				slopeAbove  = (1 - depth).max(0.01); // avoid zero
+
+				// choose a sensible threshold (amplitude meters are ~0..1). Make it a param if you like.
+				thresh      = \duckingThresh.kr(0.02);
+
+				// process: when the sidechain exceeds thresh, reduce 'snd' by slopeAbove
+				ducked = Compander.ar(
+					in:         snd,     // signal to be ducked
+					control:    side,    // external sidechain
+					thresh:     thresh,  // start reducing above this
+					slopeBelow: 1,       // unchanged below threshold
+					slopeAbove: slopeAbove,
+					clampTime:  atk,     // attack
+					relaxTime:  rel      // release
+				);
+
+				// engage only for ducked voices (duckingType == 2). Writers and non-duckers pass through unchanged.
+				snd = Select.ar(\duckingType.kr(0),
+					[snd, snd, ducked]   // 0:not ducked, 1:writer, 2:ducked(reader)
+				);
+
+				// (optional) tiny floor to avoid denormals at extreme reductions:
+				snd = snd + (1e-6 * WhiteNoise.ar(1));
+
+				Out.ar(\duckingBusOut.kr(0),
+					Mix(snd) * Select.kr(\duckingType.kr(0), [
+						0,  // 0 = not ducking
+						1,  // 1 = is ducking (writer)
+						0   // 2 = not ducking
+					])
+				);
+
+
 				// Feedback
 				LocalOut.ar(retrigCount);
 				Out.ar(trackOut, snd*(1.0 - effectReverb));
@@ -389,8 +434,12 @@ s.waitForBoot({
 		~busComb = Bus.audio(s, 2);
 		~busDisk = Bus.audio(s, 2);
 		~busTrack = Array.fill(9, { Bus.audio(s, 2) });
+		~busDucking = Array.fill(9, { Bus.audio(s, 1) });
+		~grpDuckWrite = Group.head(s);
+		~grpDuckRead  = Group.after(~grpDuckWrite);
+		~grpFX = Group.after(~grpDuckRead);
 		s.sync;
-		~synOut = Synth.tail(s,"out",[
+		~synOut = Synth.tail(~grpFX,"out",[
 			busReverb: ~busReverb,
 			busDry: ~busDry,
 			busComb: ~busComb,
@@ -493,6 +542,7 @@ s.waitForBoot({
 			var track = msg[2].asInteger;
 			var argLast;
 			var dict = Dictionary.new;
+			var targetGroup = ~grpDuckRead;
 			dict.putAll((
 			    buf:             b,
 			    effectDryOut:    ~busDry,
@@ -504,8 +554,31 @@ s.waitForBoot({
 			dict.putPairs(msg.copyToEnd(3));
 			// round numbers to 1/128 in place
 			dict.keysValuesChange { |k, v|
+				[k,v].postln;
 			    if (v.isNumber) { v.round(1.0/128.0) } { v }
 			};
+
+			// rewrite ducking bus
+
+			if (dict.includesKey(\duckingBus),{
+				var i = dict[\duckingBus].asInteger;
+				dict.put(\duckingBusIn,  ~busDucking[i]);
+				dict.put(\duckingBusOut, ~busDucking[i]);  
+				dict.removeAt(\duckingBus);
+			},{
+				// nothing happens on bus 8
+				dict.put(\duckingBusIn, ~busDucking[8]);
+				dict.put(\duckingBusOut, ~busDucking[8]);
+			});
+
+
+			if (dict.includesKey(\duckingType), {
+				if (dict[\duckingType] == 1, {
+					targetGroup = ~grpDuckWrite;
+				});
+			});
+			
+			["OutputProxy",targetGroup,dict.at(\duckingType),track].postln;
 
 			// create a new dictionary for the track if it doesn't exist
 			if (~samplesPlaying.at(track).isNil,{
@@ -523,7 +596,7 @@ s.waitForBoot({
 			    };
 			    // play new synth
 			    ~samplesPlaying.at(track).put(synName,
-			        Synth.head(Server.default, "sampler" ++ (b.numChannels), dict.asPairs).onFree({
+			        Synth.head(targetGroup, "sampler" ++ (b.numChannels), dict.asPairs).onFree({
 			            [b, "freed"].postln;
 			            ~samplesPlaying.at(track).removeAt(synName);
 			        })

@@ -108,6 +108,8 @@ func DoSave(m *model.Model) {
 		TrackSetLevels:             m.TrackSetLevels,
 		TrackTypes:                 m.TrackTypes,
 		CurrentMixerTrack:          m.CurrentMixerTrack,
+		DuckingSettings:            m.DuckingSettings,
+		DuckingEditingIndex:        m.DuckingEditingIndex,
 	}
 
 	data, err := json.Marshal(saveData)
@@ -197,6 +199,8 @@ func LoadState(m *model.Model, oscPort int, saveFolder string) error {
 	m.RecordingEnabled = saveData.RecordingEnabled
 	m.RetriggerSettings = saveData.RetriggerSettings
 	m.TimestrechSettings = saveData.TimestrechSettings
+	m.DuckingSettings = saveData.DuckingSettings
+	m.DuckingEditingIndex = saveData.DuckingEditingIndex
 
 	// Handle modulation settings with backward compatibility
 	if len(saveData.InstrumentModulateSettings) > 0 || len(saveData.SamplerModulateSettings) > 0 {
