@@ -686,6 +686,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 	effectiveDeltaTime := GetEffectiveValueForTrack(m, phrase, row, int(types.ColDeltaTime), trackId)
 	effectiveFilenameIndex := GetEffectiveValueForTrack(m, phrase, row, int(types.ColFilename), trackId)
 	effectiveFilename := GetEffectiveFilenameForTrack(m, phrase, row, trackId)
+	effectiveDucking := GetEffectiveValueForTrack(m, phrase, row, int(types.ColEffectDucking), trackId)
 
 	// Helper to format hex-ish cells
 	formatHex := func(value int) string {
@@ -981,6 +982,8 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 		}
 	}
 
+	oscParams.DuckingIndex = effectiveDucking
+
 	// NEW effect params
 	if rawEffectReverse != -1 {
 		if rawEffectReverse == 0 {
@@ -1216,6 +1219,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 		m.SendOSCInstrumentMessageWithArpeggio(instrumentParams)
 	} else {
 		// For sampler tracks, emit full sampler message
+
 		m.SendOSCSamplerMessage(oscParams)
 	}
 }
@@ -2621,4 +2625,18 @@ func IsTimestrechUnused(m *model.Model, timestrechID int) bool {
 	// Check if timestrech has any meaningful settings - if Start, End, or Beats are non-zero, it's used
 	settings := m.TimestrechSettings[timestrechID]
 	return settings.Start == 0.0 && settings.End == 0.0 && settings.Beats == 0
+}
+
+// ResolveDuckingIndex returns the sticky/effective DU value for a row (or -1)
+func ResolveDuckingIndex(m *model.Model, phrase, row, trackId int) int {
+	return GetEffectiveValueForTrack(m, phrase, row, int(types.ColEffectDucking), trackId)
+}
+
+// ApplyDuckingToSamplerParams clamps and assigns the ducking index to the outgoing params
+func ApplyDuckingToSamplerParams(m *model.Model, params *model.SamplerOSCParams, duckIdx int) {
+	if duckIdx >= 0 && duckIdx < 255 {
+		params.DuckingIndex = duckIdx
+	} else {
+		params.DuckingIndex = -1
+	}
 }

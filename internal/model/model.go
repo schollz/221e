@@ -938,6 +938,7 @@ type SamplerOSCParams struct {
 	HighPassFilter        float32 // Frequency in Hz (20Hz to 20kHz) or -1 for no filter
 	EffectComb            float32 // 0.0 .. 1.0
 	EffectReverb          float32 // 0.0 .. 1.0
+	DuckingIndex          int     // Ducking settings index (DU parameter)
 	Velocity              int     // 0 .. 127 (0x00-0x7F)
 	Update                int     // 1 if this is an update to a playing row, 0 otherwise
 }
@@ -997,7 +998,8 @@ func NewSamplerOSCParams(filename string, trackId int, sliceCount, sliceNumber i
 		EffectComb:            0,
 		EffectReverb:          0,
 		Velocity:              velocity,
-		Update:                0, // Default is not an update
+		Update:                0,  // Default is not an update
+		DuckingIndex:          -1, // Default no ducking,
 	}
 }
 
@@ -1034,6 +1036,7 @@ func NewSamplerOSCParamsWithRetrigger(filename string, trackId, sliceCount, slic
 		Velocity:              velocity,
 		DeltaTime:             deltaTime, // Delta time in seconds
 		Update:                0,         // Default is not an update
+		DuckingIndex:          -1,        // Default no ducking,
 	}
 }
 
@@ -1597,6 +1600,20 @@ func (m *Model) SendOSCSamplerMessage(params SamplerOSCParams) {
 	msg.Append(int32(params.Velocity))
 	msg.Append("deltaTime")
 	msg.Append(float32(params.DeltaTime))
+	if params.DuckingIndex >= 0 && params.DuckingIndex < 255 {
+		ds := m.DuckingSettings[params.DuckingIndex] // Type/Bus/Attack/Release/Depth live here
+		msg.Append("duckingType")
+		msg.Append(int32(ds.Type))
+		msg.Append("duckingBus")
+		msg.Append(int32(ds.Bus))
+		msg.Append("duckingAttack")
+		msg.Append(float32(ds.Attack))
+		msg.Append("duckingRelease")
+		msg.Append(float32(ds.Release))
+		msg.Append("duckingDepth")
+		msg.Append(float32(ds.Depth))
+	}
+
 	// Add update parameter when this is an update to a playing row
 	if params.Update == 1 {
 		msg.Append("update")
