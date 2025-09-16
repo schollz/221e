@@ -412,13 +412,19 @@ func GetPhraseStatusMessage(m *model.Model) string {
 			statusMsg = "No modulate selected"
 		}
 	} else if m.CurrentCol == duUI {
-		// On ducking column - show ducking info
+		// On ducking column - show ducking info with sticky behavior
 		phrasesData := m.GetCurrentPhrasesData()
 		duckingIndex := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColEffectDucking]
 		if duckingIndex >= 0 && duckingIndex < 255 {
-			statusMsg = fmt.Sprintf("Ducking: %02X", duckingIndex)
+			statusMsg = fmt.Sprintf("Ducking: %02X (sticky)", duckingIndex)
 		} else {
-			statusMsg = "No ducking selected"
+			// Check for effective (sticky) Ducking value
+			effectiveDuckingValue := input.GetEffectiveValueForTrack(m, m.CurrentPhrase, m.CurrentRow, int(types.ColEffectDucking), m.CurrentTrack)
+			if effectiveDuckingValue == -1 {
+				statusMsg = "Ducking: -- (sticky)"
+			} else {
+				statusMsg = fmt.Sprintf("Ducking: -- (%02X, sticky)", effectiveDuckingValue)
+			}
 		}
 	} else if m.CurrentCol == fiUI {
 		// On filename column - show file info
@@ -550,11 +556,17 @@ func GetPhraseStatusMessage(m *model.Model) string {
 					statusMsg = fmt.Sprintf("Reverb: %02X (%.2f, sticky)", value, reverbFloat)
 				}
 			} else if colIndex == int(types.ColEffectDucking) {
-				// DU (Ducking) column - show ducking info
+				// DU (Ducking) column - show ducking info with sticky behavior
 				if value == -1 {
-					statusMsg = "No ducking selected"
+					// Check for effective (sticky) Ducking value
+					effectiveDuckingValue := input.GetEffectiveValueForTrack(m, m.CurrentPhrase, m.CurrentRow, int(types.ColEffectDucking), m.CurrentTrack)
+					if effectiveDuckingValue == -1 {
+						statusMsg = "Ducking: -- (sticky)"
+					} else {
+						statusMsg = fmt.Sprintf("Ducking: -- (%02X, sticky)", effectiveDuckingValue)
+					}
 				} else {
-					statusMsg = fmt.Sprintf("Ducking: %02X", value)
+					statusMsg = fmt.Sprintf("Ducking: %02X (sticky)", value)
 				}
 			} else if colIndex == int(types.ColTimestretch) {
 				// TS (Timestretch) column - show timestretch info

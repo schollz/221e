@@ -1236,3 +1236,60 @@ func TestRegularCopyPasteStillWorks(t *testing.T) {
 	pastedIndex := m.SamplerPhrasesData[0][10][types.ColRetrigger]
 	assert.Equal(t, sourceRetriggerIndex, pastedIndex) // Should be same (just reference copy)
 }
+
+// TestDuckingStickyBehavior tests that DU column has sticky behavior
+func TestDuckingStickyBehavior(t *testing.T) {
+	m := createTestModel()
+
+	// Test data: Set up a phrase with ducking values
+	// Row 0: DU = 05
+	// Row 1: DU = -- (should inherit 05)
+	// Row 2: DU = 10
+	// Row 3: DU = -- (should inherit 10)
+	// Row 4: DU = -- (should inherit 10)
+	
+	m.SamplerPhrasesData[0][0][types.ColEffectDucking] = 5
+	m.SamplerPhrasesData[0][1][types.ColEffectDucking] = -1 // "--"
+	m.SamplerPhrasesData[0][2][types.ColEffectDucking] = 16
+	m.SamplerPhrasesData[0][3][types.ColEffectDucking] = -1 // "--"
+	m.SamplerPhrasesData[0][4][types.ColEffectDucking] = -1 // "--"
+
+	trackId := 0 // Test with track 0 (sampler track)
+
+	// Test sticky behavior using GetEffectiveValueForTrack
+	tests := []struct {
+		name     string
+		phrase   int
+		row      int
+		expected int
+	}{
+		{"Row 0: Direct value", 0, 0, 5},
+		{"Row 1: Inherit from row 0", 0, 1, 5},
+		{"Row 2: Direct value", 0, 2, 16},
+		{"Row 3: Inherit from row 2", 0, 3, 16},
+		{"Row 4: Inherit from row 2", 0, 4, 16},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := GetEffectiveValueForTrack(m, tt.phrase, tt.row, int(types.ColEffectDucking), trackId)
+			assert.Equal(t, tt.expected, result, "GetEffectiveValueForTrack should return correct sticky value")
+		})
+	}
+
+	// Test ResolveDuckingIndex function (convenience wrapper)
+	for _, tt := range tests {
+		t.Run(tt.name+" (ResolveDuckingIndex)", func(t *testing.T) {
+			result := ResolveDuckingIndex(m, tt.phrase, tt.row, trackId)
+			assert.Equal(t, tt.expected, result, "ResolveDuckingIndex should return correct sticky value")
+		})
+	}
+
+	// Test edge case: All rows empty
+	m.SamplerPhrasesData[1][0][types.ColEffectDucking] = -1
+	m.SamplerPhrasesData[1][1][types.ColEffectDucking] = -1
+	m.SamplerPhrasesData[1][2][types.ColEffectDucking] = -1
+
+	result := GetEffectiveValueForTrack(m, 1, 2, int(types.ColEffectDucking), trackId)
+	assert.Equal(t, -1, result, "Should return -1 when no non-null values found")
+}
