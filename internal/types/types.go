@@ -539,6 +539,7 @@ type SaveData struct {
 	InstrumentModulateSettings [255]ModulateSettings   `json:"instrumentModulateSettings"` // New separate pools
 	SamplerModulateSettings    [255]ModulateSettings   `json:"samplerModulateSettings"`    // New separate pools
 	DuckingSettings            [255]DuckingSettings    `json:"duckingSettings"`
+	DuckingEditingIndex        int                     `json:"duckingEditingIndex"`
 	ArpeggioSettings           [255]ArpeggioSettings   `json:"arpeggioSettings"`
 	MidiSettings               [255]MidiSettings       `json:"midiSettings"`
 	SoundMakerSettings         [255]SoundMakerSettings `json:"soundMakerSettings"`

@@ -436,7 +436,7 @@ func ModifyDuckingValue(m *model.Model, baseDelta float32) {
 		// Cycle through types: 0=none, 1=ducking, 2=ducked
 		typeNames := []string{"none", "ducking", "ducked"}
 		currentType := settings.Type
-		
+
 		// Ensure current type is within valid range
 		if currentType < 0 || currentType >= len(typeNames) {
 			currentType = 0
