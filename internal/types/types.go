@@ -60,7 +60,7 @@ const (
 	ColHighPassFilter                         // Column 10: HP (high pass filter) (hex, default -1/null, 00-FE maps 20Hz to 20kHz exponentially)
 	ColEffectComb                             // Column 11: CO (00-FE)
 	ColEffectReverb                           // Column 12: VE (00-FE)
-	ColEffectDucking                          // Column 13: DU (00-FE)
+	ColEffectDucking                          // Column 13: DU (00-FE, sticky)
 	ColFilename                               // Column 14: Filename index
 	ColChord                                  // Column 15: Chord (Instrument view only: "-", "M", "m", "d")
 	ColChordAddition                          // Column 16: Chord Addition (Instrument view only: "-", "7", "9", "4")
