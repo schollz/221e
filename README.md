@@ -70,13 +70,13 @@ Grab the latest build from **[Releases](https://github.com/schollz/collidertrack
 
 ### Command-line Options
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `-p, --project <dir>` | `save` | Project directory for songs and audio files |
-| `--port <port>` | `57120` | OSC port for SuperCollider communication |
-| `-r, --record` | `false` | Enable automatic session recording (entire session to SuperCollider recordings folder) |
-| `-s, --skip-sc` | `false` | Skip SuperCollider management (assume SC running) |
-| `-l, --log <file>` | - | Write debug logs to specified file |
+| Flag                  | Default | Description                                                                            |
+| --------------------- | ------- | -------------------------------------------------------------------------------------- |
+| `-p, --project <dir>` | `save`  | Project directory for songs and audio files                                            |
+| `--port <port>`       | `57120` | OSC port for SuperCollider communication                                               |
+| `-r, --record`        | `false` | Enable automatic session recording (entire session to SuperCollider recordings folder) |
+| `-s, --skip-sc`       | `false` | Skip SuperCollider management (assume SC running)                                      |
+| `-l, --log <file>`    | -       | Write debug logs to specified file                                                     |
 
 ## Keyboard — Quick Reference
 
@@ -93,10 +93,10 @@ Grab the latest build from **[Releases](https://github.com/schollz/collidertrack
 
 ### Navigation Within Views
 
-| Key Combo      | Description                                                 |
-| -------------- | ----------------------------------------------------------- |
-| **Arrow keys** | Move cursor/navigate within current view                    |
-| **Left/Right** | Navigate tracks (Song), chains (Chain), or columns (Phrase) |
+| Key Combo       | Description                                                    |
+| --------------- | -------------------------------------------------------------- |
+| **Arrow keys**  | Move cursor/navigate within current view                       |
+| **Left/Right**  | Navigate tracks (Song), chains (Chain), or columns (Phrase)    |
 | **PgUp/PgDown** | Jump to previous/next 16-row boundary (0x00, 0x10, 0x20, etc.) |
 
 ### Playback and Recording
@@ -145,13 +145,13 @@ ColliderTracker offers two types of recording:
 
 ### File Operations and System
 
-| Key Combo  | Description                                 |
-| ---------- | ------------------------------------------- |
-| **Ctrl+S** | Manual save                                 |
-| **Ctrl+F** | Smart fill/clear for DT column (Delta Time) |
+| Key Combo  | Description                                                                |
+| ---------- | -------------------------------------------------------------------------- |
+| **Ctrl+S** | Manual save                                                                |
+| **Ctrl+F** | Smart fill/clear for DT column (Delta Time)                                |
 | **Ctrl+O** | Open project selector to switch projects (press "n" to create new project) |
-| **Esc**    | Clear selection highlight                   |
-| **Ctrl+Q** | Quit                                        |
+| **Esc**    | Clear selection highlight                                                  |
+| **Ctrl+Q** | Quit                                                                       |
 
 ## Views
 
@@ -389,15 +389,15 @@ After building, verify the binary works:
 - Version information can be embedded using: `go build -ldflags "-X main.Version=<version>"`
 
 ## Big list of trackers
-
 ## Popular Modern / Commercial
 
 - [Renoise](https://www.renoise.com/)
 - [SunVox](https://www.warmplace.ru/soft/sunvox/)
 - [DefleMask](https://deflemask.com/)
-- [dirtywave m8](https://dirtywave.com/
+- [dirtywave m8](https://dirtywave.com/)
 
-### Cross-platform / General Trackers
+
+## Cross-Platform / General Trackers & Experimental
 
 - [OpenMPT (ModPlug Tracker)](https://github.com/OpenMPT/openmpt)
 - [MilkyTracker](https://github.com/milkytracker/MilkyTracker)
@@ -409,8 +409,12 @@ After building, verify the binary works:
 - [SoundTracker (GTK/Unix)](https://www.soundtracker.org/) · [Source](https://sourceforge.net/p/soundtracker/git/ci/master/tree/)
 - [ChibiTracker](https://github.com/reduz/chibitracker)
 - [Propulse Tracker](https://github.com/hukkax/Propulse)
+- [Pata Tracker](https://pixwlk.itch.io/pata-tracker) 
+- [Oxide Tracker](https://paranoidcactus.itch.io/oxidetracker) 
+- [WaveTracker](https://squiggythings.itch.io/wavetracker) 
 
-### Classic Trackers & Clones
+
+## Classic Trackers & Clones
 
 - [FastTracker II (original info)](https://en.wikipedia.org/wiki/FastTracker_2) · [ft2-clone](https://github.com/8bitbubsy/ft2-clone)
 - [ProTracker 2 clone (pt2-clone)](https://github.com/8bitbubsy/pt2-clone)
@@ -420,41 +424,47 @@ After building, verify the binary works:
 - [Skale Tracker](http://www.skale.org/)
 - [MadTracker](https://www.madtracker.org/)
 
-### Web / Browser Trackers
 
-- [BassoonTracker](https://github.com/steffest/BassoonTracker) · [Live Demo](http://www.stef.be/bassoontracker/)
-
-### Game Boy / NES / Console-focused
+## Game Boy / NES / Console-Focused / Chiptune
 
 - [LSDj (Little Sound Dj)](https://littlesounddj.com/25th/)
 - [0CC-FamiTracker](https://github.com/0xCDA/0CC-FamiTracker)
 - [FamiStudio](https://github.com/BleuBleu/FamiStudio) · [Website](https://famistudio.org/)
 - [LittleGPTracker (LGPT)](https://github.com/Mdashdotdashn/LittleGPTracker) · [Website](https://www.littlegptracker.com/)
 - [NitroTracker](https://nitrotracker.tobw.net/) · [GitHub Fork](https://github.com/TobWen/NitroTracker)
+- [klystrack](https://kometbomb.github.io/klystrack/) · [Itch.io page](https://kometbomb.itch.io/klystrack)
+- [Lovely Composer](https://lovelycomposer.itch.io/lovely-composer) 
 
-### Commodore 64 / SID
+
+## Commodore 64 / SID
 
 - [GoatTracker 2](https://sourceforge.net/projects/goattracker2/)
 - [SID Factory II](https://github.com/Chordian/sidfactory2)
 - [CheeseCutter](https://github.com/theyamo/CheeseCutter)
 - [SID-Wizard (C64 release info)](https://csdb.dk/release/?id=221555)
+- [JITT64 (Java Ice Team Tracker)](https://iceteam.itch.io/jitt64) 
 
-### Yamaha / PC-98 / FM & Multi-chip
+
+## Yamaha / FM & Multi-Chip
 
 - [BambooTracker](https://bambootracker.github.io/BambooTracker/)
-- [klystrack](https://kometbomb.github.io/klystrack/)
+- [klystrack](https://kometbomb.github.io/klystrack/) *(also listed under Chiptune)*
 - [Protrekkr](https://github.com/hitchhikr/protrekkr)
+- [Reality Adlib Tracker (RAD)](https://realityproductions.itch.io/rad) 
 
-### Amiga / ProTracker Family
 
-- [ProTracker 2 clone](https://github.com/8bitbubsy/pt2-clone)
-- [FT2 clone](https://github.com/8bitbubsy/ft2-clone)
-- [HivelyTracker](https://github.com/petet/hivelytracker)
+## Web / Browser / Mobile Trackers
 
-### Niche
+- [BassoonTracker](https://github.com/steffest/BassoonTracker) · [Live Demo](http://www.stef.be/bassoontracker/)
+- [XO-Tracker DEMO](https://kouzeru.itch.io/xo-tracker-demo) 
+- [Sound Composer NX](https://kero.itch.io/sound-composer-nx) 
+
+## Niche / Experimental
 
 - [Shield Tracker (sTracker)](https://bleep.toys/) · [Shortcuts](https://bleep.toys/stracker/keyboard_shortcuts.html)
 - [1tracker (1-bit ZX/retro)](https://randomflux.info/1bit/viewtopic.php?id=24&p=4)
+- [WaveTracker](https://squiggythings.itch.io/wavetracker) *(Itch.io, also listed under General)*
+- [Oxide Tracker](https://paranoidcactus.itch.io/oxidetracker) *(Itch.io, also listed under General)*
 
 ## License
 
