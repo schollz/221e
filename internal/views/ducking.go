@@ -98,6 +98,19 @@ func RenderDuckingView(m *model.Model) string {
 	}
 	depthRow := fmt.Sprintf("  %-14s %s", labelStyle.Render(depthLabel), depthCell)
 	content.WriteString(depthRow)
+	content.WriteString("\n")
+
+	// Thresh setting
+	threshLabel := "Thresh:"
+	threshValue := fmt.Sprintf("%.2f", settings.Thresh)
+	var threshCell string
+	if m.CurrentRow == 5 {
+		threshCell = selectedStyle.Render(threshValue)
+	} else {
+		threshCell = normalStyle.Render(threshValue)
+	}
+	threshRow := fmt.Sprintf("  %-14s %s", labelStyle.Render(threshLabel), threshCell)
+	content.WriteString(threshRow)
 	content.WriteString("\n\n")
 
 	// Footer with status

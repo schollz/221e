@@ -336,6 +336,7 @@ type DuckingSettings struct {
 	Attack  float32 `json:"attack"`  // Attack time: 0.0-2.0 seconds
 	Release float32 `json:"release"` // Release time: 0.0-2.0 seconds
 	Depth   float32 `json:"depth"`   // Depth: 0.0-1.0
+	Thresh  float32 `json:"thresh"`  // Threshold: 0.0-1.0, default 0.02
 }
 
 // ArpeggioDirection represents different arpeggio directions
@@ -453,6 +454,7 @@ const (
 	DuckingSettingsRowAttack                            // 2: Attack
 	DuckingSettingsRowRelease                           // 3: Release
 	DuckingSettingsRowDepth                             // 4: Depth
+	DuckingSettingsRowThresh                            // 5: Thresh
 )
 
 type ArpeggioRow struct {
