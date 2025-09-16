@@ -308,6 +308,25 @@ s.waitForBoot({
 				// volume
 				snd = snd * trackVolume.dbamp * \velocity.kr(100).min(127).max(0).linlin(0,127,-24,24).dbamp;
 
+				// check if signal is ducked
+				snd = snd * Select.ar(\duckingType.kr(0),[
+					// 0 = not ducked
+					DC.ar(1),
+					// 1 = not ducked 
+					DC.ar(1),
+					// 2 = ducked
+					Amplitude.ar(In.ar(\duckingBusIn.kr(0),1),\duckingAttack.kr(0.1),\duckingRelease.kr(0.1))
+						.linlin(0,1,1 - \duckingDepth.kr(0).min(0.99),1).clip(0.01,1),
+				]);
+				Out.ar(\duckingBusOut.kr(0), snd * Select.ar(\duckingType.kr(0),[
+					// 0 = not ducking
+					DC.ar(0),
+					// 1 = is ducking
+					DC.ar(1),
+					// 2 = not ducking
+					DC.ar(0),
+				]));
+
 				// Feedback
 				LocalOut.ar(retrigCount);
 				Out.ar(trackOut, snd*(1.0 - effectReverb));
@@ -389,6 +408,7 @@ s.waitForBoot({
 		~busComb = Bus.audio(s, 2);
 		~busDisk = Bus.audio(s, 2);
 		~busTrack = Array.fill(9, { Bus.audio(s, 2) });
+		~busDucking = Array.fill(9, { Bus.audio(s, 1) });
 		s.sync;
 		~synOut = Synth.tail(s,"out",[
 			busReverb: ~busReverb,
@@ -507,6 +527,18 @@ s.waitForBoot({
 				[k,v].postln;
 			    if (v.isNumber) { v.round(1.0/128.0) } { v }
 			};
+
+			// rewrite ducking bus
+
+			if (dict.includesKey(\duckingBus),{
+				dict.put(\duckingBusIn, ~busDucking[dict[\duckingBus]]);
+				dict.put(\duckingBusOut, ~busDucking[dict[\duckingBus]]);
+				dict.removeAt(\duckingBus);
+			},{
+				// nothing happens on bus 8
+				dict.put(\duckingBusIn, ~busDucking[8]);
+				dict.put(\duckingBusOut, ~busDucking[8]);
+			});
 
 			// create a new dictionary for the track if it doesn't exist
 			if (~samplesPlaying.at(track).isNil,{
