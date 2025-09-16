@@ -504,6 +504,7 @@ s.waitForBoot({
 			dict.putPairs(msg.copyToEnd(3));
 			// round numbers to 1/128 in place
 			dict.keysValuesChange { |k, v|
+				[k,v].postln;
 			    if (v.isNumber) { v.round(1.0/128.0) } { v }
 			};
 

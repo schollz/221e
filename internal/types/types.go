@@ -20,6 +20,7 @@ const (
 	ArpeggioView
 	MidiView
 	SoundMakerView
+	DuckingView
 )
 
 type PhraseViewType int
@@ -59,18 +60,19 @@ const (
 	ColHighPassFilter                         // Column 10: HP (high pass filter) (hex, default -1/null, 00-FE maps 20Hz to 20kHz exponentially)
 	ColEffectComb                             // Column 11: CO (00-FE)
 	ColEffectReverb                           // Column 12: VE (00-FE)
-	ColFilename                               // Column 13: Filename index
-	ColChord                                  // Column 14: Chord (Instrument view only: "-", "M", "m", "d")
-	ColChordAddition                          // Column 15: Chord Addition (Instrument view only: "-", "7", "9", "4")
-	ColChordTransposition                     // Column 16: Chord Transposition (Instrument view only: "-", "0"-"F")
-	ColArpeggio                               // Column 17: Arpeggio (Instrument view only: 00-FE)
-	ColMidi                                   // Column 18: MIDI (Instrument view only: 00-FE, sticky)
-	ColSoundMaker                             // Column 19: SoundMaker (Instrument view only: 00-FE, sticky)
-	ColAttack                                 // Column 20: Attack (Instrument view only: 00-FE, 0.02-30s exponential, default -1, sticky)
-	ColDecay                                  // Column 21: Decay (Instrument view only: 00-FE, 0.0-30.0s linear, default -1, sticky)
-	ColSustain                                // Column 22: Sustain (Instrument view only: 00-FE, 0.0-1.0 linear, default -1, sticky)
-	ColRelease                                // Column 23: Release (Instrument view only: 00-FE, 0.02-30s exponential, default -1, sticky)
-	ColVelocity                               // Column 24: Velocity (VE) (00-7F, 0-127)
+	ColEffectDucking                          // Column 13: DU (00-FE)
+	ColFilename                               // Column 14: Filename index
+	ColChord                                  // Column 15: Chord (Instrument view only: "-", "M", "m", "d")
+	ColChordAddition                          // Column 16: Chord Addition (Instrument view only: "-", "7", "9", "4")
+	ColChordTransposition                     // Column 17: Chord Transposition (Instrument view only: "-", "0"-"F")
+	ColArpeggio                               // Column 18: Arpeggio (Instrument view only: 00-FE)
+	ColMidi                                   // Column 19: MIDI (Instrument view only: 00-FE, sticky)
+	ColSoundMaker                             // Column 20: SoundMaker (Instrument view only: 00-FE, sticky)
+	ColAttack                                 // Column 21: Attack (Instrument view only: 00-FE, 0.02-30s exponential, default -1, sticky)
+	ColDecay                                  // Column 22: Decay (Instrument view only: 00-FE, 0.0-30.0s linear, default -1, sticky)
+	ColSustain                                // Column 23: Sustain (Instrument view only: 00-FE, 0.0-1.0 linear, default -1, sticky)
+	ColRelease                                // Column 24: Release (Instrument view only: 00-FE, 0.02-30s exponential, default -1, sticky)
+	ColVelocity                               // Column 25: Velocity (VE) (00-7F, 0-127)
 	ColCount                                  // Total number of columns
 )
 
@@ -198,7 +200,8 @@ const (
 	SamplerColHP  SamplerUIColumn = 12 // HP - High Pass Filter
 	SamplerColCO  SamplerUIColumn = 13 // CO - Comb
 	SamplerColRE  SamplerUIColumn = 14 // RE - Reverb
-	SamplerColFI  SamplerUIColumn = 15 // FI - Filename
+	SamplerColDU  SamplerUIColumn = 15 // DU - Ducking
+	SamplerColFI  SamplerUIColumn = 16 // FI - Filename
 )
 
 // UI Column positions for Arpeggio View - to prevent hardcoding issues
@@ -327,6 +330,14 @@ type ModulateSettings struct {
 	Scale     string `json:"scale"`     // Scale selection: "all", "major", "minor", etc.
 }
 
+type DuckingSettings struct {
+	Type    int     `json:"type"`    // Type: 0=none, 1=ducking, 2=ducked
+	Bus     int     `json:"bus"`     // Bus: 0-7
+	Attack  float32 `json:"attack"`  // Attack time: 0.0-2.0 seconds
+	Release float32 `json:"release"` // Release time: 0.0-2.0 seconds
+	Depth   float32 `json:"depth"`   // Depth: 0.0-1.0
+}
+
 // ArpeggioDirection represents different arpeggio directions
 type ArpeggioDirection int
 
@@ -433,6 +444,17 @@ const (
 	ModulateSettingsRowScale                                // 5: Scale
 )
 
+// DuckingSettingsRow represents different rows in the ducking settings view
+type DuckingSettingsRow int
+
+const (
+	DuckingSettingsRowType    DuckingSettingsRow = iota // 0: Type
+	DuckingSettingsRowBus                               // 1: Bus
+	DuckingSettingsRowAttack                            // 2: Attack
+	DuckingSettingsRowRelease                           // 3: Release
+	DuckingSettingsRowDepth                             // 4: Depth
+)
+
 type ArpeggioRow struct {
 	Direction int `json:"direction"` // Direction: 0="--", 1="u-", 2="d-"
 	Count     int `json:"count"`     // Count: -1="--", 0-254 for hex values 00-FE
@@ -516,6 +538,7 @@ type SaveData struct {
 	ModulateSettings           [255]ModulateSettings   `json:"modulateSettings"`           // Legacy field for backward compatibility
 	InstrumentModulateSettings [255]ModulateSettings   `json:"instrumentModulateSettings"` // New separate pools
 	SamplerModulateSettings    [255]ModulateSettings   `json:"samplerModulateSettings"`    // New separate pools
+	DuckingSettings            [255]DuckingSettings    `json:"duckingSettings"`
 	ArpeggioSettings           [255]ArpeggioSettings   `json:"arpeggioSettings"`
 	MidiSettings               [255]MidiSettings       `json:"midiSettings"`
 	SoundMakerSettings         [255]SoundMakerSettings `json:"soundMakerSettings"`

@@ -423,3 +423,115 @@ func ModifyModulateValue(m *model.Model, baseDelta float32) {
 	(*m.GetCurrentModulateSettings())[m.ModulateEditingIndex] = settings
 	storage.AutoSave(m)
 }
+
+func ModifyDuckingValue(m *model.Model, baseDelta float32) {
+	if m.DuckingEditingIndex < 0 || m.DuckingEditingIndex >= 255 {
+		return
+	}
+
+	// Get current settings
+	settings := m.DuckingSettings[m.DuckingEditingIndex]
+
+	if m.CurrentRow == 0 { // Type
+		// Cycle through types: 0=none, 1=ducking, 2=ducked
+		typeNames := []string{"none", "ducking", "ducked"}
+		currentType := settings.Type
+		
+		// Ensure current type is within valid range
+		if currentType < 0 || currentType >= len(typeNames) {
+			currentType = 0
+		}
+
+		// Move to next/previous type
+		var newType int
+		if baseDelta > 0 {
+			newType = (currentType + 1) % len(typeNames)
+		} else {
+			newType = (currentType - 1 + len(typeNames)) % len(typeNames)
+		}
+
+		oldTypeName := typeNames[currentType]
+		settings.Type = newType
+		log.Printf("Modified ducking %02X Type: %s -> %s", m.DuckingEditingIndex, oldTypeName, typeNames[newType])
+	} else if m.CurrentRow == 1 { // Bus
+		// Use different increments: 4 for coarse, 1 for fine (based on Ctrl+Up/Down vs Ctrl+Left/Right)
+		var delta int
+		if baseDelta == 1.0 || baseDelta == -1.0 {
+			delta = int(baseDelta) * 4 // Coarse control (Ctrl+Up/Down): +/-4
+		} else if baseDelta == 0.05 || baseDelta == -0.05 {
+			delta = int(baseDelta / 0.05) // Fine control (Ctrl+Left/Right): +/-1
+		} else {
+			delta = int(baseDelta) // Fallback
+		}
+
+		newBus := settings.Bus + delta
+		if newBus < 0 {
+			newBus = 0
+		} else if newBus > 7 {
+			newBus = 7
+		}
+		settings.Bus = newBus
+		log.Printf("Modified ducking %02X Bus: %d -> %d (delta: %d)", m.DuckingEditingIndex, settings.Bus-delta, settings.Bus, delta)
+	} else if m.CurrentRow == 2 { // Attack
+		// Use different increments: 0.1 for coarse, 0.01 for fine (based on Ctrl+Up/Down vs Ctrl+Left/Right)
+		var delta float32
+		if baseDelta == 1.0 || baseDelta == -1.0 {
+			delta = baseDelta * 0.1 // Coarse control (Ctrl+Up/Down): +/-0.1s
+		} else if baseDelta == 0.05 || baseDelta == -0.05 {
+			delta = baseDelta * 0.2 // Fine control (Ctrl+Left/Right): +/-0.01s
+		} else {
+			delta = baseDelta * 0.1 // Fallback
+		}
+
+		newAttack := settings.Attack + delta
+		if newAttack < 0.0 {
+			newAttack = 0.0
+		} else if newAttack > 2.0 {
+			newAttack = 2.0
+		}
+		settings.Attack = newAttack
+		log.Printf("Modified ducking %02X Attack: %.2f -> %.2f (delta: %.2f)", m.DuckingEditingIndex, settings.Attack-delta, settings.Attack, delta)
+	} else if m.CurrentRow == 3 { // Release
+		// Use different increments: 0.1 for coarse, 0.01 for fine (based on Ctrl+Up/Down vs Ctrl+Left/Right)
+		var delta float32
+		if baseDelta == 1.0 || baseDelta == -1.0 {
+			delta = baseDelta * 0.1 // Coarse control (Ctrl+Up/Down): +/-0.1s
+		} else if baseDelta == 0.05 || baseDelta == -0.05 {
+			delta = baseDelta * 0.2 // Fine control (Ctrl+Left/Right): +/-0.01s
+		} else {
+			delta = baseDelta * 0.1 // Fallback
+		}
+
+		newRelease := settings.Release + delta
+		if newRelease < 0.0 {
+			newRelease = 0.0
+		} else if newRelease > 2.0 {
+			newRelease = 2.0
+		}
+		settings.Release = newRelease
+		log.Printf("Modified ducking %02X Release: %.2f -> %.2f (delta: %.2f)", m.DuckingEditingIndex, settings.Release-delta, settings.Release, delta)
+	} else if m.CurrentRow == 4 { // Depth
+		// Use different increments: 0.1 for coarse, 0.01 for fine (based on Ctrl+Up/Down vs Ctrl+Left/Right)
+		var delta float32
+		if baseDelta == 1.0 || baseDelta == -1.0 {
+			delta = baseDelta * 0.1 // Coarse control (Ctrl+Up/Down): +/-0.1
+		} else if baseDelta == 0.05 || baseDelta == -0.05 {
+			delta = baseDelta * 0.2 // Fine control (Ctrl+Left/Right): +/-0.01
+		} else {
+			delta = baseDelta * 0.1 // Fallback
+		}
+
+		newDepth := settings.Depth + delta
+		if newDepth < 0.0 {
+			newDepth = 0.0
+		} else if newDepth > 1.0 {
+			newDepth = 1.0
+		}
+		settings.Depth = newDepth
+		log.Printf("Modified ducking %02X Depth: %.2f -> %.2f (delta: %.2f)", m.DuckingEditingIndex, settings.Depth-delta, settings.Depth, delta)
+	}
+
+	// Store back the modified settings
+	m.DuckingSettings[m.DuckingEditingIndex] = settings
+	storage.AutoSave(m)
+}

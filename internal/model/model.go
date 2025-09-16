@@ -100,6 +100,8 @@ type Model struct {
 	MidiEditingIndex       int                           // Currently editing MIDI index
 	SoundMakerSettings     [255]types.SoundMakerSettings // Array of SoundMaker settings (00-FE)
 	SoundMakerEditingIndex int                           // Currently editing SoundMaker index
+	DuckingSettings        [255]types.DuckingSettings    // Array of ducking settings (00-FE)
+	DuckingEditingIndex    int                           // Currently editing ducking index
 	// View navigation state
 	LastChainRow  int // Last selected row in chain view
 	LastPhraseRow int // Last selected row in phrase view
@@ -422,7 +424,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 		}
 	} else {
 		// Sampler view: Custom mapping after adding VE and MO columns
-		// New order: SL (0), DT (1), NN (2), VE (3), PI (4), GT (5), RT (6), TS (7), MO (8), Я (9), PA (10), LP (11), HP (12), CO (13), RE (14), FI (15)
+		// New order: SL (0), DT (1), NN (2), VE (3), PI (4), GT (5), RT (6), TS (7), MO (8), Я (9), PA (10), LP (11), HP (12), CO (13), RE (14), DU (15), FI (16)
 		switch uiColumn {
 		case int(types.SamplerColSL): // SL - display only
 			return &ColumnMapping{
@@ -559,9 +561,18 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "RE",
 			}
+		case int(types.SamplerColDU): // DU - Ducking
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColEffectDucking), // Now index 13
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "DU",
+			}
 		case int(types.SamplerColFI): // FI - Filename
 			return &ColumnMapping{
-				DataColumnIndex: int(types.ColFilename), // Now index 13
+				DataColumnIndex: int(types.ColFilename), // Now index 14
 				IsEditable:      true,
 				IsCopyable:      true,
 				IsPasteable:     true,

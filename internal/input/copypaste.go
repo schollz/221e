@@ -186,6 +186,7 @@ func CutRowToClipboard(m *model.Model) {
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColGate)] = -1                               // Clear gate (displays "--", behaves as 80)
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColRetrigger)] = -1                          // Clear retrigger
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColTimestretch)] = -1                        // Clear timestretch
+		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColEffectDucking)] = -1                      // Clear ducking
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColModulate)] = -1                           // Clear modulation
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColEffectReverse)] = -1                      // Clear effect reverse
 		(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColPan)] = -1                                // Clear pan

@@ -30,7 +30,7 @@ func RenderSamplerPhraseView(m *model.Model) string {
 	var content strings.Builder
 
 	// Render header (Я is a single-character column)
-	columnHeader := "  SL  DT  NN  MO  VE  PI  GT  RT  TS  Я  PA  LP  HP  CO  RE  FI"
+	columnHeader := "  SL  DT  NN  MO  VE  PI  GT  RT  TS  Я  PA  LP  HP  CO  RE  DU  FI"
 	phrasesData := m.GetCurrentPhrasesData()
 	totalTicks := ticks.CalculatePhraseTicks(phrasesData, m.CurrentPhrase)
 	phraseHeader := fmt.Sprintf("Phrase %02X (%d ticks)", m.CurrentPhrase, totalTicks)
@@ -324,7 +324,25 @@ func RenderSamplerPhraseView(m *model.Model) string {
 			reverbCell = normalStyle.Render(reverbText)
 		}
 
-		// Filename (FI) - first 8 characters - now at position 15
+		// DU (EffectDucking) - now at position 15
+		duckingText := "--"
+		if (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColEffectDucking] != -1 {
+			duckingText = fmt.Sprintf("%02X", (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColEffectDucking])
+		}
+		var duckingCell string
+		if m.CurrentRow == dataIndex && m.CurrentCol == 15 {
+			duckingCell = selectedStyle.Render(duckingText)
+		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
+			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == 15) {
+				duckingCell = copiedStyle.Render(duckingText)
+			} else {
+				duckingCell = normalStyle.Render(duckingText)
+			}
+		} else {
+			duckingCell = normalStyle.Render(duckingText)
+		}
+
+		// Filename (FI) - first 8 characters - now at position 16
 		fiText := "--------"
 		fileIndex := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColFilename]
 		phrasesFiles := m.GetCurrentPhrasesFiles()
@@ -338,10 +356,10 @@ func RenderSamplerPhraseView(m *model.Model) string {
 			}
 		}
 		var fiCell string
-		if m.CurrentRow == dataIndex && m.CurrentCol == 15 {
+		if m.CurrentRow == dataIndex && m.CurrentCol == 16 {
 			fiCell = selectedStyle.Render(fiText)
 		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
-			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == 15) {
+			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == 16) {
 				fiCell = copiedStyle.Render(fiText)
 			} else {
 				fiCell = normalStyle.Render(fiText)
@@ -351,8 +369,8 @@ func RenderSamplerPhraseView(m *model.Model) string {
 		}
 
 		// NOTE the %-1s for Я to keep it one character wide
-		row := fmt.Sprintf("%s %-3s  %-3s  %-3s  %-3s  %-3s  %-3s  %-3s  %-3s  %-3s  %-1s  %-3s  %-3s  %-3s  %-3s  %-3s  %-8s",
-			arrow, sliceCell, dtCell, noteCell, moCell, velocityCell, pitchCell, gtCell, rtCell, tsCell, revCell, paCell, lpCell, hpCell, combCell, reverbCell, fiCell)
+		row := fmt.Sprintf("%s %-3s  %-3s  %-3s  %-3s  %-3s  %-3s  %-3s  %-3s  %-3s  %-1s  %-3s  %-3s  %-3s  %-3s  %-3s  %-3s  %-8s",
+			arrow, sliceCell, dtCell, noteCell, moCell, velocityCell, pitchCell, gtCell, rtCell, tsCell, revCell, paCell, lpCell, hpCell, combCell, reverbCell, duckingCell, fiCell)
 		content.WriteString(row)
 		content.WriteString("\n")
 	}
@@ -371,6 +389,7 @@ func GetPhraseStatusMessage(m *model.Model) string {
 	// Use correct sampler UI column indices
 	rtUI := int(types.SamplerColRT)
 	moUI := int(types.SamplerColMO)
+	duUI := int(types.SamplerColDU)
 	fiUI := int(types.SamplerColFI)
 
 	if m.CurrentCol == rtUI {
@@ -390,6 +409,15 @@ func GetPhraseStatusMessage(m *model.Model) string {
 			statusMsg = fmt.Sprintf("Modulate: %02X", modulateIndex)
 		} else {
 			statusMsg = "No modulate selected"
+		}
+	} else if m.CurrentCol == duUI {
+		// On ducking column - show ducking info
+		phrasesData := m.GetCurrentPhrasesData()
+		duckingIndex := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColEffectDucking]
+		if duckingIndex >= 0 && duckingIndex < 255 {
+			statusMsg = fmt.Sprintf("Ducking: %02X", duckingIndex)
+		} else {
+			statusMsg = "No ducking selected"
 		}
 	} else if m.CurrentCol == fiUI {
 		// On filename column - show file info
@@ -519,6 +547,13 @@ func GetPhraseStatusMessage(m *model.Model) string {
 				} else {
 					reverbFloat := float32(value) / 254.0
 					statusMsg = fmt.Sprintf("Reverb: %02X (%.2f, sticky)", value, reverbFloat)
+				}
+			} else if colIndex == int(types.ColEffectDucking) {
+				// DU (Ducking) column - show ducking info
+				if value == -1 {
+					statusMsg = "No ducking selected"
+				} else {
+					statusMsg = fmt.Sprintf("Ducking: %02X", value)
 				}
 			} else if colIndex == int(types.ColTimestretch) {
 				// TS (Timestretch) column - show timestretch info
