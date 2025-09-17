@@ -451,9 +451,9 @@ type DuckingSettingsRow int
 const (
 	DuckingSettingsRowType    DuckingSettingsRow = iota // 0: Type
 	DuckingSettingsRowBus                               // 1: Bus
-	DuckingSettingsRowAttack                            // 2: Attack
-	DuckingSettingsRowRelease                           // 3: Release
-	DuckingSettingsRowDepth                             // 4: Depth
+	DuckingSettingsRowDepth                             // 2: Depth
+	DuckingSettingsRowAttack                            // 3: Attack
+	DuckingSettingsRowRelease                           // 4: Release
 	DuckingSettingsRowThresh                            // 5: Thresh
 )
 

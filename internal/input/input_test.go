@@ -1247,7 +1247,7 @@ func TestDuckingStickyBehavior(t *testing.T) {
 	// Row 2: DU = 10
 	// Row 3: DU = -- (should inherit 10)
 	// Row 4: DU = -- (should inherit 10)
-	
+
 	m.SamplerPhrasesData[0][0][types.ColEffectDucking] = 5
 	m.SamplerPhrasesData[0][1][types.ColEffectDucking] = -1 // "--"
 	m.SamplerPhrasesData[0][2][types.ColEffectDucking] = 16

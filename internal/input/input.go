@@ -795,6 +795,11 @@ func handleUp(m *model.Model) tea.Cmd {
 		if m.CurrentRow > 0 {
 			m.CurrentRow = m.CurrentRow - 1
 		}
+		// When changing type from 2 to something else, reset position if we're beyond visible rows
+		settings := m.DuckingSettings[m.DuckingEditingIndex]
+		if settings.Type != 2 && m.CurrentRow > int(types.DuckingSettingsRowDepth) {
+			m.CurrentRow = int(types.DuckingSettingsRowDepth)
+		}
 	} else if m.ViewMode == types.MixerView {
 		if m.CurrentMixerRow > 0 {
 			m.CurrentMixerRow = m.CurrentMixerRow - 1
@@ -893,7 +898,15 @@ func handleDown(m *model.Model) tea.Cmd {
 			}
 		}
 	} else if m.ViewMode == types.DuckingView {
-		if m.CurrentRow < int(types.DuckingSettingsRowThresh) { // Type(0) to Thresh(5)
+		// Get current ducking settings to check type
+		settings := m.DuckingSettings[m.DuckingEditingIndex]
+		var maxRow int
+		if settings.Type == 2 { // ducked type - show all rows including Attack, Release, Thresh
+			maxRow = int(types.DuckingSettingsRowThresh) // Type(0) to Thresh(5)
+		} else { // none or ducking type - only show Type, Bus, Depth
+			maxRow = int(types.DuckingSettingsRowDepth) // Type(0) to Depth(2)
+		}
+		if m.CurrentRow < maxRow {
 			m.CurrentRow = m.CurrentRow + 1
 		}
 	} else if m.ViewMode == types.MixerView {

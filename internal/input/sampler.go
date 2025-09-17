@@ -453,6 +453,11 @@ func ModifyDuckingValue(m *model.Model, baseDelta float32) {
 		oldTypeName := typeNames[currentType]
 		settings.Type = newType
 		log.Printf("Modified ducking %02X Type: %s -> %s", m.DuckingEditingIndex, oldTypeName, typeNames[newType])
+
+		// If we changed away from "ducked" type (2) and we're on a row that shouldn't be visible, move to a valid row
+		if newType != 2 && m.CurrentRow > 2 {
+			m.CurrentRow = 2 // Move to Depth row
+		}
 	} else if m.CurrentRow == 1 { // Bus
 		// Use different increments: 4 for coarse, 1 for fine (based on Ctrl+Up/Down vs Ctrl+Left/Right)
 		var delta int
@@ -491,7 +496,7 @@ func ModifyDuckingValue(m *model.Model, baseDelta float32) {
 		}
 		settings.Depth = newDepth
 		log.Printf("Modified ducking %02X Depth: %.2f -> %.2f (delta: %.2f)", m.DuckingEditingIndex, settings.Depth-delta, settings.Depth, delta)
-	} else if m.CurrentRow == 3 { // Attack
+	} else if settings.Type == 2 && m.CurrentRow == 3 { // Attack (only when type is ducked)
 		// Use different increments: 0.1 for coarse, 0.01 for fine (based on Ctrl+Up/Down vs Ctrl+Left/Right)
 		var delta float32
 		if baseDelta == 1.0 || baseDelta == -1.0 {
@@ -510,7 +515,7 @@ func ModifyDuckingValue(m *model.Model, baseDelta float32) {
 		}
 		settings.Attack = newAttack
 		log.Printf("Modified ducking %02X Attack: %.2f -> %.2f (delta: %.2f)", m.DuckingEditingIndex, settings.Attack-delta, settings.Attack, delta)
-	} else if m.CurrentRow == 4 { // Release
+	} else if settings.Type == 2 && m.CurrentRow == 4 { // Release (only when type is ducked)
 		// Use different increments: 0.1 for coarse, 0.01 for fine (based on Ctrl+Up/Down vs Ctrl+Left/Right)
 		var delta float32
 		if baseDelta == 1.0 || baseDelta == -1.0 {
@@ -529,7 +534,7 @@ func ModifyDuckingValue(m *model.Model, baseDelta float32) {
 		}
 		settings.Release = newRelease
 		log.Printf("Modified ducking %02X Release: %.2f -> %.2f (delta: %.2f)", m.DuckingEditingIndex, settings.Release-delta, settings.Release, delta)
-	} else if m.CurrentRow == 5 { // Thresh
+	} else if settings.Type == 2 && m.CurrentRow == 5 { // Thresh (only when type is ducked)
 		// Use different increments: 0.1 for coarse, 0.01 for fine (based on Ctrl+Up/Down vs Ctrl+Left/Right)
 		var delta float32
 		if baseDelta == 1.0 || baseDelta == -1.0 {

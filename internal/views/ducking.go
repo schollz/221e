@@ -74,48 +74,57 @@ func RenderDuckingView(m *model.Model) string {
 	content.WriteString(depthRow)
 	content.WriteString("\n")
 
-	// Attack setting
-	attackLabel := "Attack:"
-	attackValue := fmt.Sprintf("%.2fs", settings.Attack)
-	var attackCell string
-	if m.CurrentRow == 3 {
-		attackCell = selectedStyle.Render(attackValue)
-	} else {
-		attackCell = normalStyle.Render(attackValue)
-	}
-	attackRow := fmt.Sprintf("  %-14s %s", labelStyle.Render(attackLabel), attackCell)
-	content.WriteString(attackRow)
-	content.WriteString("\n")
+	// Only show Attack, Release, and Thresh when type is 2 (ducked)
+	if settings.Type == 2 {
+		// Attack setting
+		attackLabel := "Attack:"
+		attackValue := fmt.Sprintf("%.2fs", settings.Attack)
+		var attackCell string
+		if m.CurrentRow == 3 {
+			attackCell = selectedStyle.Render(attackValue)
+		} else {
+			attackCell = normalStyle.Render(attackValue)
+		}
+		attackRow := fmt.Sprintf("  %-14s %s", labelStyle.Render(attackLabel), attackCell)
+		content.WriteString(attackRow)
+		content.WriteString("\n")
 
-	// Release setting
-	releaseLabel := "Release:"
-	releaseValue := fmt.Sprintf("%.2fs", settings.Release)
-	var releaseCell string
-	if m.CurrentRow == 4 {
-		releaseCell = selectedStyle.Render(releaseValue)
-	} else {
-		releaseCell = normalStyle.Render(releaseValue)
-	}
-	releaseRow := fmt.Sprintf("  %-14s %s", labelStyle.Render(releaseLabel), releaseCell)
-	content.WriteString(releaseRow)
-	content.WriteString("\n")
+		// Release setting
+		releaseLabel := "Release:"
+		releaseValue := fmt.Sprintf("%.2fs", settings.Release)
+		var releaseCell string
+		if m.CurrentRow == 4 {
+			releaseCell = selectedStyle.Render(releaseValue)
+		} else {
+			releaseCell = normalStyle.Render(releaseValue)
+		}
+		releaseRow := fmt.Sprintf("  %-14s %s", labelStyle.Render(releaseLabel), releaseCell)
+		content.WriteString(releaseRow)
+		content.WriteString("\n")
 
-	// Thresh setting
-	threshLabel := "Thresh:"
-	threshValue := fmt.Sprintf("%.2f", settings.Thresh)
-	var threshCell string
-	if m.CurrentRow == 5 {
-		threshCell = selectedStyle.Render(threshValue)
-	} else {
-		threshCell = normalStyle.Render(threshValue)
+		// Thresh setting
+		threshLabel := "Thresh:"
+		threshValue := fmt.Sprintf("%.2f", settings.Thresh)
+		var threshCell string
+		if m.CurrentRow == 5 {
+			threshCell = selectedStyle.Render(threshValue)
+		} else {
+			threshCell = normalStyle.Render(threshValue)
+		}
+		threshRow := fmt.Sprintf("  %-14s %s", labelStyle.Render(threshLabel), threshCell)
+		content.WriteString(threshRow)
+		content.WriteString("\n")
 	}
-	threshRow := fmt.Sprintf("  %-14s %s", labelStyle.Render(threshLabel), threshCell)
-	content.WriteString(threshRow)
-	content.WriteString("\n\n")
+
+	content.WriteString("\n")
 
 	// Footer with status
 	statusMsg := fmt.Sprintf("Up/Down: Navigate | %s+Arrow: Adjust values | Shift+Left: Back to Phrase view", input.GetModifierKey())
-	content.WriteString(RenderFooter(m, 8, statusMsg))
+	footerPad := 6
+	if settings.Type == 2 {
+		footerPad = 9
+	}
+	content.WriteString(RenderFooter(m, footerPad, statusMsg))
 
 	// Apply container padding
 	return containerStyle.Render(content.String())
