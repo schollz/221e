@@ -363,7 +363,10 @@ s.waitForBoot({
 
 		SynthDef("startupSound",{
 			var snd;
-			snd = SinOsc.ar([440,442],0,0.1) * EnvGen.ar(Env.perc(0.01,1.0),1,doneAction:2);
+			snd = SinOsc.ar([440,442],0,0.5) * EnvGen.ar(Env.perc(0.01,4.0),1,doneAction:2);
+			snd = snd + (
+				SinOsc.ar([660,665],0,0.2) * EnvGen.ar(Env.perc(0.01,4.0),TDelay.kr(DC.kr(1.0),1.0),doneAction:2)
+			);
 			Out.ar(\out.kr(0), snd);
 		}).add;
 
@@ -440,7 +443,7 @@ s.waitForBoot({
 		~busDisk = Bus.audio(s, 2);
 		~busTrack = Array.fill(9, { Bus.audio(s, 2) });
 		~busDucking = Array.fill(9, { Bus.audio(s, 1) });
-		~grpDuckWrite = Group.head(s);
+		~grpDuckWrite = Group.head(Server.default);
 		~grpDuckRead  = Group.after(~grpDuckWrite);
 		~grpFX = Group.after(~grpDuckRead);
 		s.sync;
@@ -881,6 +884,7 @@ s.waitForBoot({
 		// }.play;
 
 		//Server.default.record;
+		["playing startupSound"].postln;
 		Synth.head(Server.default,"startupSound",[\out,~busDry]);
 	}.play;
 });
