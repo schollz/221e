@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/schollz/collidertracker/internal/getbpm"
 	"github.com/schollz/collidertracker/internal/model"
-	"github.com/schollz/collidertracker/internal/sox"
 	"github.com/schollz/collidertracker/internal/storage"
 	"github.com/schollz/collidertracker/internal/types"
 )
@@ -79,12 +79,12 @@ func SelectFile(m *model.Model) {
 	phrasesData := m.GetCurrentPhrasesData()
 	(*phrasesData)[m.CurrentPhrase][m.FileSelectRow][int(types.ColFilename)] = fileIndex
 
-	// Set initial metadata using sox.GetBPM
+	// Set initial metadata using getbpm.GetBPM
 	// BPM should be float, slices should be 2x beats (rounded to int)
 	var bpm float64
 	var beats float64
 	var err error
-	beats, bpm, err = sox.GetBPM(fullPath)
+	beats, bpm, err = getbpm.GetBPM(fullPath)
 	if err == nil {
 		slices := int(2 * math.Round(beats))
 		m.FileMetadata[fullPath] = types.FileMetadata{

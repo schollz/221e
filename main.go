@@ -19,7 +19,6 @@ import (
 	"github.com/schollz/collidertracker/internal/midiconnector"
 	"github.com/schollz/collidertracker/internal/model"
 	"github.com/schollz/collidertracker/internal/project"
-	"github.com/schollz/collidertracker/internal/sox"
 	"github.com/schollz/collidertracker/internal/storage"
 	"github.com/schollz/collidertracker/internal/supercollider"
 	"github.com/schollz/collidertracker/internal/types"
@@ -190,8 +189,6 @@ func restartWithProject() {
 		}
 	}()
 
-	// Initialize sox
-	sox.Init()
 	// hack to make sure Ctrl+V works on Windows
 	hacks.StoreWinClipboard()
 
@@ -206,7 +203,6 @@ func restartWithProject() {
 			log.Printf("Returning to project selection...")
 			// Clean up current session
 			supercollider.Cleanup()
-			sox.Clean()
 
 			// Run project selector again
 			selectedPath, cancelled, isNewProject := project.RunProjectSelector()
@@ -228,7 +224,6 @@ func restartWithProject() {
 
 	// Always call cleanup when the program exits normally (e.g., Ctrl+Q)
 	supercollider.Cleanup()
-	sox.Clean()
 }
 
 func runColliderTracker(cmd *cobra.Command, args []string) {
@@ -371,8 +366,6 @@ func runColliderTracker(cmd *cobra.Command, args []string) {
 		}
 	}()
 
-	// Initialize sox
-	sox.Init()
 	// hack to make sure Ctrl+V works on Windows
 	hacks.StoreWinClipboard()
 
@@ -387,7 +380,6 @@ func runColliderTracker(cmd *cobra.Command, args []string) {
 			log.Printf("Returning to project selection...")
 			// Clean up current session
 			supercollider.Cleanup()
-			sox.Clean()
 
 			// Run project selector again
 			selectedPath, cancelled, isNewProject := project.RunProjectSelector()
@@ -409,7 +401,6 @@ func runColliderTracker(cmd *cobra.Command, args []string) {
 
 	// Always call cleanup when the program exits normally (e.g., Ctrl+Q)
 	supercollider.Cleanup()
-	sox.Clean()
 }
 
 func initialModel(oscPort int, saveFolder string, dispatcher *osc.StandardDispatcher) *TrackerModel {
