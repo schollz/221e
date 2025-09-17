@@ -30,7 +30,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 	var content strings.Builder
 
 	// Render header for Instrument view (row, playback, note, modulation, and chord columns)
-	columnHeader := "  SL  DT  NOT  MO  C A T VE  GT A D S R   RE  CO  PA  LP  HP  AR  MI  SO"
+	columnHeader := "  SL  DT  NOT  MO  C A T VE  GT A D S R  RE  CO  PA  LP  HP  AR  MI  SO"
 	phrasesData := m.GetCurrentPhrasesData()
 	totalTicks := ticks.CalculatePhraseTicks(phrasesData, m.CurrentPhrase)
 	phraseHeader := fmt.Sprintf("Instrument %02X (%d ticks)", m.CurrentPhrase, totalTicks)
