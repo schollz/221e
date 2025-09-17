@@ -860,9 +860,9 @@ func (m *Model) initializeDefaultData() {
 		m.DuckingSettings[i] = types.DuckingSettings{
 			Type:    0,    // Default to "none"
 			Bus:     0,    // Default bus 0
-			Attack:  0.0,  // Default attack 0.0 seconds
-			Release: 0.0,  // Default release 0.0 seconds
-			Depth:   0.0,  // Default depth 0.0
+			Attack:  0.02, // Default attack 0.0 seconds
+			Release: 0.2,  // Default release 0.0 seconds
+			Depth:   0.5,  // Default depth 0.0
 			Thresh:  0.02, // Default threshold 0.02
 		}
 	}
