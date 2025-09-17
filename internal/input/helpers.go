@@ -1079,6 +1079,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 		rawHighPassFilter := GetEffectiveValueForTrack(m, phrase, row, int(types.ColHighPassFilter), trackId)
 		rawEffectComb := GetEffectiveValueForTrack(m, phrase, row, int(types.ColEffectComb), trackId)
 		rawEffectReverb := GetEffectiveValueForTrack(m, phrase, row, int(types.ColEffectReverb), trackId)
+		rawEffectDucking := GetEffectiveValueForTrack(m, phrase, row, int(types.ColEffectDucking), trackId)
 
 		// Extract other parameters with effective values (sticky)
 		rawArpeggio := rowData[types.ColArpeggio] // Arpeggio should NOT be sticky - use current row only
@@ -1169,6 +1170,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 			rawArpeggio,
 			rawMidi,
 			rawSoundMaker,
+			rawEffectDucking,
 		)
 		// Generate chord notes and apply modulation according to user specification
 		midiNotes := types.GetChordNotes(rowData[types.ColNote], types.ChordType(rawChord), types.ChordAddition(rawChordAdd), types.ChordTransposition(rawChordTrans))

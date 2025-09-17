@@ -179,6 +179,7 @@ const (
 	InstrumentColAR    InstrumentUIColumn = 18 // AR - Arpeggio
 	InstrumentColMI    InstrumentUIColumn = 19 // MI - MIDI
 	InstrumentColSO    InstrumentUIColumn = 20 // SO - SoundMaker
+	InstrumentColDU    InstrumentUIColumn = 21 // DU - Ducking
 )
 
 // UI Column positions for Sampler Phrase View - to prevent hardcoding issues

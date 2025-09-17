@@ -30,7 +30,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 	var content strings.Builder
 
 	// Render header for Instrument view (row, playback, note, modulation, and chord columns)
-	columnHeader := "  SL  DT  NOT  MO  C A T VE  GT A D S R  RE  CO  PA  LP  HP  AR  MI  SO"
+	columnHeader := "  SL  DT  NOT  MO  CAT  VE  GT A D S R   RE  CO  PA  LP  HP  AR  MI  SO  DU"
 	phrasesData := m.GetCurrentPhrasesData()
 	totalTicks := ticks.CalculatePhraseTicks(phrasesData, m.CurrentPhrase)
 	phraseHeader := fmt.Sprintf("Instrument %02X (%d ticks)", m.CurrentPhrase, totalTicks)
@@ -461,7 +461,27 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 			soundMakerCell = normalStyle.Render(fmt.Sprintf("%2s", soundMakerText))
 		}
 
-		row := fmt.Sprintf("%s %-3s  %s  %s  %s  %s%s%s  %s  %s %s%s%s%s  %s  %s  %s  %s  %s  %s  %s  %s", arrow, sliceCell, dtCell, noteCell, modulateCell, chordCell, chordAddCell, chordTransCell, velocityCell, gateCell, attackCell, decayCell, sustainCell, releaseCell, reverbCell, combCell, panCell, lpCell, hpCell, arpeggioCell, midiCell, soundMakerCell)
+		// Ducking (DU) - display ducking index
+		duckingValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColEffectDucking]
+		duckingText := "--"
+		if duckingValue != -1 {
+			duckingText = fmt.Sprintf("%02X", duckingValue)
+		}
+
+		var duckingCell string
+		if m.CurrentRow == dataIndex && m.CurrentCol == int(types.InstrumentColDU) { // Column 21 is the DU column
+			duckingCell = selectedStyle.Render(fmt.Sprintf("%2s", duckingText))
+		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
+			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == int(types.InstrumentColDU)) {
+				duckingCell = copiedStyle.Render(fmt.Sprintf("%2s", duckingText))
+			} else {
+				duckingCell = normalStyle.Render(fmt.Sprintf("%2s", duckingText))
+			}
+		} else {
+			duckingCell = normalStyle.Render(fmt.Sprintf("%2s", duckingText))
+		}
+
+		row := fmt.Sprintf("%s %-3s  %s  %s  %s  %s%s%s  %s  %s %s%s%s%s  %s  %s  %s  %s  %s  %s  %s  %s  %s", arrow, sliceCell, dtCell, noteCell, modulateCell, chordCell, chordAddCell, chordTransCell, velocityCell, gateCell, attackCell, decayCell, sustainCell, releaseCell, reverbCell, combCell, panCell, lpCell, hpCell, arpeggioCell, midiCell, soundMakerCell, duckingCell)
 		content.WriteString(row)
 		content.WriteString("\n")
 	}
@@ -803,6 +823,20 @@ func GetInstrumentPhraseStatusMessage(m *model.Model) string {
 		} else {
 			statusMsg = fmt.Sprintf("Velocity: %02X (%d, sticky)", velocityValue, velocityValue)
 		}
+	} else if columnMapping != nil && columnMapping.DataColumnIndex == int(types.ColEffectDucking) { // DU column
+		// Show Ducking info with sticky behavior (reuse logic from sampler view)
+		duckingValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColEffectDucking]
+		if duckingValue == -1 {
+			// Check for effective (sticky) Ducking value
+			effectiveDuckingValue := input.GetEffectiveValueForTrack(m, m.CurrentPhrase, m.CurrentRow, int(types.ColEffectDucking), m.CurrentTrack)
+			if effectiveDuckingValue == -1 {
+				statusMsg = "Ducking: -- (sticky)"
+			} else {
+				statusMsg = fmt.Sprintf("Ducking: -- (%02X, sticky)", effectiveDuckingValue)
+			}
+		} else {
+			statusMsg = fmt.Sprintf("Ducking: %02X (sticky)", duckingValue)
+		}
 	} else {
 		// On other columns - show basic info
 		statusMsg = fmt.Sprintf("Instrument Phrase %02X Row %02X", m.CurrentPhrase, m.CurrentRow)
@@ -818,6 +852,11 @@ func GetInstrumentPhraseStatusMessage(m *model.Model) string {
 		statusMsg += " | Stopped (SPACE to play)"
 	}
 
-	statusMsg += " | Shift+Left: Back to chain view"
+	// Add context-sensitive Shift+Right action based on current column
+	if m.CurrentCol == int(types.InstrumentColDU) {
+		statusMsg += " | Shift+Right: Ducking | Shift+Left: Back to chain view"
+	} else {
+		statusMsg += " | Shift+Left: Back to chain view"
+	}
 	return statusMsg
 }

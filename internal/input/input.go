@@ -486,9 +486,9 @@ func handleShiftRight(m *model.Model) tea.Cmd {
 
 		// Check if we're in Instrument view - implement fallback navigation for non-navigable columns
 		if m.GetPhraseViewType() == types.InstrumentPhraseView {
-			// For columns that don't have their own Shift+Right navigation (all except MI and SO),
+			// For columns that don't have their own Shift+Right navigation (all except MI, SO, and DU),
 			// check if MI or SO columns have effective (sticky) values and navigate to those views
-			if m.CurrentCol != int(types.InstrumentColMI) && m.CurrentCol != int(types.InstrumentColSO) {
+			if m.CurrentCol != int(types.InstrumentColMI) && m.CurrentCol != int(types.InstrumentColSO) && m.CurrentCol != int(types.InstrumentColDU) {
 				phrasesData := m.GetCurrentPhrasesData()
 
 				// Find effective (sticky) MI and SO values by looking backwards from current row
@@ -1028,7 +1028,7 @@ func handleRight(m *model.Model) tea.Cmd {
 		phraseViewType := m.GetPhraseViewType()
 		var maxValidCol int
 		if phraseViewType == types.InstrumentPhraseView {
-			maxValidCol = int(types.InstrumentColSO) // Instrument: last valid column is SO (SoundMaker)
+			maxValidCol = int(types.InstrumentColDU) // Instrument: last valid column is DU (Ducking)
 		} else {
 			maxValidCol = int(types.SamplerColFI) // Sampler: last valid column is FI (Filename)
 		}

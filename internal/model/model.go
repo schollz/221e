@@ -419,6 +419,15 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "SO",
 			}
+		case int(types.InstrumentColDU): // DU - Ducking column
+			return &ColumnMapping{
+				DataColumnIndex: int(types.ColEffectDucking),
+				IsEditable:      true,
+				IsCopyable:      true,
+				IsPasteable:     true,
+				IsDeletable:     true,
+				DisplayName:     "DU",
+			}
 		default:
 			return nil // Invalid column
 		}
@@ -966,6 +975,7 @@ type InstrumentOSCParams struct {
 	ArpeggioIndex      int       // Arpeggio settings index (AR parameter)
 	MidiSettingsIndex  int       // MIDI settings index (MI parameter)
 	SoundMakerIndex    int       // SoundMaker settings index (SO parameter)
+	DuckingIndex       int       // Ducking settings index (DU parameter)
 	Update             int       // 1 if this is an update to a playing row, 0 otherwise
 }
 
@@ -1042,7 +1052,7 @@ func NewSamplerOSCParamsWithRetrigger(filename string, trackId, sliceCount, slic
 }
 
 // NewInstrumentOSCParams creates instrument parameters
-func NewInstrumentOSCParams(trackId int32, velocity float32, chordType, chordAddition, chordTransposition, gate int, deltaTime, attack, decay, sustain, release, pan, lowPassFilter, highPassFilter, effectComb, effectReverb float32, arpeggioIndex, midiSettingsIndex, soundMakerIndex int) InstrumentOSCParams {
+func NewInstrumentOSCParams(trackId int32, velocity float32, chordType, chordAddition, chordTransposition, gate int, deltaTime, attack, decay, sustain, release, pan, lowPassFilter, highPassFilter, effectComb, effectReverb float32, arpeggioIndex, midiSettingsIndex, soundMakerIndex, duckingIndex int) InstrumentOSCParams {
 	return InstrumentOSCParams{
 		TrackId:            trackId,
 		NoteOn:             1,
@@ -1064,6 +1074,7 @@ func NewInstrumentOSCParams(trackId int32, velocity float32, chordType, chordAdd
 		ArpeggioIndex:      arpeggioIndex,
 		MidiSettingsIndex:  midiSettingsIndex,
 		SoundMakerIndex:    soundMakerIndex,
+		DuckingIndex:       duckingIndex,
 		Update:             0, // Default is not an update
 	}
 }
@@ -1309,6 +1320,8 @@ func (m *Model) sendOSCInstrumentMessage(params InstrumentOSCParams) {
 		msg.Append(float32(params.EffectComb))
 		msg.Append("effectReverb")
 		msg.Append(float32(params.EffectReverb))
+		msg.Append("duckingIndex")
+		msg.Append(int32(params.DuckingIndex))
 		msg.Append("velocity")
 		msg.Append(int32(params.Velocity))
 
