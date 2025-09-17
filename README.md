@@ -29,6 +29,18 @@ This is a music tracker designed to be used with any terminal (Linux, macOS, Win
 - **JACK (jackd)** must be running with the output to your favorite speaker. Download [here](https://jackaudio.org/downloads/).
 - **collidertracker** binary. See installation options below.
 
+### Automatic Plugin Downloads
+
+ColliderTracker will automatically download required SuperCollider extensions on first run if they are not already installed. These extensions are downloaded to your system's standard SuperCollider extensions directory:
+
+- **macOS**: `~/Library/Application Support/SuperCollider/Extensions`
+- **Linux**: `~/.local/share/SuperCollider/Extensions`  
+- **Windows**: `%LOCALAPPDATA%/SuperCollider/Extensions`
+
+The following extensions are automatically downloaded:
+- **PortedPlugins** ([schollz/portedplugins](https://github.com/schollz/portedplugins)) - Audio effects including Fverb and AnalogTape
+- **mi-UGens** ([v7b1/mi-UGens](https://github.com/v7b1/mi-UGens)) - Mutable Instruments synthesizer modules including MiBraids
+
 ## Installation
 
 ### macOS
@@ -465,6 +477,39 @@ After building, verify the binary works:
 - [1tracker (1-bit ZX/retro)](https://randomflux.info/1bit/viewtopic.php?id=24&p=4)
 - [WaveTracker](https://squiggythings.itch.io/wavetracker) *(Itch.io, also listed under General)*
 - [Oxide Tracker](https://paranoidcactus.itch.io/oxidetracker) *(Itch.io, also listed under General)*
+
+## Uninstalling ColliderTracker
+
+To completely remove all ColliderTracker-related data from your system:
+
+### 1. Remove ColliderTracker Binary and Project Data
+
+- **Delete the ColliderTracker binary** from wherever you installed it (e.g., `/usr/local/bin/collidertracker` or the downloaded location)
+- **Delete your project directory** (default: `./save/` in the directory where you run ColliderTracker, or custom directory specified with `-p` flag)
+
+### 2. Remove Downloaded SuperCollider Extensions
+
+ColliderTracker automatically downloads SuperCollider extensions to the following locations:
+
+- **macOS**: Remove `~/Library/Application Support/SuperCollider/Extensions/PortedPlugins/` and `~/Library/Application Support/SuperCollider/Extensions/mi-UGens/`
+- **Linux**: Remove `~/.local/share/SuperCollider/Extensions/PortedPlugins/` and `~/.local/share/SuperCollider/Extensions/mi-UGens/`
+- **Windows**: Remove `%LOCALAPPDATA%/SuperCollider/Extensions/PortedPlugins/` and `%LOCALAPPDATA%/SuperCollider/Extensions/mi-UGens/`
+
+**Note**: These extensions may also be used by other SuperCollider applications. Only remove them if you're sure they're not needed by other software.
+
+### 3. Clean Up Temporary Files
+
+ColliderTracker may create temporary `.scd` files in your system's temp directory during operation. These are automatically cleaned up when the application exits, but you can manually remove any remaining files with names like:
+- `collidertracker_*.scd`
+- `dx7_*.afx`
+- `dx7_*.scd`
+
+### 4. SuperCollider Recordings (Optional)
+
+If you used the recording feature (`-r` flag), recordings are saved to SuperCollider's default recordings directory. You may want to back up or remove these files:
+- **macOS**: `~/Music/SuperCollider Recordings/`
+- **Linux**: `~/SuperCollider/`
+- **Windows**: `%USERPROFILE%/Music/SuperCollider Recordings/`
 
 ## License
 
