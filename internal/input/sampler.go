@@ -472,45 +472,7 @@ func ModifyDuckingValue(m *model.Model, baseDelta float32) {
 		}
 		settings.Bus = newBus
 		log.Printf("Modified ducking %02X Bus: %d -> %d (delta: %d)", m.DuckingEditingIndex, settings.Bus-delta, settings.Bus, delta)
-	} else if m.CurrentRow == 2 { // Attack
-		// Use different increments: 0.1 for coarse, 0.01 for fine (based on Ctrl+Up/Down vs Ctrl+Left/Right)
-		var delta float32
-		if baseDelta == 1.0 || baseDelta == -1.0 {
-			delta = baseDelta * 0.1 // Coarse control (Ctrl+Up/Down): +/-0.1s
-		} else if baseDelta == 0.05 || baseDelta == -0.05 {
-			delta = baseDelta * 0.2 // Fine control (Ctrl+Left/Right): +/-0.01s
-		} else {
-			delta = baseDelta * 0.1 // Fallback
-		}
-
-		newAttack := settings.Attack + delta
-		if newAttack < 0.0 {
-			newAttack = 0.0
-		} else if newAttack > 2.0 {
-			newAttack = 2.0
-		}
-		settings.Attack = newAttack
-		log.Printf("Modified ducking %02X Attack: %.2f -> %.2f (delta: %.2f)", m.DuckingEditingIndex, settings.Attack-delta, settings.Attack, delta)
-	} else if m.CurrentRow == 3 { // Release
-		// Use different increments: 0.1 for coarse, 0.01 for fine (based on Ctrl+Up/Down vs Ctrl+Left/Right)
-		var delta float32
-		if baseDelta == 1.0 || baseDelta == -1.0 {
-			delta = baseDelta * 0.1 // Coarse control (Ctrl+Up/Down): +/-0.1s
-		} else if baseDelta == 0.05 || baseDelta == -0.05 {
-			delta = baseDelta * 0.2 // Fine control (Ctrl+Left/Right): +/-0.01s
-		} else {
-			delta = baseDelta * 0.1 // Fallback
-		}
-
-		newRelease := settings.Release + delta
-		if newRelease < 0.0 {
-			newRelease = 0.0
-		} else if newRelease > 2.0 {
-			newRelease = 2.0
-		}
-		settings.Release = newRelease
-		log.Printf("Modified ducking %02X Release: %.2f -> %.2f (delta: %.2f)", m.DuckingEditingIndex, settings.Release-delta, settings.Release, delta)
-	} else if m.CurrentRow == 4 { // Depth
+	} else if m.CurrentRow == 2 { // Depth
 		// Use different increments: 0.1 for coarse, 0.01 for fine (based on Ctrl+Up/Down vs Ctrl+Left/Right)
 		var delta float32
 		if baseDelta == 1.0 || baseDelta == -1.0 {
@@ -529,6 +491,44 @@ func ModifyDuckingValue(m *model.Model, baseDelta float32) {
 		}
 		settings.Depth = newDepth
 		log.Printf("Modified ducking %02X Depth: %.2f -> %.2f (delta: %.2f)", m.DuckingEditingIndex, settings.Depth-delta, settings.Depth, delta)
+	} else if m.CurrentRow == 3 { // Attack
+		// Use different increments: 0.1 for coarse, 0.01 for fine (based on Ctrl+Up/Down vs Ctrl+Left/Right)
+		var delta float32
+		if baseDelta == 1.0 || baseDelta == -1.0 {
+			delta = baseDelta * 0.1 // Coarse control (Ctrl+Up/Down): +/-0.1s
+		} else if baseDelta == 0.05 || baseDelta == -0.05 {
+			delta = baseDelta * 0.2 // Fine control (Ctrl+Left/Right): +/-0.01s
+		} else {
+			delta = baseDelta * 0.1 // Fallback
+		}
+
+		newAttack := settings.Attack + delta
+		if newAttack < 0.0 {
+			newAttack = 0.0
+		} else if newAttack > 2.0 {
+			newAttack = 2.0
+		}
+		settings.Attack = newAttack
+		log.Printf("Modified ducking %02X Attack: %.2f -> %.2f (delta: %.2f)", m.DuckingEditingIndex, settings.Attack-delta, settings.Attack, delta)
+	} else if m.CurrentRow == 4 { // Release
+		// Use different increments: 0.1 for coarse, 0.01 for fine (based on Ctrl+Up/Down vs Ctrl+Left/Right)
+		var delta float32
+		if baseDelta == 1.0 || baseDelta == -1.0 {
+			delta = baseDelta * 0.1 // Coarse control (Ctrl+Up/Down): +/-0.1s
+		} else if baseDelta == 0.05 || baseDelta == -0.05 {
+			delta = baseDelta * 0.2 // Fine control (Ctrl+Left/Right): +/-0.01s
+		} else {
+			delta = baseDelta * 0.1 // Fallback
+		}
+
+		newRelease := settings.Release + delta
+		if newRelease < 0.0 {
+			newRelease = 0.0
+		} else if newRelease > 2.0 {
+			newRelease = 2.0
+		}
+		settings.Release = newRelease
+		log.Printf("Modified ducking %02X Release: %.2f -> %.2f (delta: %.2f)", m.DuckingEditingIndex, settings.Release-delta, settings.Release, delta)
 	} else if m.CurrentRow == 5 { // Thresh
 		// Use different increments: 0.1 for coarse, 0.01 for fine (based on Ctrl+Up/Down vs Ctrl+Left/Right)
 		var delta float32

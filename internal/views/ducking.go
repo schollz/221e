@@ -61,11 +61,24 @@ func RenderDuckingView(m *model.Model) string {
 	content.WriteString(busRow)
 	content.WriteString("\n")
 
+	// Depth setting
+	depthLabel := "Depth:"
+	depthValue := fmt.Sprintf("%.2f", settings.Depth)
+	var depthCell string
+	if m.CurrentRow == 2 {
+		depthCell = selectedStyle.Render(depthValue)
+	} else {
+		depthCell = normalStyle.Render(depthValue)
+	}
+	depthRow := fmt.Sprintf("  %-14s %s", labelStyle.Render(depthLabel), depthCell)
+	content.WriteString(depthRow)
+	content.WriteString("\n")
+
 	// Attack setting
 	attackLabel := "Attack:"
 	attackValue := fmt.Sprintf("%.2fs", settings.Attack)
 	var attackCell string
-	if m.CurrentRow == 2 {
+	if m.CurrentRow == 3 {
 		attackCell = selectedStyle.Render(attackValue)
 	} else {
 		attackCell = normalStyle.Render(attackValue)
@@ -78,26 +91,13 @@ func RenderDuckingView(m *model.Model) string {
 	releaseLabel := "Release:"
 	releaseValue := fmt.Sprintf("%.2fs", settings.Release)
 	var releaseCell string
-	if m.CurrentRow == 3 {
+	if m.CurrentRow == 4 {
 		releaseCell = selectedStyle.Render(releaseValue)
 	} else {
 		releaseCell = normalStyle.Render(releaseValue)
 	}
 	releaseRow := fmt.Sprintf("  %-14s %s", labelStyle.Render(releaseLabel), releaseCell)
 	content.WriteString(releaseRow)
-	content.WriteString("\n")
-
-	// Depth setting
-	depthLabel := "Depth:"
-	depthValue := fmt.Sprintf("%.2f", settings.Depth)
-	var depthCell string
-	if m.CurrentRow == 4 {
-		depthCell = selectedStyle.Render(depthValue)
-	} else {
-		depthCell = normalStyle.Render(depthValue)
-	}
-	depthRow := fmt.Sprintf("  %-14s %s", labelStyle.Render(depthLabel), depthCell)
-	content.WriteString(depthRow)
 	content.WriteString("\n")
 
 	// Thresh setting
