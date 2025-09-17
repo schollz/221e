@@ -35,6 +35,32 @@ s.waitForBoot({
 							* \velocity.kr(100).min(127).max(0).linlin(0,127,-24,24).dbamp;
 			snd = RLPF.ar(snd, \lowPassFilter.kr(20000), 0.707);
 			snd = Balance2.ar(snd[0],snd[1],\pan.kr(0));
+
+			// check if signal is ducked
+			// process: when the sidechain exceeds thresh, reduce 'snd' by slopeAbove
+			ducked = Compander.ar(
+				in:         snd,     // signal to be ducked
+				control:    LeakDC.ar(In.ar(\duckingBusIn.kr(0), 1)),    // external sidechain
+				thresh:     \duckingThresh.kr(0.02),  // start reducing above this
+				slopeBelow: 1,       // unchanged below threshold
+				slopeAbove: (1 - \duckingDepth.kr(0).clip(0, 0.99)).max(0.01),
+				clampTime:  \duckingAttack.kr(0.02),     // attack
+				relaxTime:  \duckingRelease.kr(0.20)      // release
+			);
+			// engage only for ducked voices (duckingType == 2). Writers and non-duckers pass through unchanged.
+			snd = Select.ar(\duckingType.kr(0),
+				[snd, snd, ducked]   // 0:not ducked, 1:writer, 2:ducked(reader)
+			);
+			// tiny floor to avoid denormals at extreme reductions:
+			snd = snd + (1e-6 * WhiteNoise.ar(1));
+			Out.ar(\duckingBusOut.kr(0),
+				Mix(snd) * depth * Select.kr(\duckingType.kr(0), [
+					0,  // 0 = not ducking
+					1,  // 1 = is ducking (writer)
+					0   // 2 = not ducking
+				])
+			);
+			
 			Out.ar(\trackOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
 			Out.ar(\effectDryOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
 			Out.ar(\effectCombOut.kr(0), snd*\effectComb.kr(0));
@@ -66,6 +92,32 @@ s.waitForBoot({
 			snd = snd * env * \trackVolume.kr(0).dbamp * (1.0 / \noteSize.kr(1).sqrt)
 				* \velocity.kr(100).min(127).max(0).linlin(0,127,-24,24).dbamp;
 			snd = RLPF.ar(snd, \lowPassFilter.kr(20000), 0.707);
+
+			// check if signal is ducked
+			// process: when the sidechain exceeds thresh, reduce 'snd' by slopeAbove
+			ducked = Compander.ar(
+				in:         snd,     // signal to be ducked
+				control:    LeakDC.ar(In.ar(\duckingBusIn.kr(0), 1)),    // external sidechain
+				thresh:     \duckingThresh.kr(0.02),  // start reducing above this
+				slopeBelow: 1,       // unchanged below threshold
+				slopeAbove: (1 - \duckingDepth.kr(0).clip(0, 0.99)).max(0.01),
+				clampTime:  \duckingAttack.kr(0.02),     // attack
+				relaxTime:  \duckingRelease.kr(0.20)      // release
+			);
+			// engage only for ducked voices (duckingType == 2). Writers and non-duckers pass through unchanged.
+			snd = Select.ar(\duckingType.kr(0),
+				[snd, snd, ducked]   // 0:not ducked, 1:writer, 2:ducked(reader)
+			);
+			// tiny floor to avoid denormals at extreme reductions:
+			snd = snd + (1e-6 * WhiteNoise.ar(1));
+			Out.ar(\duckingBusOut.kr(0),
+				Mix(snd) * depth * Select.kr(\duckingType.kr(0), [
+					0,  // 0 = not ducking
+					1,  // 1 = is ducking (writer)
+					0   // 2 = not ducking
+				])
+			);
+
 			snd = Pan2.ar(snd,\pan.kr(0));
 			Out.ar(\trackOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
 			Out.ar(\effectDryOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
@@ -88,6 +140,32 @@ s.waitForBoot({
 			snd = MoogFF.ar(snd, \lowPassFilter.kr(20000), 1.5);
 			snd = snd * env * \trackVolume.kr(0).dbamp * (1.0 / \noteSize.kr(1).sqrt)
 				* \velocity.kr(100).min(127).max(0).linlin(0,127,-24,0).dbamp;
+
+			// check if signal is ducked
+			// process: when the sidechain exceeds thresh, reduce 'snd' by slopeAbove
+			ducked = Compander.ar(
+				in:         snd,     // signal to be ducked
+				control:    LeakDC.ar(In.ar(\duckingBusIn.kr(0), 1)),    // external sidechain
+				thresh:     \duckingThresh.kr(0.02),  // start reducing above this
+				slopeBelow: 1,       // unchanged below threshold
+				slopeAbove: (1 - \duckingDepth.kr(0).clip(0, 0.99)).max(0.01),
+				clampTime:  \duckingAttack.kr(0.02),     // attack
+				relaxTime:  \duckingRelease.kr(0.20)      // release
+			);
+			// engage only for ducked voices (duckingType == 2). Writers and non-duckers pass through unchanged.
+			snd = Select.ar(\duckingType.kr(0),
+				[snd, snd, ducked]   // 0:not ducked, 1:writer, 2:ducked(reader)
+			);
+			// tiny floor to avoid denormals at extreme reductions:
+			snd = snd + (1e-6 * WhiteNoise.ar(1));
+			Out.ar(\duckingBusOut.kr(0),
+				Mix(snd) * depth * Select.kr(\duckingType.kr(0), [
+					0,  // 0 = not ducking
+					1,  // 1 = is ducking (writer)
+					0   // 2 = not ducking
+				])
+			);
+
 			snd = Pan2.ar(snd,\pan.kr(0));
 			Out.ar(\trackOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
 			Out.ar(\effectDryOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
@@ -320,15 +398,12 @@ s.waitForBoot({
 					clampTime:  \duckingAttack.kr(0.02),     // attack
 					relaxTime:  \duckingRelease.kr(0.20)      // release
 				);
-
 				// engage only for ducked voices (duckingType == 2). Writers and non-duckers pass through unchanged.
 				snd = Select.ar(\duckingType.kr(0),
 					[snd, snd, ducked]   // 0:not ducked, 1:writer, 2:ducked(reader)
 				);
-
-				// (optional) tiny floor to avoid denormals at extreme reductions:
+				// tiny floor to avoid denormals at extreme reductions:
 				snd = snd + (1e-6 * WhiteNoise.ar(1));
-
 				Out.ar(\duckingBusOut.kr(0),
 					Mix(snd) * depth * Select.kr(\duckingType.kr(0), [
 						0,  // 0 = not ducking
