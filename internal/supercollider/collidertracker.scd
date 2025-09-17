@@ -193,7 +193,6 @@ s.waitForBoot({
 				var beatDuration = 60 / bpmTarget;
 				var retrigCountFeedback = 0;
 				var timestretchPos, timestretchRate, effectTimestretch;
-				var duckingAmp, duckingDepth, duckingGain;
 				var side, atk, rel, depth, slopeAbove, thresh, ducked;
 
 				sliceNum = sliceNum.mod(sliceCount);
@@ -345,7 +344,7 @@ s.waitForBoot({
 				snd = snd + (1e-6 * WhiteNoise.ar(1));
 
 				Out.ar(\duckingBusOut.kr(0),
-					Mix(snd) * Select.kr(\duckingType.kr(0), [
+					Mix(snd) * depth * Select.kr(\duckingType.kr(0), [
 						0,  // 0 = not ducking
 						1,  // 1 = is ducking (writer)
 						0   // 2 = not ducking
@@ -361,6 +360,12 @@ s.waitForBoot({
 				Out.ar(effectReverbOut, snd*XLine.kr(0.001,effectReverb,sliceDurationBeats*beatDuration/2));
 			}).add;
 		});
+
+		SynthDef("startupSound",{
+			var snd;
+			snd = SinOsc.ar([440,442],0,0.1) * EnvGen.ar(Env.perc(0.01,1.0),1,doneAction:2);
+			Out.ar(\out.kr(0), snd);
+		}).add;
 
 		SynthDef("out",{
 			arg busReverb, busDry, busComb, busDisk,
@@ -876,6 +881,7 @@ s.waitForBoot({
 		// }.play;
 
 		//Server.default.record;
+		Synth.head(Server.default,"startupSound",[\out,~busDry]);
 	}.play;
 });
 )
