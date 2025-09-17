@@ -310,29 +310,15 @@ s.waitForBoot({
 				snd = snd * trackVolume.dbamp * \velocity.kr(100).min(127).max(0).linlin(0,127,-24,24).dbamp;
 
 				// check if signal is ducked
-
-				// --- sidechain ducking with Compander ---
-				side        = LeakDC.ar(In.ar(\duckingBusIn.kr(0), 1));   // the sidechain control signal
-				atk         = \duckingAttack.kr(0.02);
-				rel         = \duckingRelease.kr(0.20);
-
-				// map your 0..0.99 depth to a compander slope:
-				//   slopeAbove: 1.0 = no reduction, 0.0 = infinite reduction
-				depth       = \duckingDepth.kr(0).clip(0, 0.99);
-				slopeAbove  = (1 - depth).max(0.01); // avoid zero
-
-				// choose a sensible threshold (amplitude meters are ~0..1). Make it a param if you like.
-				thresh      = \duckingThresh.kr(0.02);
-
 				// process: when the sidechain exceeds thresh, reduce 'snd' by slopeAbove
 				ducked = Compander.ar(
 					in:         snd,     // signal to be ducked
-					control:    side,    // external sidechain
-					thresh:     thresh,  // start reducing above this
+					control:    LeakDC.ar(In.ar(\duckingBusIn.kr(0), 1)),    // external sidechain
+					thresh:     \duckingThresh.kr(0.02),  // start reducing above this
 					slopeBelow: 1,       // unchanged below threshold
-					slopeAbove: slopeAbove,
-					clampTime:  atk,     // attack
-					relaxTime:  rel      // release
+					slopeAbove: (1 - \duckingDepth.kr(0).clip(0, 0.99)).max(0.01),
+					clampTime:  \duckingAttack.kr(0.02),     // attack
+					relaxTime:  \duckingRelease.kr(0.20)      // release
 				);
 
 				// engage only for ducked voices (duckingType == 2). Writers and non-duckers pass through unchanged.
