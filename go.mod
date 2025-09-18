@@ -4,7 +4,7 @@ go 1.25
 
 require (
 	github.com/charmbracelet/bubbles v0.21.0
-	github.com/charmbracelet/bubbletea v1.3.9
+	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/go-audio/wav v1.1.0
 	github.com/hypebeast/go-osc v0.0.0-20220308234300-cec5a8a1e5f5
