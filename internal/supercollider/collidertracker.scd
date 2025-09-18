@@ -20,8 +20,8 @@ s.waitForBoot({
 				doneAction:2,
 			);
 			var snd = MiPlaits.ar(
-				pitch: \note.kr(60),
-				engine: \engine.kr(0),
+				pitch: \note.kr(60).min(127).max(0),
+				engine: \engine.kr(0).min(15).max(0),
 				harm: \engine.kr(0),
 				timbre: \timbre.kr(0),
 				morph: \morph.kr(0),
@@ -60,7 +60,7 @@ s.waitForBoot({
 					0   // 2 = not ducking
 				])
 			);
-			
+
 			Out.ar(\trackOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
 			Out.ar(\effectDryOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
 			Out.ar(\effectCombOut.kr(0), snd*\effectComb.kr(0));
