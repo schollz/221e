@@ -9,6 +9,8 @@ s.waitForBoot({
 
 
 		SynthDef("MiPlaits",{
+			var ducked;
+
 			var env = EnvGen.ar(
 				Env.adsr(
 					\attack.kr(0.1),
@@ -54,7 +56,7 @@ s.waitForBoot({
 			// tiny floor to avoid denormals at extreme reductions:
 			snd = snd + (1e-6 * WhiteNoise.ar(1));
 			Out.ar(\duckingBusOut.kr(0),
-				Mix(snd) * depth * Select.kr(\duckingType.kr(0), [
+				Mix(snd) * \duckingDepth.kr(0).clip(0, 0.99) * Select.kr(\duckingType.kr(0), [
 					0,  // 0 = not ducking
 					1,  // 1 = is ducking (writer)
 					0   // 2 = not ducking
@@ -68,6 +70,7 @@ s.waitForBoot({
 		}).add;
 
 		SynthDef("MiBraids",{
+			var ducked;
 			var env = EnvGen.ar(
 				Env.adsr(
 					\attack.kr(0.1),
@@ -111,7 +114,7 @@ s.waitForBoot({
 			// tiny floor to avoid denormals at extreme reductions:
 			snd = snd + (1e-6 * WhiteNoise.ar(1));
 			Out.ar(\duckingBusOut.kr(0),
-				Mix(snd) * depth * Select.kr(\duckingType.kr(0), [
+				Mix(snd) * \duckingDepth.kr(0).clip(0, 0.99) * Select.kr(\duckingType.kr(0), [
 					0,  // 0 = not ducking
 					1,  // 1 = is ducking (writer)
 					0   // 2 = not ducking
@@ -126,6 +129,7 @@ s.waitForBoot({
 		}).add;
 
 		SynthDef("PolyPerc",{
+			var ducked;
 			var env = EnvGen.ar(
 				Env.adsr(
 					\attack.kr(0.1),
@@ -159,7 +163,7 @@ s.waitForBoot({
 			// tiny floor to avoid denormals at extreme reductions:
 			snd = snd + (1e-6 * WhiteNoise.ar(1));
 			Out.ar(\duckingBusOut.kr(0),
-				Mix(snd) * depth * Select.kr(\duckingType.kr(0), [
+				Mix(snd) * \duckingDepth.kr(0).clip(0, 0.99) * Select.kr(\duckingType.kr(0), [
 					0,  // 0 = not ducking
 					1,  // 1 = is ducking (writer)
 					0   // 2 = not ducking
@@ -405,7 +409,7 @@ s.waitForBoot({
 				// tiny floor to avoid denormals at extreme reductions:
 				snd = snd + (1e-6 * WhiteNoise.ar(1));
 				Out.ar(\duckingBusOut.kr(0),
-					Mix(snd) * depth * Select.kr(\duckingType.kr(0), [
+					Mix(snd) * \duckingDepth.kr(0).clip(0, 0.99) * Select.kr(\duckingType.kr(0), [
 						0,  // 0 = not ducking
 						1,  // 1 = is ducking (writer)
 						0   // 2 = not ducking
