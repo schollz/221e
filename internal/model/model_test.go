@@ -9,7 +9,7 @@ import (
 )
 
 func TestNewModel(t *testing.T) {
-	m := NewModel(57120, "test-save.json")
+	m := NewModel(57120, "test-save.json", false)
 
 	// Test default initialization
 	assert.Equal(t, 0, m.CurrentRow)
@@ -54,7 +54,7 @@ func TestNewModel(t *testing.T) {
 }
 
 func TestModelDataStructures(t *testing.T) {
-	m := NewModel(0, "")
+	m := NewModel(0, "", false)
 
 	// Test accessing existing methods
 	data := m.GetCurrentPhrasesData()
@@ -74,7 +74,7 @@ func TestModelDataStructures(t *testing.T) {
 }
 
 func TestModelDataManipulation(t *testing.T) {
-	m := NewModel(0, "")
+	m := NewModel(0, "", false)
 
 	// Test SetChainsData method
 	m.SetChainsData(0, 0, 10)
@@ -92,7 +92,7 @@ func TestModelDataManipulation(t *testing.T) {
 }
 
 func TestModelWaveformOperations(t *testing.T) {
-	m := NewModel(0, "")
+	m := NewModel(0, "", false)
 
 	// Test PushWaveformSample method
 	maxCols := 50
@@ -111,7 +111,7 @@ func TestModelWaveformOperations(t *testing.T) {
 }
 
 func TestModelOSCIntegration(t *testing.T) {
-	m := NewModel(57120, "")
+	m := NewModel(57120, "", false)
 
 	// Test OSC message methods (they should not panic)
 	m.SendOSCPregainMessage()
@@ -134,7 +134,7 @@ func TestModelOSCIntegration(t *testing.T) {
 }
 
 func TestModelFileOperations(t *testing.T) {
-	m := NewModel(0, "")
+	m := NewModel(0, "", false)
 
 	// Test file appending for sampler tracks
 	m.CurrentTrack = 5 // Sampler track
@@ -150,7 +150,7 @@ func TestModelFileOperations(t *testing.T) {
 }
 
 func TestModelColumnMapping(t *testing.T) {
-	m := NewModel(0, "")
+	m := NewModel(0, "", false)
 
 	// Test column mapping for instrument view
 	m.CurrentTrack = 1 // Instrument track
@@ -164,7 +164,7 @@ func TestModelColumnMapping(t *testing.T) {
 }
 
 func TestModelRecordingFilename(t *testing.T) {
-	m := NewModel(0, "")
+	m := NewModel(0, "", false)
 
 	filename := m.GenerateRecordingFilename()
 	assert.NotEmpty(t, filename)
@@ -172,7 +172,7 @@ func TestModelRecordingFilename(t *testing.T) {
 }
 
 func TestModelPlaybackState(t *testing.T) {
-	m := NewModel(0, "")
+	m := NewModel(0, "", false)
 
 	// Test initial playback state
 	assert.False(t, m.IsPlaying)
@@ -190,7 +190,7 @@ func TestModelPlaybackState(t *testing.T) {
 }
 
 func TestModelDataInitialization(t *testing.T) {
-	m := NewModel(0, "")
+	m := NewModel(0, "", false)
 
 	// Test that data is properly initialized with defaults
 	// Check phrase data defaults for sampler - virtual default columns now start as -1
@@ -212,12 +212,12 @@ func TestModelDataInitialization(t *testing.T) {
 
 func BenchmarkModelInitialization(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_ = NewModel(57120, "bench-test.json")
+		_ = NewModel(57120, "bench-test.json", false)
 	}
 }
 
 func BenchmarkWaveformBufferPush(b *testing.B) {
-	m := NewModel(0, "")
+	m := NewModel(0, "", false)
 	maxCols := 100
 
 	b.ResetTimer()
@@ -228,7 +228,7 @@ func BenchmarkWaveformBufferPush(b *testing.B) {
 
 func TestProcessArpeggio(t *testing.T) {
 	// Create a model with test data
-	model := NewModel(0, "")
+	model := NewModel(0, "", false)
 
 	tests := []struct {
 		name                string
@@ -435,7 +435,7 @@ func TestProcessArpeggio(t *testing.T) {
 }
 
 func TestProcessArpeggioWithChordAdditions(t *testing.T) {
-	model := NewModel(0, "")
+	model := NewModel(0, "", false)
 
 	tests := []struct {
 		name             string
@@ -513,7 +513,7 @@ func TestProcessArpeggioWithChordAdditions(t *testing.T) {
 }
 
 func TestGetNextChordNote(t *testing.T) {
-	model := NewModel(0, "")
+	model := NewModel(0, "", false)
 
 	tests := []struct {
 		name        string
@@ -563,7 +563,7 @@ func TestGetNextChordNote(t *testing.T) {
 }
 
 func TestGetNextChordNoteWithRotatedChord(t *testing.T) {
-	model := NewModel(0, "")
+	model := NewModel(0, "", false)
 
 	tests := []struct {
 		name        string
@@ -613,7 +613,7 @@ func TestGetNextChordNoteWithRotatedChord(t *testing.T) {
 }
 
 func TestProcessArpeggioWithRotatedChord(t *testing.T) {
-	model := NewModel(0, "")
+	model := NewModel(0, "", false)
 
 	tests := []struct {
 		name             string
@@ -694,7 +694,7 @@ func TestProcessArpeggioWithRotatedChord(t *testing.T) {
 func TestSendOSCInstrumentMessageWithArpeggioInitialNote(t *testing.T) {
 	// This test verifies that when an arpeggio is active, only the root note is sent initially
 	// We can't easily test the actual OSC sending without mocking, but we can test the logic
-	model := NewModel(0, "")
+	model := NewModel(0, "", false)
 
 	// Set up arpeggio settings for index 1
 	model.ArpeggioSettings[1] = types.ArpeggioSettings{

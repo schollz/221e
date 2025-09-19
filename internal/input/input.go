@@ -254,9 +254,6 @@ func HandleKeyInput(m *model.Model, msg tea.KeyMsg) tea.Cmd {
 	case "x":
 		return handleBackspace(m)
 
-	case "ctrl+h", "alt+h":
-		return handleCtrlH(m)
-
 	case "ctrl+r", "alt+r":
 		return handleCtrlR(m)
 
@@ -277,6 +274,79 @@ func HandleKeyInput(m *model.Model, msg tea.KeyMsg) tea.Cmd {
 
 	case "ctrl+o", "alt+o":
 		return handleCtrlO(m)
+
+	// Vim movement keys (only when vim mode is enabled)
+	case "h":
+		if m.VimMode {
+			return handleLeft(m)
+		}
+	case "j":
+		if m.VimMode {
+			return handleDown(m)
+		}
+	case "k":
+		if m.VimMode {
+			return handleUp(m)
+		}
+	case "l":
+		if m.VimMode {
+			return handleRight(m)
+		}
+
+	// Ctrl + vim movement keys (only when vim mode is enabled)
+	case "ctrl+h", "alt+h":
+		if m.VimMode {
+			return handleCtrlLeft(m)
+		} else {
+			return handleCtrlH(m)
+		}
+	case "ctrl+j", "alt+j":
+		if m.VimMode {
+			return handleCtrlDown(m)
+		}
+	case "ctrl+k", "alt+k":
+		if m.VimMode {
+			return handleCtrlUp(m)
+		}
+	case "ctrl+l", "alt+l":
+		if m.VimMode {
+			return handleCtrlRight(m)
+		}
+
+	// Shift + vim movement keys (only when vim mode is enabled)
+	// Note: Shift+letter typically produces uppercase letters
+	case "H":
+		if m.VimMode {
+			return handleShiftLeft(m)
+		}
+	case "J":
+		if m.VimMode {
+			return handleShiftDown(m)
+		}
+	case "K":
+		if m.VimMode {
+			return handleShiftUp(m)
+		}
+	case "L":
+		if m.VimMode {
+			return handleShiftRight(m)
+		}
+	case "shift+h":
+		if m.VimMode {
+			return handleShiftLeft(m)
+		}
+	case "shift+j":
+		if m.VimMode {
+			return handleShiftDown(m)
+		}
+	case "shift+k":
+		if m.VimMode {
+			return handleShiftUp(m)
+		}
+	case "shift+l":
+		if m.VimMode {
+			return handleShiftRight(m)
+		}
 	}
 
 	return nil

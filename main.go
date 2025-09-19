@@ -36,6 +36,7 @@ var (
 		record          bool
 		debug           string
 		skipSC          bool
+		vim             bool
 	}
 )
 
@@ -68,6 +69,8 @@ func init() {
 		"Write debug logs to specified file (empty disables)")
 	rootCmd.PersistentFlags().BoolVarP(&config.skipSC, "skip-sc", "s", false,
 		"Skip SuperCollider management (assume SC is already running)")
+	rootCmd.PersistentFlags().BoolVar(&config.vim, "vim", false,
+		"Enable vim-style cursor movement (h/j/k/l)")
 
 	// Set up a callback to track when --project is explicitly provided
 	rootCmd.PersistentFlags().Lookup("project").Changed = false
@@ -151,7 +154,7 @@ func restartWithProject() {
 		}
 	})
 	// Build program
-	tm = initialModel(config.port, config.project, d)
+	tm = initialModel(config.port, config.project, config.vim, d)
 
 	p := tea.NewProgram(tm, tea.WithAltScreen())
 
@@ -328,7 +331,7 @@ func runColliderTracker(cmd *cobra.Command, args []string) {
 		}
 	})
 	// Build program
-	tm = initialModel(config.port, config.project, d)
+	tm = initialModel(config.port, config.project, config.vim, d)
 
 	p := tea.NewProgram(tm, tea.WithAltScreen())
 
@@ -403,8 +406,8 @@ func runColliderTracker(cmd *cobra.Command, args []string) {
 	supercollider.Cleanup()
 }
 
-func initialModel(oscPort int, saveFolder string, dispatcher *osc.StandardDispatcher) *TrackerModel {
-	m := model.NewModel(oscPort, saveFolder)
+func initialModel(oscPort int, saveFolder string, vimMode bool, dispatcher *osc.StandardDispatcher) *TrackerModel {
+	m := model.NewModel(oscPort, saveFolder, vimMode)
 
 	// Try to load saved state
 	if err := storage.LoadState(m, oscPort, saveFolder); err == nil {
