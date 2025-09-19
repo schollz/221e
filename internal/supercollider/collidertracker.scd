@@ -556,13 +556,6 @@ s.waitForBoot({
 			var argLast;
 			var noteOn = msg[2].asInteger;
 			var synthToPlay = msg[3].asString;
-			var args = [
-				\effectDryOut, ~busDry,
-				\effectCombOut, ~busComb,
-				\effectReverbOut, ~busReverb,
-				\trackId, track,
-				\trackOut, ~busTrack[track],
-			];
 			var notes = Array.new();
 			var nonNoteIndex = 4;
 			var keepSearching = true;
@@ -592,13 +585,49 @@ s.waitForBoot({
 				});
 			});
 			if (noteOn > 0,{
-				args = args ++ msg[nonNoteIndex..];
+				var args;
+				var dict = Dictionary.new;
+				var targetGroup = ~grpDuckRead;
+				dict.putAll((
+					buf:             b,
+					effectDryOut:    ~busDry,
+					effectCombOut:   ~busComb,
+					effectReverbOut: ~busReverb,
+					trackId:         track,
+					trackOut:        ~busTrack[track]
+				));
+				dict.putPairs(msg.copyToEnd(nonNoteIndex));
+				// round numbers to 1/128 in place
+				dict.keysValuesChange { |k, v|
+					[k,v].postln;
+					if (v.isNumber) { v.round(1.0/128.0) } { v }
+				};
+
+				// rewrite ducking bus
+				if (dict.includesKey(\duckingBus),{
+					var i = dict[\duckingBus].asInteger;
+					dict.put(\duckingBusIn,  ~busDucking[i]);
+					dict.put(\duckingBusOut, ~busDucking[i]);  
+					dict.removeAt(\duckingBus);
+				},{
+					// nothing happens on bus 8
+					dict.put(\duckingBusIn, ~busDucking[8]);
+					dict.put(\duckingBusOut, ~busDucking[8]);
+				});
+				if (dict.includesKey(\duckingType), {
+					if (dict[\duckingType] == 1, {
+						targetGroup = ~grpDuckWrite;
+					});
+				});
+				args = dict.asPairs;
+				
 				notes.do({ arg n;
 					var synthArgs = args ++ [\note,n,\noteSize,notes.size];
 					var synthName = synName ++ "_" ++ n.asString;
-					[synthName,"started",synthArgs].postln;
+					// print out all the synthargs
+					synthArgs.do({ arg a,i; [i,a].postln; });
 					~synthsPlaying.at(track).put(synthName,
-						Synth.head(Server.default,synthToPlay,synthArgs).onFree({
+						Synth.head(targetGroup,synthToPlay,synthArgs).onFree({
 							[synthName,"freed"].postln;
 							~synthsPlaying.at(track).removeAt(synthName);
 						});
@@ -632,7 +661,6 @@ s.waitForBoot({
 			};
 
 			// rewrite ducking bus
-
 			if (dict.includesKey(\duckingBus),{
 				var i = dict[\duckingBus].asInteger;
 				dict.put(\duckingBusIn,  ~busDucking[i]);
@@ -643,15 +671,12 @@ s.waitForBoot({
 				dict.put(\duckingBusIn, ~busDucking[8]);
 				dict.put(\duckingBusOut, ~busDucking[8]);
 			});
-
-
 			if (dict.includesKey(\duckingType), {
 				if (dict[\duckingType] == 1, {
 					targetGroup = ~grpDuckWrite;
 				});
 			});
 			
-			["OutputProxy",targetGroup,dict.at(\duckingType),track].postln;
 
 			// create a new dictionary for the track if it doesn't exist
 			if (~samplesPlaying.at(track).isNil,{
