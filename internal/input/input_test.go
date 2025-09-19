@@ -12,7 +12,7 @@ import (
 )
 
 func createTestModel() *model.Model {
-	return model.NewModel(0, "test.json") // Port 0 to disable OSC for testing
+	return model.NewModel(0, "test.json", false) // Port 0 to disable OSC for testing
 }
 
 func TestHandlePgDown(t *testing.T) {

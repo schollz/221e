@@ -144,6 +144,8 @@ type Model struct {
 	arpeggioMutex        sync.Mutex                   // Mutex for safe access to arpeggio tracking
 	// Per-track random number generators for modulation
 	ModulateRngs [8]*rand.Rand // Per-track RNG for modulation (one per track)
+	// Vim mode configuration
+	VimMode bool // Enable vim-style cursor movement (h/j/k/l)
 }
 
 // Methods for modifying data structures
@@ -594,7 +596,7 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 	}
 }
 
-func NewModel(oscPort int, saveFolder string) *Model {
+func NewModel(oscPort int, saveFolder string, vimMode bool) *Model {
 	m := &Model{
 		CurrentRow:        0,
 		CurrentCol:        0,              // Start at first track in song view
@@ -651,6 +653,8 @@ func NewModel(oscPort int, saveFolder string) *Model {
 		RecordingEnabled:     false,
 		RecordingActive:      false,
 		CurrentRecordingFile: "",
+		// Initialize vim mode
+		VimMode: vimMode,
 	}
 
 	// Initialize mixer state with defaults

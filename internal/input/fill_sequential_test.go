@@ -9,7 +9,7 @@ import (
 )
 
 func TestFillSequentialRT(t *testing.T) {
-	m := model.NewModel(0, "")
+	m := model.NewModel(0, "", false)
 	m.ViewMode = types.PhraseView
 	m.CurrentPhrase = 0
 	m.CurrentTrack = 0
@@ -36,7 +36,7 @@ func TestFillSequentialRT(t *testing.T) {
 }
 
 func TestFillSequentialTS(t *testing.T) {
-	m := model.NewModel(0, "")
+	m := model.NewModel(0, "", false)
 	m.ViewMode = types.PhraseView
 	m.CurrentPhrase = 0
 	m.CurrentTrack = 0
@@ -64,7 +64,7 @@ func TestFillSequentialTS(t *testing.T) {
 }
 
 func TestFillSequentialRTNoReferenceValue(t *testing.T) {
-	m := model.NewModel(0, "")
+	m := model.NewModel(0, "", false)
 	m.ViewMode = types.PhraseView
 	m.CurrentPhrase = 0
 	m.CurrentTrack = 0
@@ -89,7 +89,7 @@ func TestFillSequentialRTNoReferenceValue(t *testing.T) {
 }
 
 func TestFillSequentialTSNoReferenceValue(t *testing.T) {
-	m := model.NewModel(0, "")
+	m := model.NewModel(0, "", false)
 	m.ViewMode = types.PhraseView
 	m.CurrentPhrase = 0
 	m.CurrentTrack = 0
@@ -114,7 +114,7 @@ func TestFillSequentialTSNoReferenceValue(t *testing.T) {
 
 func TestFillSequentialOtherColumnStillIncrements(t *testing.T) {
 	// Test that other columns still work with the normal incrementing behavior
-	m := model.NewModel(0, "")
+	m := model.NewModel(0, "", false)
 	m.ViewMode = types.PhraseView
 	m.CurrentPhrase = 0
 	m.CurrentTrack = 0

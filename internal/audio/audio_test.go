@@ -12,7 +12,7 @@ import (
 
 func TestPlayFile(t *testing.T) {
 	t.Run("empty files list", func(t *testing.T) {
-		m := model.NewModel(0, "test-save.json") // OSC port 0 to disable OSC
+		m := model.NewModel(0, "test-save.json", false) // OSC port 0 to disable OSC
 		m.Files = []string{}
 
 		PlayFile(m)
@@ -23,7 +23,7 @@ func TestPlayFile(t *testing.T) {
 	})
 
 	t.Run("current row out of bounds", func(t *testing.T) {
-		m := model.NewModel(0, "test-save.json")
+		m := model.NewModel(0, "test-save.json", false)
 		m.Files = []string{"test.wav"}
 		m.CurrentRow = 1 // Out of bounds
 
@@ -35,7 +35,7 @@ func TestPlayFile(t *testing.T) {
 	})
 
 	t.Run("skip directory", func(t *testing.T) {
-		m := model.NewModel(0, "test-save.json")
+		m := model.NewModel(0, "test-save.json", false)
 		m.Files = []string{"subdir/"}
 		m.CurrentRow = 0
 		m.CurrentDir = "test"
@@ -48,7 +48,7 @@ func TestPlayFile(t *testing.T) {
 	})
 
 	t.Run("skip parent directory", func(t *testing.T) {
-		m := model.NewModel(0, "test-save.json")
+		m := model.NewModel(0, "test-save.json", false)
 		m.Files = []string{".."}
 		m.CurrentRow = 0
 		m.CurrentDir = "test"
@@ -61,7 +61,7 @@ func TestPlayFile(t *testing.T) {
 	})
 
 	t.Run("start playing new file", func(t *testing.T) {
-		m := model.NewModel(0, "test-save.json")
+		m := model.NewModel(0, "test-save.json", false)
 		m.Files = []string{"test.wav"}
 		m.CurrentRow = 0
 		m.CurrentDir = "test"
@@ -74,7 +74,7 @@ func TestPlayFile(t *testing.T) {
 	})
 
 	t.Run("stop currently playing file", func(t *testing.T) {
-		m := model.NewModel(0, "test-save.json")
+		m := model.NewModel(0, "test-save.json", false)
 		m.Files = []string{"test.wav"}
 		m.CurrentRow = 0
 		m.CurrentDir = "test"
@@ -90,7 +90,7 @@ func TestPlayFile(t *testing.T) {
 	})
 
 	t.Run("switch to different file", func(t *testing.T) {
-		m := model.NewModel(0, "test-save.json")
+		m := model.NewModel(0, "test-save.json", false)
 		m.Files = []string{"test1.wav", "test2.wav"}
 		m.CurrentRow = 1
 		m.CurrentDir = "test"
@@ -107,7 +107,7 @@ func TestPlayFile(t *testing.T) {
 
 func TestSelectFile(t *testing.T) {
 	t.Run("empty files list", func(t *testing.T) {
-		m := model.NewModel(0, "test-save.json")
+		m := model.NewModel(0, "test-save.json", false)
 		m.Files = []string{}
 
 		SelectFile(m)
@@ -116,7 +116,7 @@ func TestSelectFile(t *testing.T) {
 	})
 
 	t.Run("current row out of bounds", func(t *testing.T) {
-		m := model.NewModel(0, "test-save.json")
+		m := model.NewModel(0, "test-save.json", false)
 		m.Files = []string{"test.wav"}
 		m.CurrentRow = 1 // Out of bounds
 
@@ -126,7 +126,7 @@ func TestSelectFile(t *testing.T) {
 	})
 
 	t.Run("navigate to parent directory", func(t *testing.T) {
-		m := model.NewModel(0, "test-save.json")
+		m := model.NewModel(0, "test-save.json", false)
 		m.Files = []string{".."}
 		m.CurrentRow = 0
 		m.CurrentDir = filepath.Join("test", "subdir")
@@ -140,7 +140,7 @@ func TestSelectFile(t *testing.T) {
 	})
 
 	t.Run("navigate to subdirectory", func(t *testing.T) {
-		m := model.NewModel(0, "test-save.json")
+		m := model.NewModel(0, "test-save.json", false)
 		m.Files = []string{"subdir/"}
 		m.CurrentRow = 0
 		m.CurrentDir = "test"
@@ -154,7 +154,7 @@ func TestSelectFile(t *testing.T) {
 	})
 
 	t.Run("select audio file", func(t *testing.T) {
-		m := model.NewModel(0, "test-save.json")
+		m := model.NewModel(0, "test-save.json", false)
 		m.Files = []string{"test.wav"}
 		m.CurrentRow = 0
 		m.CurrentDir = "test"

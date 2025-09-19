@@ -10,7 +10,7 @@ import (
 
 func TestFillSequentialChain(t *testing.T) {
 	t.Run("Chain with existing phrases at rows 0,1 - cursor at row 5", func(t *testing.T) {
-		m := model.NewModel(0, "")
+		m := model.NewModel(0, "", false)
 		m.ViewMode = types.ChainView
 		m.CurrentChain = 0
 		m.CurrentRow = 5
@@ -35,7 +35,7 @@ func TestFillSequentialChain(t *testing.T) {
 	})
 
 	t.Run("Empty chain - cursor at row 3", func(t *testing.T) {
-		m := model.NewModel(0, "")
+		m := model.NewModel(0, "", false)
 		m.ViewMode = types.ChainView
 		m.CurrentChain = 0
 		m.CurrentRow = 3
@@ -55,7 +55,7 @@ func TestFillSequentialChain(t *testing.T) {
 	})
 
 	t.Run("Chain with phrase at row 0 - cursor at row 2", func(t *testing.T) {
-		m := model.NewModel(0, "")
+		m := model.NewModel(0, "", false)
 		m.ViewMode = types.ChainView
 		m.CurrentChain = 0
 		m.CurrentRow = 2
@@ -75,7 +75,7 @@ func TestFillSequentialChain(t *testing.T) {
 	})
 
 	t.Run("Chain with existing phrase at row 2 - cursor at row 4", func(t *testing.T) {
-		m := model.NewModel(0, "")
+		m := model.NewModel(0, "", false)
 		m.ViewMode = types.ChainView
 		m.CurrentChain = 0
 		m.CurrentRow = 4
@@ -98,7 +98,7 @@ func TestFillSequentialChain(t *testing.T) {
 
 	t.Run("User scenario: phrases 00,01 at rows 0,1 - cursor at row 5", func(t *testing.T) {
 		// This matches the exact scenario from the user's debug output
-		m := model.NewModel(0, "")
+		m := model.NewModel(0, "", false)
 		m.ViewMode = types.ChainView
 		m.CurrentChain = 0
 		m.CurrentRow = 5

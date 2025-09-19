@@ -13,7 +13,7 @@ import (
 )
 
 func createTestModel() *model.Model {
-	m := model.NewModel(0, "test.json") // Port 0 to disable OSC
+	m := model.NewModel(0, "test.json", false) // Port 0 to disable OSC
 	m.TermWidth = 120
 	m.TermHeight = 40
 	return m

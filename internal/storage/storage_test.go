@@ -16,7 +16,7 @@ func TestDoSave(t *testing.T) {
 		tmpDir := t.TempDir()
 		saveFolder := filepath.Join(tmpDir, "test_save")
 
-		m := model.NewModel(0, saveFolder)
+		m := model.NewModel(0, saveFolder, false)
 		m.BPM = 140
 		m.CurrentRow = 5
 
@@ -38,7 +38,7 @@ func TestDoSave(t *testing.T) {
 	})
 
 	t.Run("save to invalid path", func(t *testing.T) {
-		m := model.NewModel(0, "/invalid/path/that/does/not/exist/save")
+		m := model.NewModel(0, "/invalid/path/that/does/not/exist/save", false)
 
 		// Should not panic, just log error
 		DoSave(m)
@@ -51,14 +51,14 @@ func TestLoadState(t *testing.T) {
 		saveFolder := filepath.Join(tmpDir, "test_load")
 
 		// Create and save a model with specific state
-		m1 := model.NewModel(0, saveFolder)
+		m1 := model.NewModel(0, saveFolder, false)
 		m1.BPM = 140
 		m1.CurrentRow = 10
 		m1.ViewMode = types.ChainView
 		DoSave(m1)
 
 		// Create new model and load state
-		m2 := model.NewModel(0, saveFolder)
+		m2 := model.NewModel(0, saveFolder, false)
 		err := LoadState(m2, 0, saveFolder)
 
 		assert.NoError(t, err)
@@ -68,7 +68,7 @@ func TestLoadState(t *testing.T) {
 	})
 
 	t.Run("load nonexistent file", func(t *testing.T) {
-		m := model.NewModel(0, "")
+		m := model.NewModel(0, "", false)
 		err := LoadState(m, 0, "/path/that/does/not/exist")
 
 		assert.Error(t, err)
@@ -79,12 +79,12 @@ func TestLoadState(t *testing.T) {
 		saveFolder := filepath.Join(tmpDir, "test_force_view")
 
 		// Create and save a model in a non-main view
-		m1 := model.NewModel(0, saveFolder)
+		m1 := model.NewModel(0, saveFolder, false)
 		m1.ViewMode = types.FileView // This should be forced to PhraseView
 		DoSave(m1)
 
 		// Load state
-		m2 := model.NewModel(0, saveFolder)
+		m2 := model.NewModel(0, saveFolder, false)
 		err := LoadState(m2, 0, saveFolder)
 
 		assert.NoError(t, err)
@@ -103,7 +103,7 @@ func TestLoadFiles(t *testing.T) {
 		os.WriteFile(filepath.Join(tmpDir, "test3.txt"), []byte("test"), 0644) // Should be ignored
 		os.Mkdir(filepath.Join(tmpDir, "subdir"), 0755)
 
-		m := model.NewModel(0, "")
+		m := model.NewModel(0, "", false)
 		m.CurrentDir = tmpDir
 
 		LoadFiles(m)
@@ -117,7 +117,7 @@ func TestLoadFiles(t *testing.T) {
 	})
 
 	t.Run("load files from root directory", func(t *testing.T) {
-		m := model.NewModel(0, "")
+		m := model.NewModel(0, "", false)
 		m.CurrentDir = "/"
 
 		LoadFiles(m)
@@ -127,7 +127,7 @@ func TestLoadFiles(t *testing.T) {
 	})
 
 	t.Run("load files from nonexistent directory", func(t *testing.T) {
-		m := model.NewModel(0, "")
+		m := model.NewModel(0, "", false)
 		m.CurrentDir = "/path/that/does/not/exist"
 
 		LoadFiles(m)
@@ -142,7 +142,7 @@ func TestAutoSave(t *testing.T) {
 		tmpDir := t.TempDir()
 		saveFolder := filepath.Join(tmpDir, "autosave_test")
 
-		m := model.NewModel(0, saveFolder)
+		m := model.NewModel(0, saveFolder, false)
 		m.BPM = 150
 
 		// Call AutoSave multiple times quickly
@@ -170,7 +170,7 @@ func BenchmarkDoSave(b *testing.B) {
 	saveFolder := filepath.Join(tmpDir, "test_save")
 
 	// Create a model with default data
-	m := model.NewModel(0, saveFolder) // OSC port 0 to disable OSC
+	m := model.NewModel(0, saveFolder, false) // OSC port 0 to disable OSC
 
 	// Run the benchmark
 	b.ResetTimer()
@@ -185,7 +185,7 @@ func BenchmarkLoadState(b *testing.B) {
 	saveFolder := filepath.Join(tmpDir, "test_load")
 
 	// Create a model with default data and save it once
-	m := model.NewModel(0, saveFolder) // OSC port 0 to disable OSC
+	m := model.NewModel(0, saveFolder, false) // OSC port 0 to disable OSC
 	DoSave(m)
 
 	// Verify the save folder and data file exist
@@ -198,7 +198,7 @@ func BenchmarkLoadState(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		// Create a fresh model for each load operation
-		testModel := model.NewModel(0, saveFolder)
+		testModel := model.NewModel(0, saveFolder, false)
 		err := LoadState(testModel, 0, saveFolder)
 		if err != nil {
 			b.Fatalf("LoadState failed: %v", err)
