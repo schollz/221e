@@ -1326,6 +1326,23 @@ func (m *Model) sendOSCInstrumentMessage(params InstrumentOSCParams) {
 		msg.Append(float32(params.EffectReverb))
 		msg.Append("duckingIndex")
 		msg.Append(int32(params.DuckingIndex))
+		if params.DuckingIndex >= 0 && params.DuckingIndex < 255 {
+			ds := m.DuckingSettings[params.DuckingIndex] // Type/Bus/Attack/Release/Depth/Thresh live here
+			msg.Append("duckingType")
+			msg.Append(int32(ds.Type))
+			msg.Append("duckingBusIn")
+			msg.Append(int32(ds.Bus))
+			msg.Append("duckingBusOut")
+			msg.Append(int32(ds.Bus))
+			msg.Append("duckingAttack")
+			msg.Append(float32(ds.Attack))
+			msg.Append("duckingRelease")
+			msg.Append(float32(ds.Release))
+			msg.Append("duckingDepth")
+			msg.Append(float32(ds.Depth))
+			msg.Append("duckingThresh")
+			msg.Append(float32(ds.Thresh))
+		}
 		msg.Append("velocity")
 		msg.Append(int32(params.Velocity))
 
