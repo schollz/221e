@@ -138,19 +138,42 @@ func restartWithProject() {
 
 	// Set up OSC dispatcher early to detect SuperCollider readiness
 	d := osc.NewStandardDispatcher()
+	var tm *TrackerModel // Will be set after model creation
+	var initialPreferencesSent = false
+
 	d.AddMsgHandler("/cpuusage", func(msg *osc.Message) {
 		log.Printf("SuperCollider CPU Usage: %v", msg.Arguments[0])
+
+		// Send initial preferences on first CPU message (when SC is confirmed ready)
+		if !initialPreferencesSent && tm != nil {
+			log.Printf("Sending initial preferences to SuperCollider")
+			tm.model.SendOSCPregainMessage()
+			tm.model.SendOSCPostgainMessage()
+			tm.model.SendOSCBiasMessage()
+			tm.model.SendOSCSaturationMessage()
+			tm.model.SendOSCDriveMessage()
+			tm.model.SendOSCInputLevelMessage()
+			tm.model.SendOSCReverbSendMessage()
+
+			// Send track set levels too
+			for track := 0; track < 8; track++ {
+				tm.model.SendOSCTrackSetLevelMessage(track)
+			}
+			initialPreferencesSent = true
+		}
+
 		// Signal that SuperCollider is ready (non-blocking)
 		select {
 		case readyChannel <- struct{}{}:
 		default:
 		}
 	})
-	var tm *TrackerModel // Will be set after model creation
 
 	d.AddMsgHandler("/track_volume", func(msg *osc.Message) {
-		for i := 0; i < len(tm.model.TrackVolumes); i++ {
-			tm.model.TrackVolumes[i] = msg.Arguments[i].(float32)
+		if tm != nil {
+			for i := 0; i < len(tm.model.TrackVolumes); i++ {
+				tm.model.TrackVolumes[i] = msg.Arguments[i].(float32)
+			}
 		}
 	})
 	// Build program
@@ -315,19 +338,42 @@ func runColliderTracker(cmd *cobra.Command, args []string) {
 
 	// Set up OSC dispatcher early to detect SuperCollider readiness
 	d := osc.NewStandardDispatcher()
+	var tm *TrackerModel // Will be set after model creation
+	var initialPreferencesSent = false
+
 	d.AddMsgHandler("/cpuusage", func(msg *osc.Message) {
 		log.Printf("SuperCollider CPU Usage: %v", msg.Arguments[0])
+
+		// Send initial preferences on first CPU message (when SC is confirmed ready)
+		if !initialPreferencesSent && tm != nil {
+			log.Printf("Sending initial preferences to SuperCollider")
+			tm.model.SendOSCPregainMessage()
+			tm.model.SendOSCPostgainMessage()
+			tm.model.SendOSCBiasMessage()
+			tm.model.SendOSCSaturationMessage()
+			tm.model.SendOSCDriveMessage()
+			tm.model.SendOSCInputLevelMessage()
+			tm.model.SendOSCReverbSendMessage()
+
+			// Send track set levels too
+			for track := 0; track < 8; track++ {
+				tm.model.SendOSCTrackSetLevelMessage(track)
+			}
+			initialPreferencesSent = true
+		}
+
 		// Signal that SuperCollider is ready (non-blocking)
 		select {
 		case readyChannel <- struct{}{}:
 		default:
 		}
 	})
-	var tm *TrackerModel // Will be set after model creation
 
 	d.AddMsgHandler("/track_volume", func(msg *osc.Message) {
-		for i := 0; i < len(tm.model.TrackVolumes); i++ {
-			tm.model.TrackVolumes[i] = msg.Arguments[i].(float32)
+		if tm != nil {
+			for i := 0; i < len(tm.model.TrackVolumes); i++ {
+				tm.model.TrackVolumes[i] = msg.Arguments[i].(float32)
+			}
 		}
 	})
 	// Build program
@@ -418,17 +464,8 @@ func initialModel(oscPort int, saveFolder string, vimMode bool, dispatcher *osc.
 		storage.LoadFiles(m)
 	}
 
-	// Send current dB settings to OSC on startup
-	m.SendOSCPregainMessage()
-	m.SendOSCPostgainMessage()
-	m.SendOSCBiasMessage()
-	m.SendOSCSaturationMessage()
-	m.SendOSCDriveMessage()
-
-	// Send track set levels to OSC on startup
-	for track := 0; track < 8; track++ {
-		m.SendOSCTrackSetLevelMessage(track)
-	}
+	// Note: Preference OSC messages are now sent when first CPU message is received
+	// to ensure SuperCollider is ready to receive them
 
 	// Add waveform handler to the existing OSC dispatcher
 	dispatcher.AddMsgHandler("/waveform", func(msg *osc.Message) {
