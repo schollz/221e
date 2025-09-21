@@ -68,7 +68,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&config.debug, "log", "l", "",
 		"Write debug logs to specified file (empty disables)")
 	rootCmd.PersistentFlags().BoolVarP(&config.skipSC, "skip-sc", "s", false,
-		"Skip SuperCollider management (assume SC is already running)")
+		"Skip SuperCollider detection and management entirely")
 	rootCmd.PersistentFlags().BoolVar(&config.vim, "vim", false,
 		"Enable vim-style cursor movement (h/j/k/l)")
 
@@ -190,11 +190,23 @@ func restartWithProject() {
 		}
 	}()
 
-	// Start SuperCollider in the background so it doesn't block the splash
+	// Intelligent SuperCollider detection and startup
 	if !config.skipSC {
-		log.Printf("Starting SuperCollider if not already running")
+		log.Printf("Checking for existing SuperCollider instance...")
 		go func() {
-			if !supercollider.IsSuperColliderEnabled() {
+			// Wait up to 3 seconds for CPU usage messages indicating SC is already running
+			// with ColliderTracker code loaded
+			timeout := time.NewTimer(3 * time.Second)
+			defer timeout.Stop()
+
+			select {
+			case <-readyChannel:
+				// SuperCollider with ColliderTracker is already running
+				log.Printf("Found existing SuperCollider instance with ColliderTracker")
+				return
+			case <-timeout.C:
+				// No SuperCollider found, start our own
+				log.Printf("No existing SuperCollider found, starting new instance")
 				if err := supercollider.StartSuperColliderWithRecording(config.record); err != nil {
 					log.Printf("Failed to start SuperCollider: %v", err)
 				}
@@ -390,11 +402,23 @@ func runColliderTracker(cmd *cobra.Command, args []string) {
 		}
 	}()
 
-	// Start SuperCollider in the background so it doesn't block the splash
+	// Intelligent SuperCollider detection and startup
 	if !config.skipSC {
-		log.Printf("Starting SuperCollider if not already running")
+		log.Printf("Checking for existing SuperCollider instance...")
 		go func() {
-			if !supercollider.IsSuperColliderEnabled() {
+			// Wait up to 3 seconds for CPU usage messages indicating SC is already running
+			// with ColliderTracker code loaded
+			timeout := time.NewTimer(3 * time.Second)
+			defer timeout.Stop()
+
+			select {
+			case <-readyChannel:
+				// SuperCollider with ColliderTracker is already running
+				log.Printf("Found existing SuperCollider instance with ColliderTracker")
+				return
+			case <-timeout.C:
+				// No SuperCollider found, start our own
+				log.Printf("No existing SuperCollider found, starting new instance")
 				if err := supercollider.StartSuperColliderWithRecording(config.record); err != nil {
 					log.Printf("Failed to start SuperCollider: %v", err)
 				}
