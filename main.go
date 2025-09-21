@@ -190,13 +190,22 @@ func restartWithProject() {
 		}
 	}()
 
-	// Intelligent SuperCollider detection and startup
+	// Fast SuperCollider detection and startup
 	if !config.skipSC {
-		log.Printf("Checking for existing SuperCollider instance...")
 		go func() {
-			// Wait up to 3 seconds for CPU usage messages indicating SC is already running
-			// with ColliderTracker code loaded
-			timeout := time.NewTimer(3 * time.Second)
+			// First, quickly check if sclang process is running
+			if !supercollider.IsSuperColliderEnabled() {
+				// No sclang process found - start SuperCollider immediately
+				log.Printf("No sclang process found, starting SuperCollider")
+				if err := supercollider.StartSuperColliderWithRecording(config.record); err != nil {
+					log.Printf("Failed to start SuperCollider: %v", err)
+				}
+				return
+			}
+			
+			// sclang is running - wait briefly to see if it has ColliderTracker loaded
+			log.Printf("Found sclang process, checking if ColliderTracker is loaded...")
+			timeout := time.NewTimer(1 * time.Second)
 			defer timeout.Stop()
 
 			select {
@@ -205,15 +214,15 @@ func restartWithProject() {
 				log.Printf("Found existing SuperCollider instance with ColliderTracker")
 				return
 			case <-timeout.C:
-				// No SuperCollider found, start our own
-				log.Printf("No existing SuperCollider found, starting new instance")
+				// sclang is running but no ColliderTracker - start our own instance
+				log.Printf("sclang running but no ColliderTracker detected, starting new instance")
 				if err := supercollider.StartSuperColliderWithRecording(config.record); err != nil {
 					log.Printf("Failed to start SuperCollider: %v", err)
 				}
 			}
 		}()
 	} else {
-		log.Printf("Skipping SuperCollider management (--skip-sc flag provided)")
+		log.Printf("Skipping SuperCollider detection and management entirely (--skip-sc flag provided)")
 	}
 
 	// When SC signals readiness via /cpuusage, hide the splash
@@ -402,13 +411,22 @@ func runColliderTracker(cmd *cobra.Command, args []string) {
 		}
 	}()
 
-	// Intelligent SuperCollider detection and startup
+	// Fast SuperCollider detection and startup
 	if !config.skipSC {
-		log.Printf("Checking for existing SuperCollider instance...")
 		go func() {
-			// Wait up to 3 seconds for CPU usage messages indicating SC is already running
-			// with ColliderTracker code loaded
-			timeout := time.NewTimer(3 * time.Second)
+			// First, quickly check if sclang process is running
+			if !supercollider.IsSuperColliderEnabled() {
+				// No sclang process found - start SuperCollider immediately
+				log.Printf("No sclang process found, starting SuperCollider")
+				if err := supercollider.StartSuperColliderWithRecording(config.record); err != nil {
+					log.Printf("Failed to start SuperCollider: %v", err)
+				}
+				return
+			}
+			
+			// sclang is running - wait briefly to see if it has ColliderTracker loaded
+			log.Printf("Found sclang process, checking if ColliderTracker is loaded...")
+			timeout := time.NewTimer(1 * time.Second)
 			defer timeout.Stop()
 
 			select {
@@ -417,15 +435,15 @@ func runColliderTracker(cmd *cobra.Command, args []string) {
 				log.Printf("Found existing SuperCollider instance with ColliderTracker")
 				return
 			case <-timeout.C:
-				// No SuperCollider found, start our own
-				log.Printf("No existing SuperCollider found, starting new instance")
+				// sclang is running but no ColliderTracker - start our own instance
+				log.Printf("sclang running but no ColliderTracker detected, starting new instance")
 				if err := supercollider.StartSuperColliderWithRecording(config.record); err != nil {
 					log.Printf("Failed to start SuperCollider: %v", err)
 				}
 			}
 		}()
 	} else {
-		log.Printf("Skipping SuperCollider management (--skip-sc flag provided)")
+		log.Printf("Skipping SuperCollider detection and management entirely (--skip-sc flag provided)")
 	}
 
 	// When SC signals readiness via /cpuusage, hide the splash

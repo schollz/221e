@@ -79,18 +79,13 @@ Ensure the cursor is on this line and hit Ctrl+Enter. You should now hear a sine
 
 ## Run
 
-**Option 1: Intelligent Auto-Detection (Recommended)**
+**Option 1: (Recommended)**
 
 Simply run collidertracker - it will automatically detect if SuperCollider is already running with ColliderTracker code, or start a new instance if needed:
 
 ```bash
 ./collidertracker
 ```
-
-The application will:
-- Check for an existing SuperCollider instance running ColliderTracker (3 second detection period)
-- If found: Use the existing instance
-- If not found: Automatically start and manage SuperCollider
 
 _Note:_ On Windows, you may need to add SuperCollider to the list of approved programs. Run the following commands in an Administrator-level PowerShell:
 
