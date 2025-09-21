@@ -194,8 +194,28 @@ func Cleanup() {
 	if startedBySelf {
 		// Stop SuperCollider process if we started it
 		if sclangProcess != nil && sclangProcess.Process != nil {
-			sclangProcess.Process.Kill()
-			sclangProcess.Wait() // Wait for it to actually stop
+			if runtime.GOOS == "windows" {
+				// On Windows, use taskkill for more reliable termination
+				killCmd := exec.Command("taskkill", "/F", "/T", "/PID", fmt.Sprintf("%d", sclangProcess.Process.Pid))
+				killCmd.Run() // Run taskkill but don't wait for output
+				// Give it a moment to terminate
+				time.Sleep(500 * time.Millisecond)
+			} else {
+				// On Unix systems, use the standard approach
+				sclangProcess.Process.Kill()
+			}
+			// Wait for the process to actually stop (with timeout)
+			done := make(chan error, 1)
+			go func() {
+				done <- sclangProcess.Wait()
+			}()
+			select {
+			case <-done:
+				// Process finished normally
+			case <-time.After(2 * time.Second):
+				// Timeout - process may still be running but we've done our best
+				log.Printf("Timeout waiting for sclang process to terminate")
+			}
 		}
 		startedBySelf = false
 		sclangProcess = nil
