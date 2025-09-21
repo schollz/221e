@@ -34,10 +34,11 @@ This is a music tracker designed to be used with any terminal (Linux, macOS, Win
 ColliderTracker will automatically download required SuperCollider extensions on first run if they are not already installed. These extensions are downloaded to your system's standard SuperCollider extensions directory:
 
 - **macOS**: `~/Library/Application Support/SuperCollider/Extensions`
-- **Linux**: `~/.local/share/SuperCollider/Extensions`  
+- **Linux**: `~/.local/share/SuperCollider/Extensions`
 - **Windows**: `%LOCALAPPDATA%/SuperCollider/Extensions`
 
 The following extensions are automatically downloaded:
+
 - **PortedPlugins** ([schollz/portedplugins](https://github.com/schollz/portedplugins)) - Audio effects including Fverb and AnalogTape
 - **mi-UGens** ([v7b1/mi-UGens](https://github.com/v7b1/mi-UGens)) - Mutable Instruments synthesizer modules including MiBraids
 
@@ -68,6 +69,13 @@ Grab the latest build from **[Releases](https://github.com/schollz/collidertrack
 
 ```bash
 ./collidertracker
+```
+
+_Note:_ On Windows, you may need to add SuperCollider to the list of approved programs. Run the following commands in an Administrator-level PowerShell:
+
+```powershell
+Add-MpPreference -ExclusionProcess "C:\Program Files\SuperCollider-3.13.0\sclang.exe"
+Add-MpPreference -ExclusionProcess "C:\Program Files\SuperCollider-3.13.0\scsynth.exe"
 ```
 
 **Option 2: Manual SuperCollider Management**
@@ -125,12 +133,14 @@ Grab the latest build from **[Releases](https://github.com/schollz/collidertrack
 ColliderTracker offers two types of recording:
 
 ### Session Recording (`-r, --record` flag)
+
 - Records the **entire session** from start to finish
 - Output saved to SuperCollider's default recordings folder
 - Captures everything: all tracks, effects, and audio output
 - Automatic recording begins when the program starts
 
 ### Multitrack Recording (**Ctrl+R** in program)
+
 - **Context-aware recording** of active tracks only
 - Records current track (Chain/Phrase view) or all active tracks (Song view)
 - **Output**: Generates master mix + individual track stems with timestamps
@@ -191,11 +201,11 @@ ColliderTracker offers two types of recording:
 
 ### Effect Configuration Views
 
-| View            | Description                                      |
-| --------------- | ------------------------------------------------ |
-| **Retrigger**   | Envelope settings for retrigger effects          |
-| **Timestretch** | Time-stretching parameters                       |
-| **Arpeggio**    | Arpeggio pattern editor (Instrument tracks only) |
+| View            | Description                                                  |
+| --------------- | ------------------------------------------------------------ |
+| **Retrigger**   | Envelope settings for retrigger effects                      |
+| **Timestretch** | Time-stretching parameters                                   |
+| **Arpeggio**    | Arpeggio pattern editor (Instrument tracks only)             |
 | **Modulate**    | Note modulation with randomization, scaling, and probability |
 
 ## Smart 'C' Key Functionality
@@ -403,13 +413,13 @@ After building, verify the binary works:
 - Version information can be embedded using: `go build -ldflags "-X main.Version=<version>"`
 
 ## Big list of trackers
+
 ## Popular Modern / Commercial
 
 - [Renoise](https://www.renoise.com/)
 - [SunVox](https://www.warmplace.ru/soft/sunvox/)
 - [DefleMask](https://deflemask.com/)
 - [dirtywave m8](https://dirtywave.com/)
-
 
 ## Cross-Platform / General Trackers & Experimental
 
@@ -423,10 +433,9 @@ After building, verify the binary works:
 - [SoundTracker (GTK/Unix)](https://www.soundtracker.org/) · [Source](https://sourceforge.net/p/soundtracker/git/ci/master/tree/)
 - [ChibiTracker](https://github.com/reduz/chibitracker)
 - [Propulse Tracker](https://github.com/hukkax/Propulse)
-- [Pata Tracker](https://pixwlk.itch.io/pata-tracker) 
-- [Oxide Tracker](https://paranoidcactus.itch.io/oxidetracker) 
-- [WaveTracker](https://squiggythings.itch.io/wavetracker) 
-
+- [Pata Tracker](https://pixwlk.itch.io/pata-tracker)
+- [Oxide Tracker](https://paranoidcactus.itch.io/oxidetracker)
+- [WaveTracker](https://squiggythings.itch.io/wavetracker)
 
 ## Classic Trackers & Clones
 
@@ -438,7 +447,6 @@ After building, verify the binary works:
 - [Skale Tracker](http://www.skale.org/)
 - [MadTracker](https://www.madtracker.org/)
 
-
 ## Game Boy / NES / Console-Focused / Chiptune
 
 - [LSDj (Little Sound Dj)](https://littlesounddj.com/25th/)
@@ -447,8 +455,7 @@ After building, verify the binary works:
 - [LittleGPTracker (LGPT)](https://github.com/Mdashdotdashn/LittleGPTracker) · [Website](https://www.littlegptracker.com/)
 - [NitroTracker](https://nitrotracker.tobw.net/) · [GitHub Fork](https://github.com/TobWen/NitroTracker)
 - [klystrack](https://kometbomb.github.io/klystrack/) · [Itch.io page](https://kometbomb.itch.io/klystrack)
-- [Lovely Composer](https://lovelycomposer.itch.io/lovely-composer) 
-
+- [Lovely Composer](https://lovelycomposer.itch.io/lovely-composer)
 
 ## Commodore 64 / SID
 
@@ -456,29 +463,27 @@ After building, verify the binary works:
 - [SID Factory II](https://github.com/Chordian/sidfactory2)
 - [CheeseCutter](https://github.com/theyamo/CheeseCutter)
 - [SID-Wizard (C64 release info)](https://csdb.dk/release/?id=221555)
-- [JITT64 (Java Ice Team Tracker)](https://iceteam.itch.io/jitt64) 
-
+- [JITT64 (Java Ice Team Tracker)](https://iceteam.itch.io/jitt64)
 
 ## Yamaha / FM & Multi-Chip
 
 - [BambooTracker](https://bambootracker.github.io/BambooTracker/)
-- [klystrack](https://kometbomb.github.io/klystrack/) *(also listed under Chiptune)*
+- [klystrack](https://kometbomb.github.io/klystrack/) _(also listed under Chiptune)_
 - [Protrekkr](https://github.com/hitchhikr/protrekkr)
-- [Reality Adlib Tracker (RAD)](https://realityproductions.itch.io/rad) 
-
+- [Reality Adlib Tracker (RAD)](https://realityproductions.itch.io/rad)
 
 ## Web / Browser / Mobile Trackers
 
 - [BassoonTracker](https://github.com/steffest/BassoonTracker) · [Live Demo](http://www.stef.be/bassoontracker/)
-- [XO-Tracker DEMO](https://kouzeru.itch.io/xo-tracker-demo) 
-- [Sound Composer NX](https://kero.itch.io/sound-composer-nx) 
+- [XO-Tracker DEMO](https://kouzeru.itch.io/xo-tracker-demo)
+- [Sound Composer NX](https://kero.itch.io/sound-composer-nx)
 
 ## Niche / Experimental
 
 - [Shield Tracker (sTracker)](https://bleep.toys/) · [Shortcuts](https://bleep.toys/stracker/keyboard_shortcuts.html)
 - [1tracker (1-bit ZX/retro)](https://randomflux.info/1bit/viewtopic.php?id=24&p=4)
-- [WaveTracker](https://squiggythings.itch.io/wavetracker) *(Itch.io, also listed under General)*
-- [Oxide Tracker](https://paranoidcactus.itch.io/oxidetracker) *(Itch.io, also listed under General)*
+- [WaveTracker](https://squiggythings.itch.io/wavetracker) _(Itch.io, also listed under General)_
+- [Oxide Tracker](https://paranoidcactus.itch.io/oxidetracker) _(Itch.io, also listed under General)_
 
 ## Uninstalling ColliderTracker
 
@@ -502,6 +507,7 @@ ColliderTracker automatically downloads SuperCollider extensions to the followin
 ### 3. Clean Up Temporary Files
 
 ColliderTracker may create temporary `.scd` files in your system's temp directory during operation. These are automatically cleaned up when the application exits, but you can manually remove any remaining files with names like:
+
 - `collidertracker_*.scd`
 - `dx7_*.afx`
 - `dx7_*.scd`
@@ -509,6 +515,7 @@ ColliderTracker may create temporary `.scd` files in your system's temp director
 ### 4. SuperCollider Recordings (Optional)
 
 If you used the recording feature (`-r` flag), recordings are saved to SuperCollider's default recordings directory. You may want to back up or remove these files:
+
 - **macOS**: `~/Music/SuperCollider Recordings/`
 - **Linux**: `~/SuperCollider/`
 - **Windows**: `%USERPROFILE%/Music/SuperCollider Recordings/`

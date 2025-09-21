@@ -118,6 +118,11 @@ func StartSuperColliderWithRecording(enableRecording bool) error {
 	// Start sclang with the temporary scd file
 	sclangProcess = exec.Command(sclangPath, tempSamplerFile)
 
+	// On Windows, set working directory to sclang's directory so it can find scsynth
+	if runtime.GOOS == "windows" {
+		sclangProcess.Dir = filepath.Dir(sclangPath)
+	}
+
 	// Redirect SuperCollider output to the same logger used by the main application
 	sclangProcess.Stdout = log.Writer()
 	sclangProcess.Stderr = log.Writer()
