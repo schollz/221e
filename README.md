@@ -1,18 +1,16 @@
-<p align="center">
-<a href="https://www.youtube.com/watch?v=zViMACW6VbQ">
-<img width="600" alt="vlcsnap-2025-08-23-18h24m04s244" src="https://github.com/user-attachments/assets/7d4c36c0-bd28-4611-a41b-ddf864af045c" />
-</a>
-<br>
-<a href="https://github.com/schollz/collidertracker/releases/latest">
-<img src="https://img.shields.io/github/v/release/schollz/collidertracker" alt="Version">
-</a>
-<a href="https://github.com/schollz/collidertracker/actions/workflows/build.yml">
-<img src="https://github.com/schollz/collidertracker/actions/workflows/build.yml/badge.svg" alt="Build Status">
-</a>
-<a href="https://github.com/sponsors/schollz">
-<img alt="GitHub Sponsors" src="https://img.shields.io/github/sponsors/schollz">
-</a>
-</p>
+<p align="center"> <a href="https://www.youtube.com/watch?v=zViMACW6VbQ"> <img
+width="600" alt="vlcsnap-2025-08-23-18h24m04s244"
+src="https://github.com/user-attachments/assets/7d4c36c0-bd28-4611-a41b-ddf864af045c"
+/> </a> <br> <a
+href="https://github.com/schollz/collidertracker/releases/latest"> <img
+src="https://img.shields.io/github/v/release/schollz/collidertracker"
+alt="Version"> </a> <a
+href="https://github.com/schollz/collidertracker/actions/workflows/build.yml">
+<img
+src="https://github.com/schollz/collidertracker/actions/workflows/build.yml/badge.svg"
+alt="Build Status"> </a> <a href="https://github.com/sponsors/schollz"> <img
+alt="GitHub Sponsors" src="https://img.shields.io/github/sponsors/schollz">
+</a> </p>
 
 A terminal-based music tracker powered by SuperCollider.
 
@@ -41,6 +39,24 @@ The following extensions are automatically downloaded:
 - **PortedPlugins** ([schollz/portedplugins](https://github.com/schollz/portedplugins)) - Audio effects including Fverb and AnalogTape
 - **mi-UGens** ([v7b1/mi-UGens](https://github.com/v7b1/mi-UGens)) - Mutable Instruments synthesizer modules including MiBraids
 
+### Checking the SuperCollider Installation Worked
+
+First, open the SuperCollider IDE by searching for and running 'SuperCollider IDE'. The IDE should open and give you three main panes:
+
+- a large blank text window
+- a help window
+- a post window containing text about how the startup process went.
+
+Secondly, boot the server using the command in the Language menu, or Ctrl+B.
+
+Thirdly, enter the following into the blank text window:
+
+```supercollider
+{SinOsc.ar}.play
+```
+
+Ensure the cursor is on this line and hit Ctrl+Enter. You should now hear a sine tone. Kill the sine tone by hitting Ctrl+.. If you don't hear the tone, remember to check your speakers, volume control – all the regular suspects!
+
 ## Installation
 
 ### macOS
@@ -58,24 +74,6 @@ Grab the latest build from **[Releases](https://github.com/schollz/collidertrack
 ### Linux/Windows
 
 Grab the latest build from **[Releases](https://github.com/schollz/collidertracker/releases/latest)**.
-
-## Checking the Installation Worked
-
-First, open the SuperCollider IDE by searching for and running 'SuperCollider IDE'. The IDE should open and give you three main panes:
-
-- a large blank text window
-- a help window
-- a post window containing text about how the startup process went.
-
-Secondly, boot the server using the command in the Language menu, or Ctrl+B.
-
-Thirdly, enter the following into the blank text window:
-
-```supercollider
-{SinOsc.ar}.play
-```
-
-Ensure the cursor is on this line and hit Ctrl+Enter. You should now hear a sine tone. Kill the sine tone by hitting Ctrl+.. If you don't hear the tone, remember to check your speakers, volume control – all the regular suspects!
 
 ## Run
 
