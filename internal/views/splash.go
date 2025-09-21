@@ -1,6 +1,8 @@
 package views
 
 import (
+	"math"
+	"math/rand"
 	"strings"
 	"time"
 
@@ -41,7 +43,7 @@ func RenderSplashScreen(termWidth, termHeight int, state *SplashState, version s
 
 	// Handle edge cases for small or zero terminal dimensions
 	if termWidth <= 0 || termHeight <= 0 {
-		return "∞\nby infinite digits\ngithub.com/schollz/collidertracker\nversion " + version
+		return "collidertracker\nby infinite digits\ngithub.com/schollz/collidertracker\nversion " + version
 	}
 
 	// Ensure minimum dimensions for proper animation
@@ -87,41 +89,185 @@ func RenderSplashScreen(termWidth, termHeight int, state *SplashState, version s
 		Foreground(lipgloss.Color("10")).
 		Align(lipgloss.Center)
 
-	// Render text with fade-in effect
+	// Enhanced text rendering with typewriter and bounce effects
+	termTime := time.Now().UnixMilli()
+
+	// Title with enhanced animation
 	if progress > 0.05 {
-		// Title
-		titleLine := titleStyle.Width(termWidth).Render("∞")
+		titleProgress := math.Min((progress-0.05)/0.05, 1.0)
+
+		// Bounce effect for title
+		titleBounce := bounceEaseOut(titleProgress)
+		titleScale := int(titleBounce * 3) // Scale from 0 to 3
+
+		// Enhanced title style with dynamic effects
+		titleStyleEnhanced := titleStyle
+		if titleProgress > 0.8 {
+			// Add glow effect near completion
+			pulse := math.Sin(float64(termTime)/40.0)*0.3 + 0.7
+			if pulse > 0.6 {
+				titleStyleEnhanced = titleStyleEnhanced.Foreground(lipgloss.Color("226")) // Yellow glow
+			}
+		}
+
+		titleText := "collidertracker"
+		if titleScale > 0 {
+			titleText = strings.Repeat(" ", titleScale) + titleText + strings.Repeat(" ", titleScale)
+		}
+
+		titleLine := titleStyleEnhanced.Width(termWidth).Render(titleText)
 		content.WriteString(titleLine)
 		content.WriteString("\n")
 	}
 
+	// Subtitle with typewriter effect
 	if progress > 0.1 {
-		// Subtitle
-		subtitleLine := subtitleStyle.Width(termWidth).Render("by infinite digits")
+		subtitleProgress := math.Min((progress-0.1)/0.08, 1.0)
+
+		fullText := "by infinite digits"
+		visibleChars := int(float64(len(fullText)) * subtitleProgress)
+		if visibleChars > len(fullText) {
+			visibleChars = len(fullText)
+		}
+
+		displayText := fullText[:visibleChars]
+
+		// Add typing cursor effect
+		if subtitleProgress < 1.0 && int(float64(termTime)/300.0)%2 == 0 {
+			displayText += "▋"
+		}
+
+		// Color transition during typing
+		subtitleStyleEnhanced := subtitleStyle
+		if subtitleProgress > 0.5 {
+			subtitleStyleEnhanced = subtitleStyleEnhanced.Foreground(lipgloss.Color("14"))
+		}
+
+		subtitleLine := subtitleStyleEnhanced.Width(termWidth).Render(displayText)
 		content.WriteString(subtitleLine)
 		content.WriteString("\n")
-
 	}
 
-	if progress > 0.15 {
-		// URL
-		urlLine := urlStyle.Width(termWidth).Render("github.com/schollz/collidertracker")
+	// URL with character-by-character reveal
+	if progress > 0.18 {
+		urlProgress := math.Min((progress-0.18)/0.10, 1.0)
+
+		fullURL := "github.com/schollz/collidertracker"
+		visibleChars := int(float64(len(fullURL)) * urlProgress)
+		if visibleChars > len(fullURL) {
+			visibleChars = len(fullURL)
+		}
+
+		displayURL := fullURL[:visibleChars]
+
+		// Matrix-style character morphing effect
+		if urlProgress < 1.0 && len(displayURL) < len(fullURL) {
+			morphChars := []string{"@", "#", "$", "%", "&", "*"}
+			morphChar := morphChars[int(float64(termTime)/80.0)%len(morphChars)]
+			if int(float64(termTime)/150.0)%3 == 0 {
+				displayURL += morphChar
+			}
+		}
+
+		urlStyleEnhanced := urlStyle
+		if urlProgress > 0.7 {
+			urlStyleEnhanced = urlStyleEnhanced.Bold(true)
+		}
+
+		urlLine := urlStyleEnhanced.Width(termWidth).Render(displayURL)
 		content.WriteString(urlLine)
 		content.WriteString("\n")
 	}
 
-	if progress > 0.17 {
-		// Version
-		versionLine := subtitleStyle.Width(termWidth).Render("version " + version)
+	// Version with scaling effect
+	if progress > 0.28 {
+		versionProgress := math.Min((progress-0.28)/0.06, 1.0)
+
+		// Elastic scaling effect
+		versionScale := elasticEaseOut(versionProgress)
+		versionText := "version " + version
+
+		// Add spacing for scale effect
+		if versionScale < 1.0 {
+			spacing := int((1.0 - versionScale) * 2)
+			if spacing > 0 {
+				spacedText := ""
+				for _, char := range versionText {
+					spacedText += string(char) + strings.Repeat(" ", spacing)
+				}
+				versionText = spacedText
+			}
+		}
+
+		versionStyleEnhanced := subtitleStyle
+		if versionProgress > 0.5 {
+			versionStyleEnhanced = versionStyleEnhanced.Foreground(lipgloss.Color("8"))
+		}
+
+		versionLine := versionStyleEnhanced.Width(termWidth).Render(versionText)
 		content.WriteString(versionLine)
 		content.WriteString("\n")
 	}
 
-	if progress > 0.2 {
-		// Loading
-		loadingLine := loadingStyle.Width(termWidth).Render("initializing SuperCollider...")
+	// Loading with animated dots and progress
+	if progress > 0.35 {
+		loadingProgress := math.Min((progress-0.35)/0.15, 1.0)
+
+		baseText := "initializing SuperCollider"
+
+		// Animated dots
+		dotCount := int(float64(termTime)/200.0) % 4
+		dots := strings.Repeat(".", dotCount)
+
+		// Progress bar effect
+		if loadingProgress > 0.3 {
+			barLength := 20
+			filledLength := int(float64(barLength) * loadingProgress)
+			bar := "[" + strings.Repeat("█", filledLength) + strings.Repeat("░", barLength-filledLength) + "]"
+			baseText += " " + bar
+		}
+
+		loadingText := baseText + dots
+
+		// Color intensity based on progress
+		loadingStyleEnhanced := loadingStyle
+		if loadingProgress > 0.7 {
+			loadingStyleEnhanced = loadingStyleEnhanced.Foreground(lipgloss.Color("46")).Bold(true)
+		} else if loadingProgress > 0.4 {
+			loadingStyleEnhanced = loadingStyleEnhanced.Foreground(lipgloss.Color("42"))
+		}
+
+		loadingLine := loadingStyleEnhanced.Width(termWidth).Render(loadingText)
 		content.WriteString(loadingLine)
 		content.WriteString("\n")
+
+		// Add status messages during later phases
+		if progress > 0.45 {
+			statusProgress := (progress - 0.45) / 0.15
+
+			var statusText string
+			if statusProgress < 0.3 {
+				statusText = "◦ Loading audio engine..."
+			} else if statusProgress < 0.6 {
+				statusText = "◦ Initializing synthesizers..."
+			} else if statusProgress < 0.8 {
+				statusText = "◦ Setting up MIDI connections..."
+			} else {
+				statusText = ""
+			}
+
+			statusStyle := lipgloss.NewStyle().
+				Foreground(lipgloss.Color("245")).
+				Align(lipgloss.Center)
+
+			if statusProgress > 0.9 {
+				statusStyle = statusStyle.Foreground(lipgloss.Color("82")).Bold(true)
+			}
+
+			statusLine := statusStyle.Width(termWidth).Render(statusText)
+			content.WriteString(statusLine)
+			content.WriteString("\n")
+		}
 	}
 
 	// Fill remaining space
@@ -132,131 +278,392 @@ func RenderSplashScreen(termWidth, termHeight int, state *SplashState, version s
 	return content.String()
 }
 
-// renderAnimatedBlocks creates the animated block pattern
+// Particle represents a single animated element
+type Particle struct {
+	X, Y       float64
+	VelX, VelY float64
+	Char       string
+	Color      string
+	Phase      float64
+	Age        float64
+}
+
+// renderAnimatedBlocks creates the enhanced digital convergence animation
 func renderAnimatedBlocks(centerX int, progress float64) string {
-	// Block characters for animation
-	blocks := []string{"▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"}
+	termTime := time.Now().UnixMilli()
 
-	// Create animated blocks coming together
-	blockCount := 12
-	halfBlocks := blockCount / 2
+	// Animation phases
+	var phase1, phase2, phase3, phase4, phase5 float64
 
-	// More dramatic movement - blocks start much further apart
-	maxDistance := centerX / 2 // Start from edges of screen
-	if maxDistance < 10 {
-		maxDistance = 10
+	if progress <= 0.25 {
+		phase1 = progress / 0.25
+	} else if progress <= 0.45 {
+		phase1 = 1.0
+		phase2 = (progress - 0.25) / 0.20
+	} else if progress <= 0.70 {
+		phase1, phase2 = 1.0, 1.0
+		phase3 = (progress - 0.45) / 0.25
+	} else if progress <= 0.90 {
+		phase1, phase2, phase3 = 1.0, 1.0, 1.0
+		phase4 = (progress - 0.70) / 0.20
+	} else {
+		phase1, phase2, phase3, phase4 = 1.0, 1.0, 1.0, 1.0
+		phase5 = (progress - 0.90) / 0.10
 	}
 
-	// Easing function for more dramatic movement (ease-out)
-	easedProgress := 1.0 - ((1.0 - progress) * (1.0 - progress))
+	var lines []string
+	maxLines := 5 // Multi-line animation
 
-	// Calculate current distance from center (starts at maxDistance, ends at 0)
-	currentDistance := int(float64(maxDistance) * (1.0 - easedProgress))
+	for lineIdx := 0; lineIdx < maxLines; lineIdx++ {
+		lines = append(lines, renderAnimationLine(centerX, lineIdx, maxLines, phase1, phase2, phase3, phase4, phase5, termTime))
+	}
 
-	// Calculate positions for left and right groups
-	leftGroupCenter := centerX - currentDistance
-	rightGroupCenter := centerX + currentDistance
+	return strings.Join(lines, "\n")
+}
 
-	// Build the animation line
+// renderAnimationLine creates a single line of the complex animation
+func renderAnimationLine(centerX, lineIdx, maxLines int, phase1, phase2, phase3, phase4, phase5 float64, termTime int64) string {
 	var line strings.Builder
 
-	// Calculate total width needed for proper centering
-	blockSpacing := 1
-	leftGroupWidth := halfBlocks + (halfBlocks-1)*blockSpacing
-	rightGroupWidth := halfBlocks + (halfBlocks-1)*blockSpacing
-	gapBetweenGroups := rightGroupCenter - leftGroupCenter - leftGroupWidth
-	if gapBetweenGroups < 0 {
-		gapBetweenGroups = 0
-	}
+	// Different line behaviors
+	isMainLine := lineIdx == maxLines/2
 
-	totalWidth := leftGroupWidth + gapBetweenGroups + rightGroupWidth
-	startX := centerX - totalWidth/2
-
-	// Ensure non-negative padding
-	if startX < 0 {
-		startX = 0
-	}
-
-	// Add initial padding to center the entire animation
-	line.WriteString(strings.Repeat(" ", startX))
-
-	// Left blocks (moving right)
-	for i := 0; i < halfBlocks; i++ {
-		// Block height animation - grows over time with staggered effect
-		staggerDelay := float64(i) * 0.1
-		adjustedProgress := progress - staggerDelay
-		if adjustedProgress < 0 {
-			adjustedProgress = 0
-		}
-
-		blockHeight := int(adjustedProgress * float64(len(blocks)-1))
-		if blockHeight >= len(blocks) {
-			blockHeight = len(blocks) - 1
-		}
-		if blockHeight < 0 {
-			blockHeight = 0
-		}
-
-		// Color animation with more vibrant colors
-		blockStyle := lipgloss.NewStyle()
-		if progress < 0.3 {
-			// Start with blue
-			blockStyle = blockStyle.Foreground(lipgloss.Color("12"))
-		} else if progress < 0.6 {
-			// Transition to cyan
-			blockStyle = blockStyle.Foreground(lipgloss.Color("14"))
-		} else {
-			// End with bright white
-			blockStyle = blockStyle.Foreground(lipgloss.Color("15")).Bold(true)
-		}
-
-		block := blockStyle.Render(blocks[blockHeight])
-		line.WriteString(block)
-
-		// Add spacing between blocks
-		if i < halfBlocks-1 {
-			line.WriteString(strings.Repeat(" ", blockSpacing))
-		}
-	}
-
-	// Gap between groups
-	line.WriteString(strings.Repeat(" ", gapBetweenGroups))
-
-	// Right blocks (moving left)
-	for i := 0; i < halfBlocks; i++ {
-		// Add spacing before block
-		if i > 0 {
-			line.WriteString(strings.Repeat(" ", blockSpacing))
-		}
-
-		// Block height animation with staggered effect (reverse order for right side)
-		staggerDelay := float64(halfBlocks-1-i) * 0.1
-		adjustedProgress := progress - staggerDelay
-		if adjustedProgress < 0 {
-			adjustedProgress = 0
-		}
-
-		blockHeight := int(adjustedProgress * float64(len(blocks)-1))
-		if blockHeight >= len(blocks) {
-			blockHeight = len(blocks) - 1
-		}
-		if blockHeight < 0 {
-			blockHeight = 0
-		}
-
-		// Color animation matching left side
-		blockStyle := lipgloss.NewStyle()
-		if progress < 0.3 {
-			blockStyle = blockStyle.Foreground(lipgloss.Color("12"))
-		} else if progress < 0.6 {
-			blockStyle = blockStyle.Foreground(lipgloss.Color("14"))
-		} else {
-			blockStyle = blockStyle.Foreground(lipgloss.Color("15")).Bold(true)
-		}
-
-		block := blockStyle.Render(blocks[blockHeight])
-		line.WriteString(block)
+	if isMainLine {
+		// Main convergence line with primary animation
+		line.WriteString(renderMainConvergenceLine(centerX, phase1, phase2, phase3, phase4, phase5, termTime))
+	} else {
+		// Supporting lines with particle effects and digital rain
+		line.WriteString(renderSupportLine(centerX, lineIdx, maxLines, phase1, phase2, phase3, phase4, phase5, termTime))
 	}
 
 	return line.String()
+}
+
+// renderMainConvergenceLine creates the primary animation line
+func renderMainConvergenceLine(centerX int, phase1, phase2, phase3, phase4, phase5 float64, termTime int64) string {
+	var line strings.Builder
+
+	// Enhanced character sets for different phases
+	scatterChars := []string{"░", "▒", "▓", "◆", "◇", "○", "●", "◎", "◉", "⬟", "⬢", "⬡"}
+	blockChars := []string{"▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"}
+	infinityChars := []string{"∞", "⧢", "⧣", "⟐", "⟑"}
+
+	// Calculate particle count and positions
+	particleCount := 18
+	particles := make([]Particle, particleCount)
+
+	// Initialize particles based on animation phase
+	for i := 0; i < particleCount; i++ {
+		seed := float64(i*7 + int(termTime/100)) // Evolving seed
+
+		// Phase 1: Scattered genesis
+		if phase1 < 1.0 {
+			randX := math.Sin(seed) * float64(centerX) * (1.2 - phase1*0.5)
+			randY := math.Cos(seed*1.3) * 2 * (1.0 - phase1*0.7)
+
+			particles[i].X = float64(centerX) + randX
+			particles[i].Y = randY
+			particles[i].Char = scatterChars[i%len(scatterChars)]
+
+			// Flickering effect
+			flicker := math.Sin(float64(termTime)/50.0 + seed)
+			if flicker > 0.3 {
+				particles[i].Color = getPhaseColor(1, seed, termTime)
+			} else {
+				particles[i].Color = "0" // Dim/off
+			}
+		}
+
+		// Phase 2: Gravitational pull with physics
+		if phase2 > 0 && phase1 >= 1.0 {
+			// Apply easing functions - bounce and elastic
+			easedPhase2 := elasticEaseOut(phase2)
+
+			// Converge towards center with orbital motion
+			targetX := float64(centerX)
+			currentX := particles[i].X + (targetX-particles[i].X)*easedPhase2
+
+			// Add orbital motion
+			orbit := math.Sin(float64(termTime)/80.0+seed) * (1.0 - easedPhase2) * 3
+			currentX += orbit
+
+			particles[i].X = currentX
+			particles[i].Y = math.Sin(float64(termTime)/120.0+seed*2) * (1.0 - easedPhase2)
+			blockIndex := int(easedPhase2 * float64(len(blockChars)-1))
+			if blockIndex >= len(blockChars) {
+				blockIndex = len(blockChars) - 1
+			}
+			particles[i].Char = blockChars[blockIndex]
+			particles[i].Color = getPhaseColor(2, seed, termTime)
+		}
+
+		// Phase 3: Formation sequence - infinity symbol
+		if phase3 > 0 && phase2 >= 1.0 {
+			// Form infinity symbol
+			angle := float64(i) / float64(particleCount) * 2 * math.Pi
+			infScale := 8.0 * phase3
+
+			// Infinity symbol parametric equations
+			t := angle + float64(termTime)/200.0*phase3
+			infX := infScale * math.Cos(t) / (1 + math.Sin(t)*math.Sin(t))
+			infY := infScale * math.Sin(t) * math.Cos(t) / (1 + math.Sin(t)*math.Sin(t)) * 0.3
+
+			particles[i].X = float64(centerX) + infX
+			particles[i].Y = infY
+			infIndex := int(phase3 * float64(len(infinityChars)-1))
+			if infIndex >= len(infinityChars) {
+				infIndex = len(infinityChars) - 1
+			}
+			particles[i].Char = infinityChars[infIndex]
+			particles[i].Color = getPhaseColor(3, seed, termTime)
+		}
+
+		// Phase 4: Digital rain/matrix effect
+		if phase4 > 0 && phase3 >= 1.0 {
+			// Some particles create vertical streams
+			if i%3 == 0 {
+				particles[i].Y = math.Mod(float64(termTime)/30.0+seed*50, 6) - 3
+				if len(blockChars) > 0 {
+					particles[i].Char = blockChars[rand.Intn(len(blockChars))]
+				} else {
+					particles[i].Char = "█"
+				}
+				particles[i].Color = getPhaseColor(4, seed, termTime)
+			}
+
+			// Main infinity symbol solidifies
+			if i < 6 {
+				particles[i].Char = "∞"
+				particles[i].Color = "15" // Bright white
+
+				// Pulsing glow effect
+				pulse := math.Sin(float64(termTime)/50.0)*0.3 + 0.7
+				if pulse > 0.8 {
+					particles[i].Color = "226" // Bright yellow
+				}
+			}
+		}
+
+		// Phase 5: Crystallization and final burst
+		if phase5 > 0 && phase4 >= 1.0 {
+			// Lock into final perfect formation
+			if i < 8 {
+				particles[i].X = float64(centerX) + float64((i-4)*2)
+				particles[i].Y = 0
+				particles[i].Char = "∞"
+
+				// Final burst effect
+				burstIntensity := bounceEaseOut(phase5)
+				if burstIntensity > 0.7 {
+					particles[i].Color = "196" // Bright red
+				} else {
+					particles[i].Color = "15" // White
+				}
+			}
+		}
+	}
+
+	// Render particles to line buffer
+	lineBuffer := make(map[int]string)
+	colorBuffer := make(map[int]string)
+
+	for _, p := range particles {
+		x := int(math.Round(p.X))
+		if x >= 0 && x < centerX*2 && math.Abs(p.Y) < 0.5 { // Only render on main line
+			lineBuffer[x] = p.Char
+			colorBuffer[x] = p.Color
+		}
+	}
+
+	// Build final line with proper spacing
+	minX, maxX := centerX*2, 0
+	for x := range lineBuffer {
+		if x < minX {
+			minX = x
+		}
+		if x > maxX {
+			maxX = x
+		}
+	}
+
+	// Add leading padding
+	startPadding := minX
+	if startPadding > 0 {
+		line.WriteString(strings.Repeat(" ", startPadding))
+	}
+
+	// Render characters with colors
+	for x := minX; x <= maxX; x++ {
+		if char, exists := lineBuffer[x]; exists {
+			color := colorBuffer[x]
+			style := lipgloss.NewStyle().Foreground(lipgloss.Color(color))
+			if color == "15" || color == "226" {
+				style = style.Bold(true)
+			}
+			line.WriteString(style.Render(char))
+		} else {
+			line.WriteString(" ")
+		}
+	}
+
+	return line.String()
+}
+
+// renderSupportLine creates supporting animation lines (digital rain, particles)
+func renderSupportLine(centerX, lineIdx, maxLines int, phase1, phase2, phase3, phase4, phase5 float64, termTime int64) string {
+	var line strings.Builder
+
+	// Digital rain effect for supporting lines
+	if phase4 > 0 {
+		rainChars := []string{"╷", "╵", "│", "┃", "┆", "┇", "┊", "┋"}
+		glitchChars := []string{"▪", "▫", "▴", "▸", "▾", "◂"}
+
+		// Create rain drops at various positions
+		rainCount := 5 + int(phase4*3)
+		for i := 0; i < rainCount; i++ {
+			seed := float64(i*11 + lineIdx*7 + int(termTime/150))
+
+			// Rain position
+			rainX := int(math.Abs(math.Sin(seed)) * float64(centerX*2))
+
+			// Rain character selection
+			charIdx := int(math.Abs(math.Sin(seed*1.5)) * float64(len(rainChars)))
+			if charIdx >= len(rainChars) {
+				charIdx = len(rainChars) - 1
+			}
+
+			char := rainChars[charIdx]
+
+			// Occasional glitch characters
+			if math.Sin(seed*3.7) > 0.85 {
+				glitchIdx := int(math.Abs(math.Sin(seed*4.1)) * float64(len(glitchChars)))
+				if glitchIdx >= len(glitchChars) {
+					glitchIdx = len(glitchChars) - 1
+				}
+				char = glitchChars[glitchIdx]
+			}
+
+			// Position in line
+			if rainX >= 0 && rainX < centerX*2 {
+				// Build line with proper spacing
+				currentLen := line.Len()
+				needed := rainX - currentLen
+				if needed > 0 {
+					line.WriteString(strings.Repeat(" ", needed))
+				}
+
+				// Color based on distance from center and time
+				distFromCenter := math.Abs(float64(rainX - centerX))
+				colorIntensity := (1.0 - distFromCenter/float64(centerX)) * phase4
+
+				var color string
+				if colorIntensity > 0.7 {
+					color = "46" // Bright green
+				} else if colorIntensity > 0.4 {
+					color = "42" // Green
+				} else {
+					color = "22" // Dark green
+				}
+
+				style := lipgloss.NewStyle().Foreground(lipgloss.Color(color))
+				line.WriteString(style.Render(char))
+			}
+		}
+	}
+
+	// Subtle particle trails for other phases
+	if phase2 > 0 && phase4 == 0 {
+		trailChars := []string{"·", "•", "‧", "∘"}
+
+		for i := 0; i < 3; i++ {
+			seed := float64(i*13 + lineIdx*5 + int(termTime/200))
+			trailX := int(float64(centerX) + math.Sin(seed)*float64(centerX)*0.7)
+
+			if trailX >= 0 && trailX < centerX*2 {
+				currentLen := line.Len()
+				needed := trailX - currentLen
+				if needed > 0 {
+					line.WriteString(strings.Repeat(" ", needed))
+				}
+
+				charIdx := int(math.Abs(math.Sin(seed*2.3)) * float64(len(trailChars)))
+				if charIdx >= len(trailChars) {
+					charIdx = len(trailChars) - 1
+				}
+
+				char := trailChars[charIdx]
+				color := getPhaseColor(2, seed, termTime)
+
+				style := lipgloss.NewStyle().Foreground(lipgloss.Color(color))
+				line.WriteString(style.Render(char))
+			}
+		}
+	}
+
+	return line.String()
+}
+
+// Easing functions for smooth animations
+func elasticEaseOut(t float64) float64 {
+	if t == 0 || t == 1 {
+		return t
+	}
+	return math.Pow(2, -10*t)*math.Sin((t*10-0.75)*2*math.Pi/3) + 1
+}
+
+func bounceEaseOut(t float64) float64 {
+	if t < 1.0/2.75 {
+		return 7.5625 * t * t
+	} else if t < 2.0/2.75 {
+		t -= 1.5 / 2.75
+		return 7.5625*t*t + 0.75
+	} else if t < 2.5/2.75 {
+		t -= 2.25 / 2.75
+		return 7.5625*t*t + 0.9375
+	} else {
+		t -= 2.625 / 2.75
+		return 7.5625*t*t + 0.984375
+	}
+}
+
+// getPhaseColor returns dynamic colors for different animation phases
+func getPhaseColor(phase int, seed float64, termTime int64) string {
+	timeOffset := float64(termTime) / 100.0
+
+	switch phase {
+	case 1: // Scattered genesis - blues and purples
+		colors := []string{"54", "55", "56", "57", "93", "99", "105"}
+		idx := int(math.Abs(math.Sin(seed+timeOffset)) * float64(len(colors)))
+		if idx >= len(colors) {
+			idx = len(colors) - 1
+		}
+		return colors[idx]
+
+	case 2: // Gravitational pull - cyans and greens
+		colors := []string{"37", "43", "49", "50", "51", "87", "123"}
+		idx := int(math.Abs(math.Sin(seed*1.3+timeOffset)) * float64(len(colors)))
+		if idx >= len(colors) {
+			idx = len(colors) - 1
+		}
+		return colors[idx]
+
+	case 3: // Formation sequence - magentas and reds
+		colors := []string{"161", "162", "163", "164", "200", "201", "207"}
+		idx := int(math.Abs(math.Sin(seed*1.7+timeOffset)) * float64(len(colors)))
+		if idx >= len(colors) {
+			idx = len(colors) - 1
+		}
+		return colors[idx]
+
+	case 4: // Digital rain - greens
+		colors := []string{"22", "28", "34", "40", "46", "82", "118"}
+		idx := int(math.Abs(math.Sin(seed*2.1+timeOffset)) * float64(len(colors)))
+		if idx >= len(colors) {
+			idx = len(colors) - 1
+		}
+		return colors[idx]
+
+	default: // Default white/bright
+		return "15"
+	}
 }
