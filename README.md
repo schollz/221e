@@ -14,19 +14,18 @@
 </a>
 </p>
 
-A terminal-based music tracker powered by SuperCollider + JACK.
+A terminal-based music tracker powered by SuperCollider.
 
 _IMPORTANT NOTE: this software is currently in development and is definetly unstable and chock full of bugs._
 
 **COMPATIBILITY WARNING**: Major version changes (X.0.0 -> Y.0.0) are not backward compatible. Save files from version X.0 cannot be used with version Y.0 and vice versa. Back up your projects before upgrading across major versions.
 
-This is a music tracker designed to be used with any terminal (Linux, macOS, Windows WSL/terminal). It is the first tracker that (to my knowledge) uses [SuperCollider](https://supercollider.github.io/downloads.html) as the sound engine, which allows for very flexible sound design and synthesis. It also uses [JACK](https://jackaudio.org/downloads/) for audio routing, which allows for low-latency audio and MIDI routing.
+This is a music tracker designed to be used with any terminal (Linux, macOS, Windows WSL/terminal). It is the first tracker that (to my knowledge) uses [SuperCollider](https://supercollider.github.io/downloads.html) as the sound engine, which allows for very flexible sound design and synthesis.
 
 ## Prerequisites
 
 - **SuperCollider** (required; extensions are checked at launch). Download [here](https://supercollider.github.io/downloads.html).
 - **SuperCollider extensions** (required): Download [here](https://supercollider.github.io/sc3-plugins/)
-- **JACK (jackd)** must be running with the output to your favorite speaker. Download [here](https://jackaudio.org/downloads/).
 - **collidertracker** binary. See installation options below.
 
 ### Automatic Plugin Downloads
@@ -60,12 +59,29 @@ Grab the latest build from **[Releases](https://github.com/schollz/collidertrack
 
 Grab the latest build from **[Releases](https://github.com/schollz/collidertracker/releases/latest)**.
 
+## Checking the Installation Worked
+
+First, open the SuperCollider IDE by searching for and running 'SuperCollider IDE'. The IDE should open and give you three main panes:
+
+- a large blank text window
+- a help window
+- a post window containing text about how the startup process went.
+
+Secondly, boot the server using the command in the Language menu, or Ctrl+B.
+
+Thirdly, enter the following into the blank text window:
+
+```supercollider
+{SinOsc.ar}.play
+```
+
+Ensure the cursor is on this line and hit Ctrl+Enter. You should now hear a sine tone. Kill the sine tone by hitting Ctrl+.. If you don't hear the tone, remember to check your speakers, volume control – all the regular suspects!
+
 ## Run
 
 **Option 1: Automatic SuperCollider Management (Recommended)**
 
-1. First start JACK audio server.
-2. Run collidertracker (it will automatically start and manage SuperCollider):
+1. Run collidertracker (it will automatically start and manage SuperCollider):
 
 ```bash
 ./collidertracker
@@ -80,9 +96,8 @@ Add-MpPreference -ExclusionProcess "C:\Program Files\SuperCollider-3.13.0\scsynt
 
 **Option 2: Manual SuperCollider Management**
 
-1. First start JACK audio server.
-2. Run SuperCollider and then open `collidertracker/internal/supercollider/collidertracker.scd` in SuperCollider. Then, in SuperCollider, goto "Language" -> "Evaluate File". SuperCollider should become Active.
-3. Run collidertracker with the `--skip-sc` flag:
+1. Run SuperCollider and then open `collidertracker/internal/supercollider/collidertracker.scd` in SuperCollider. Then, in SuperCollider, goto "Language" -> "Evaluate File". SuperCollider should become Active.
+2. Run collidertracker with the `--skip-sc` flag:
 
 ```bash
 ./collidertracker -s

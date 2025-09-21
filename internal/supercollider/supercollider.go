@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"syscall"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -121,6 +122,11 @@ func StartSuperColliderWithRecording(enableRecording bool) error {
 	// On Windows, set working directory to sclang's directory so it can find scsynth
 	if runtime.GOOS == "windows" {
 		sclangProcess.Dir = filepath.Dir(sclangPath)
+	} else {
+		// On Unix systems, create a new process group so we can kill child processes too
+		sclangProcess.SysProcAttr = &syscall.SysProcAttr{
+			Setpgid: true,
+		}
 	}
 
 	// Redirect SuperCollider output to the same logger used by the main application
@@ -199,10 +205,48 @@ func Cleanup() {
 				killCmd := exec.Command("taskkill", "/F", "/T", "/PID", fmt.Sprintf("%d", sclangProcess.Process.Pid))
 				killCmd.Run() // Run taskkill but don't wait for output
 				// Give it a moment to terminate
-				time.Sleep(500 * time.Millisecond)
+				time.Sleep(250 * time.Millisecond)
 			} else {
-				// On Unix systems, use the standard approach
-				sclangProcess.Process.Kill()
+				// On Unix systems, use a more robust approach
+				log.Printf("Attempting graceful shutdown of sclang process (PID: %d)", sclangProcess.Process.Pid)
+
+				// First, try to terminate the entire process group to catch child processes
+				pgid, err := syscall.Getpgid(sclangProcess.Process.Pid)
+				if err == nil {
+					// Send SIGTERM to the process group first for graceful shutdown
+					log.Printf("Sending SIGTERM to process group %d", pgid)
+					syscall.Kill(-pgid, syscall.SIGTERM)
+
+					// Wait a bit for graceful shutdown
+					time.Sleep(250 * time.Millisecond)
+
+					// Check if process is still running
+					if isProcessStillRunning(sclangProcess.Process.Pid) {
+						log.Printf("Process still running, sending SIGKILL to process group %d", pgid)
+						// If still running, force kill the process group
+						syscall.Kill(-pgid, syscall.SIGKILL)
+					} else {
+						log.Printf("Process gracefully terminated")
+					}
+				} else {
+					log.Printf("Could not get process group, falling back to single process termination")
+					// Fallback: try graceful termination of the main process
+					sclangProcess.Process.Signal(syscall.SIGTERM)
+
+					// Wait a bit for graceful shutdown
+					time.Sleep(1 * time.Second)
+
+					// If still running, force kill
+					if isProcessStillRunning(sclangProcess.Process.Pid) {
+						log.Printf("Process still running, sending SIGKILL")
+						sclangProcess.Process.Kill()
+					} else {
+						log.Printf("Process gracefully terminated")
+					}
+				}
+
+				// Give additional time for cleanup
+				time.Sleep(500 * time.Millisecond)
 			}
 			// Wait for the process to actually stop (with timeout)
 			done := make(chan error, 1)
@@ -455,6 +499,14 @@ func getSuperColliderExtensionDirs() []string {
 func fileExists(filepath string) bool {
 	_, err := os.Stat(filepath)
 	return !os.IsNotExist(err)
+}
+
+// isProcessStillRunning checks if a process is still running by PID
+func isProcessStillRunning(pid int) bool {
+	// On Unix systems, we can check if a process exists by sending signal 0
+	// This doesn't actually send a signal but checks if we can send one
+	err := syscall.Kill(pid, 0)
+	return err == nil
 }
 
 // findSuperColliderDir searches for a SuperCollider installation directory
