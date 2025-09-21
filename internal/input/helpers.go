@@ -661,21 +661,23 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 			}
 
 			modulatedNote := modulation.ApplyModulation(originalNote, modulation.ModulateSettings{
-				Seed:      modulateSettings.Seed,
-				IRandom:   modulateSettings.IRandom,
-				Sub:       modulateSettings.Sub,
-				Add:       modulateSettings.Add,
-				ScaleRoot: modulateSettings.ScaleRoot,
-				Scale:     modulateSettings.Scale,
+				Seed:        modulateSettings.Seed,
+				IRandom:     modulateSettings.IRandom,
+				Sub:         modulateSettings.Sub,
+				Add:         modulateSettings.Add,
+				ScaleRoot:   modulateSettings.ScaleRoot,
+				Scale:       modulateSettings.Scale,
+				Probability: modulateSettings.Probability,
 			}, trackRng)
 			// modulat rawNote
 			rawNoteModulated = modulation.ApplyModulation(rawNote, modulation.ModulateSettings{
-				Seed:      modulateSettings.Seed,
-				IRandom:   modulateSettings.IRandom,
-				Sub:       modulateSettings.Sub,
-				Add:       modulateSettings.Add,
-				ScaleRoot: modulateSettings.ScaleRoot,
-				Scale:     modulateSettings.Scale,
+				Seed:        modulateSettings.Seed,
+				IRandom:     modulateSettings.IRandom,
+				Sub:         modulateSettings.Sub,
+				Add:         modulateSettings.Add,
+				ScaleRoot:   modulateSettings.ScaleRoot,
+				Scale:       modulateSettings.Scale,
+				Probability: modulateSettings.Probability,
 			}, trackRng)
 			log.Printf("Applied modulation %02X: NN %02X -> %02X (Seed=%d, IRandom=%d, Sub=%d, Add=%d, Scale=%s)",
 				rawModulate, originalNote, modulatedNote, modulateSettings.Seed, modulateSettings.IRandom, modulateSettings.Sub, modulateSettings.Add, modulateSettings.Scale)
@@ -1198,12 +1200,13 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 
 			for i, note := range midiNotes {
 				modulatedNote := modulation.ApplyModulation(note, modulation.ModulateSettings{
-					Seed:      modulateSettings.Seed,
-					IRandom:   modulateSettings.IRandom,
-					Sub:       modulateSettings.Sub,
-					Add:       modulateSettings.Add,
-					ScaleRoot: modulateSettings.ScaleRoot,
-					Scale:     modulateSettings.Scale,
+					Seed:        modulateSettings.Seed,
+					IRandom:     modulateSettings.IRandom,
+					Sub:         modulateSettings.Sub,
+					Add:         modulateSettings.Add,
+					ScaleRoot:   modulateSettings.ScaleRoot,
+					Scale:       modulateSettings.Scale,
+					Probability: modulateSettings.Probability,
 				}, trackRng)
 				instrumentParams.Notes[i] = float32(modulatedNote)
 				log.Printf("Applied modulation to instrument note %d: %d -> %d (hasArpeggio=%v, hasChord=%v)", i, note, modulatedNote, hasArpeggio, hasChord)

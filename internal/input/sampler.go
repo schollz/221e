@@ -417,6 +417,25 @@ func ModifyModulateValue(m *model.Model, baseDelta float32) {
 		oldScale := settings.Scale
 		settings.Scale = availableScales[newIndex]
 		log.Printf("Modified modulate %02X Scale: %s -> %s", m.ModulateEditingIndex, oldScale, settings.Scale)
+	} else if m.CurrentRow == 6 { // Probability
+		// Use different increments: 10 for coarse, 1 for fine (based on Ctrl+Up/Down vs Ctrl+Left/Right)
+		var delta int
+		if baseDelta == 1.0 || baseDelta == -1.0 {
+			delta = int(baseDelta) * 10 // Coarse control (Ctrl+Up/Down): +/-10%
+		} else if baseDelta == 0.05 || baseDelta == -0.05 {
+			delta = int(baseDelta / 0.05) // Fine control (Ctrl+Left/Right): +/-1%
+		} else {
+			delta = int(baseDelta) // Fallback
+		}
+
+		newProbability := settings.Probability + delta
+		if newProbability < 0 {
+			newProbability = 0
+		} else if newProbability > 100 {
+			newProbability = 100
+		}
+		settings.Probability = newProbability
+		log.Printf("Modified modulate %02X Probability: %d -> %d (delta: %d)", m.ModulateEditingIndex, settings.Probability-delta, settings.Probability, delta)
 	}
 
 	// Save the modified settings back to the model

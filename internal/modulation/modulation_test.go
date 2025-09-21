@@ -27,16 +27,20 @@ func TestNewModulateSettings(t *testing.T) {
 	if settings.Scale != "all" {
 		t.Errorf("Expected Scale to be 'all', got %s", settings.Scale)
 	}
+	if settings.Probability != 100 {
+		t.Errorf("Expected Probability to be 100, got %d", settings.Probability)
+	}
 }
 
 func TestApplyModulationNoRandomization(t *testing.T) {
 	settings := ModulateSettings{
-		Seed:      -1,
-		IRandom:   0, // No randomization
-		Sub:       2,
-		Add:       5,
-		ScaleRoot: 0,
-		Scale:     "all",
+		Seed:        -1,
+		IRandom:     0, // No randomization
+		Sub:         2,
+		Add:         5,
+		ScaleRoot:   0,
+		Scale:       "all",
+		Probability: 100, // Always apply modulation
 	}
 
 	// Create a test RNG (doesn't matter since IRandom=0)
@@ -54,12 +58,13 @@ func TestApplyModulationNoneDoesNothing(t *testing.T) {
 	// Test that Seed=-1 with IRandom > 0 applies randomization
 	// Note: Based on actual working behavior, Seed=-1 does NOT skip randomization
 	settings := ModulateSettings{
-		Seed:      -1,
-		IRandom:   10,
-		Sub:       2,
-		Add:       5,
-		ScaleRoot: 0,
-		Scale:     "all",
+		Seed:        -1,
+		IRandom:     10,
+		Sub:         2,
+		Add:         5,
+		ScaleRoot:   0,
+		Scale:       "all",
+		Probability: 100, // Always apply modulation
 	}
 
 	// Create a test RNG with known seed for predictable results
@@ -83,12 +88,13 @@ func TestApplyModulationNoneDoesNothing(t *testing.T) {
 
 func TestApplyModulationWithFixedSeed(t *testing.T) {
 	settings := ModulateSettings{
-		Seed:      42, // Fixed seed
-		IRandom:   10,
-		Sub:       0,
-		Add:       0,
-		ScaleRoot: 0,
-		Scale:     "all",
+		Seed:        42, // Fixed seed
+		IRandom:     10,
+		Sub:         0,
+		Add:         0,
+		ScaleRoot:   0,
+		Scale:       "all",
+		Probability: 100, // Always apply modulation
 	}
 
 	// Create a test RNG (seed doesn't matter since we're using fixed seed in settings)
@@ -120,12 +126,13 @@ func TestApplyModulationWithTimeSeed(t *testing.T) {
 func TestApplyModulationWithRandomSeed(t *testing.T) {
 	// Test that Seed=0 ("random") uses time seeding (track RNG)
 	settings := ModulateSettings{
-		Seed:      0, // "random" - should use track RNG
-		IRandom:   20,
-		Sub:       0,
-		Add:       0,
-		ScaleRoot: 0,
-		Scale:     "all",
+		Seed:        0, // "random" - should use track RNG
+		IRandom:     20,
+		Sub:         0,
+		Add:         0,
+		ScaleRoot:   0,
+		Scale:       "all",
+		Probability: 100, // Always apply modulation
 	}
 
 	// Create different RNGs for different "tracks" to ensure different results
@@ -165,12 +172,13 @@ func TestApplyModulationWithRandomSeed(t *testing.T) {
 
 func TestApplyModulationBounds(t *testing.T) {
 	settings := ModulateSettings{
-		Seed:      42,
-		IRandom:   0, // No randomization for predictable test
-		Sub:       100,
-		Add:       200,
-		ScaleRoot: 0,
-		Scale:     "all",
+		Seed:        42,
+		IRandom:     0, // No randomization for predictable test
+		Sub:         100,
+		Add:         200,
+		ScaleRoot:   0,
+		Scale:       "all",
+		Probability: 100, // Always apply modulation
 	}
 
 	// Create a test RNG (doesn't matter since IRandom=0)
@@ -187,12 +195,13 @@ func TestApplyModulationBounds(t *testing.T) {
 
 func TestApplyModulationWithScale(t *testing.T) {
 	settings := ModulateSettings{
-		Seed:      42,
-		IRandom:   0, // No randomization for predictable test
-		Sub:       0,
-		Add:       1, // Add 1 to shift note
-		ScaleRoot: 0, // C
-		Scale:     "major",
+		Seed:        42,
+		IRandom:     0, // No randomization for predictable test
+		Sub:         0,
+		Add:         1, // Add 1 to shift note
+		ScaleRoot:   0, // C
+		Scale:       "major",
+		Probability: 100, // Always apply modulation
 	}
 
 	// Create a test RNG (doesn't matter since IRandom=0)
@@ -209,12 +218,13 @@ func TestApplyModulationWithScale(t *testing.T) {
 
 func TestApplyModulationWithScaleRoot(t *testing.T) {
 	settings := ModulateSettings{
-		Seed:      42,
-		IRandom:   0,
-		Sub:       0,
-		Add:       0,
-		ScaleRoot: 2, // D major
-		Scale:     "major",
+		Seed:        42,
+		IRandom:     0,
+		Sub:         0,
+		Add:         0,
+		ScaleRoot:   2, // D major
+		Scale:       "major",
+		Probability: 100, // Always apply modulation
 	}
 
 	// Create a test RNG (doesn't matter since IRandom=0)
@@ -297,12 +307,13 @@ func TestQuantizeToScale(t *testing.T) {
 func TestSeedBehavior(t *testing.T) {
 	// Test that Seed=0 is treated as "random" (time seeding), not fixed seed
 	settings0 := ModulateSettings{
-		Seed:      0,
-		IRandom:   10,
-		Sub:       0,
-		Add:       0,
-		ScaleRoot: 0,
-		Scale:     "all",
+		Seed:        0,
+		IRandom:     10,
+		Sub:         0,
+		Add:         0,
+		ScaleRoot:   0,
+		Scale:       "all",
+		Probability: 100, // Always apply modulation
 	}
 
 	// Create different RNGs to simulate different tracks/timing
@@ -323,12 +334,13 @@ func TestSeedBehavior(t *testing.T) {
 
 	// Test that fixed seeds still produce consistent results
 	settings1 := ModulateSettings{
-		Seed:      1,
-		IRandom:   10,
-		Sub:       0,
-		Add:       0,
-		ScaleRoot: 0,
-		Scale:     "all",
+		Seed:        1,
+		IRandom:     10,
+		Sub:         0,
+		Add:         0,
+		ScaleRoot:   0,
+		Scale:       "all",
+		Probability: 100, // Always apply modulation
 	}
 
 	result3 := ApplyModulation(60, settings1, rng1)
@@ -344,12 +356,13 @@ func TestTrackIsolation(t *testing.T) {
 	// Test that different tracks with separate RNGs produce independent random sequences
 	// Updated to use seed=0 ("random") since seed=-1 ("none") no longer does randomization
 	settings := ModulateSettings{
-		Seed:      0, // Use "random" seeding (not "none")
-		IRandom:   20,
-		Sub:       0,
-		Add:       0,
-		ScaleRoot: 0,
-		Scale:     "all",
+		Seed:        0, // Use "random" seeding (not "none")
+		IRandom:     20,
+		Sub:         0,
+		Add:         0,
+		ScaleRoot:   0,
+		Scale:       "all",
+		Probability: 100, // Always apply modulation
 	}
 
 	// Create two different track RNGs with different seeds

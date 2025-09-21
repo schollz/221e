@@ -215,12 +215,17 @@ func LoadState(m *model.Model, oscPort int, saveFolder string) error {
 
 	// Fix any ModulateSettings that have Seed=0 when they should be -1 for "none"
 	// This handles save files from before proper seed initialization
+	// Also fix Probability=0 when it should be 100 for backward compatibility
 	for i := 0; i < len(m.InstrumentModulateSettings); i++ {
 		settings := &m.InstrumentModulateSettings[i]
 		// If seed is 0 and all other values are defaults, this should be "none" (-1)
 		if settings.Seed == 0 && settings.IRandom == 0 && settings.Sub == 0 &&
 			settings.Add == 0 && settings.ScaleRoot == 0 && settings.Scale == "all" {
 			settings.Seed = -1
+		}
+		// If probability is 0, set it to 100 for backward compatibility
+		if settings.Probability == 0 {
+			settings.Probability = 100
 		}
 	}
 	for i := 0; i < len(m.SamplerModulateSettings); i++ {
@@ -229,6 +234,10 @@ func LoadState(m *model.Model, oscPort int, saveFolder string) error {
 		if settings.Seed == 0 && settings.IRandom == 0 && settings.Sub == 0 &&
 			settings.Add == 0 && settings.ScaleRoot == 0 && settings.Scale == "all" {
 			settings.Seed = -1
+		}
+		// If probability is 0, set it to 100 for backward compatibility
+		if settings.Probability == 0 {
+			settings.Probability = 100
 		}
 	}
 

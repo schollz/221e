@@ -8,12 +8,13 @@ import (
 
 // ModulateSettings represents the settings for a single modulation entry
 type ModulateSettings struct {
-	Seed      int    `json:"seed"`      // Random seed: -1 for "none" (no randomization), 0 for "random" (time seeding), 1-128 for fixed seed
-	IRandom   int    `json:"irandom"`   // Random range: 0-128 (0 means no randomization)
-	Sub       int    `json:"sub"`       // Subtract value: 0-120
-	Add       int    `json:"add"`       // Add value: 0-120
-	ScaleRoot int    `json:"scaleRoot"` // Scale root note: 0-11 (C, C#, D, D#, E, F, F#, G, G#, A, A#, B)
-	Scale     string `json:"scale"`     // Scale selection: "all", "major", "minor", etc.
+	Seed        int    `json:"seed"`        // Random seed: -1 for "none" (no randomization), 0 for "random" (time seeding), 1-128 for fixed seed
+	IRandom     int    `json:"irandom"`     // Random range: 0-128 (0 means no randomization)
+	Sub         int    `json:"sub"`         // Subtract value: 0-120
+	Add         int    `json:"add"`         // Add value: 0-120
+	ScaleRoot   int    `json:"scaleRoot"`   // Scale root note: 0-11 (C, C#, D, D#, E, F, F#, G, G#, A, A#, B)
+	Scale       string `json:"scale"`       // Scale selection: "all", "major", "minor", etc.
+	Probability int    `json:"probability"` // Probability percentage: 0-100 (100 = always apply modulation)
 }
 
 // Scale represents a musical scale
@@ -77,8 +78,19 @@ func GetNoteNames() []string {
 
 // ApplyModulation applies modulation to a MIDI note value using the provided RNG
 func ApplyModulation(originalNote int, settings ModulateSettings, rng *rand.Rand) int {
-	log.Printf("DEBUG: ApplyModulation - Seed=%d, IRandom=%d, Sub=%d, Add=%d",
-		settings.Seed, settings.IRandom, settings.Sub, settings.Add)
+	log.Printf("DEBUG: ApplyModulation - Seed=%d, IRandom=%d, Sub=%d, Add=%d, Probability=%d",
+		settings.Seed, settings.IRandom, settings.Sub, settings.Add, settings.Probability)
+
+	// Check probability first - determine if modulation should occur at all
+	if settings.Probability < 100 {
+		// Generate a random number 1-100 to compare against probability
+		probabilityRoll := rng.Intn(100) + 1
+		if probabilityRoll > settings.Probability {
+			log.Printf("DEBUG: Modulation skipped - probabilityRoll=%d > probability=%d", probabilityRoll, settings.Probability)
+			return originalNote // Return original note without any modulation
+		}
+		log.Printf("DEBUG: Modulation proceeding - probabilityRoll=%d <= probability=%d", probabilityRoll, settings.Probability)
+	}
 
 	// Start with the original note
 	result := originalNote
@@ -166,11 +178,12 @@ func abs(x int) int {
 // NewModulateSettings creates a new ModulateSettings with default values
 func NewModulateSettings() ModulateSettings {
 	return ModulateSettings{
-		Seed:      -1, // Default to "none"
-		IRandom:   0,
-		Sub:       0,
-		Add:       0,
-		ScaleRoot: 0, // Default to C
-		Scale:     "all",
+		Seed:        -1, // Default to "none"
+		IRandom:     0,
+		Sub:         0,
+		Add:         0,
+		ScaleRoot:   0, // Default to C
+		Scale:       "all",
+		Probability: 100, // Default to always apply modulation
 	}
 }

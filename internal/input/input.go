@@ -933,7 +933,7 @@ func handleDown(m *model.Model) tea.Cmd {
 			m.CurrentRow = m.CurrentRow + 1
 		}
 	} else if m.ViewMode == types.ModulateView {
-		if m.CurrentRow < int(types.ModulateSettingsRowScale) { // IRandom(0) to Scale(3)
+		if m.CurrentRow < int(types.ModulateSettingsRowProbability) { // Seed(0) to Probability(6)
 			m.CurrentRow = m.CurrentRow + 1
 		}
 	} else if m.ViewMode == types.ArpeggioView {
@@ -1752,7 +1752,7 @@ func handlePgDown(m *model.Model) tea.Cmd {
 		case types.TimestrechView:
 			maxRow = int(types.TimestrechSettingsRowProbability) // Start(0) to Probability(4)
 		case types.ModulateView:
-			maxRow = int(types.ModulateSettingsRowScale) // Seed(0) to Scale(5)
+			maxRow = int(types.ModulateSettingsRowProbability) // Seed(0) to Probability(6)
 		case types.FileMetadataView:
 			maxRow = int(types.FileMetadataRowSlices) // BPM(0) to Slices(1)
 		default:

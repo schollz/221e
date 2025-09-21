@@ -196,6 +196,7 @@ ColliderTracker offers two types of recording:
 | **Retrigger**   | Envelope settings for retrigger effects          |
 | **Timestretch** | Time-stretching parameters                       |
 | **Arpeggio**    | Arpeggio pattern editor (Instrument tracks only) |
+| **Modulate**    | Note modulation with randomization, scaling, and probability |
 
 ## Smart 'C' Key Functionality
 
@@ -225,13 +226,13 @@ This unified approach allows instant playback testing of any musical element whi
 ### Sampler View
 
 ```
-SL  DT  NN  PI  GT  RT  TS  Я  PA  LP  HP  CO  VE  VL  FI
+SL  DT  NN  PI  GT  RT  TS  Я  PA  LP  HP  CO  VE  VL  MO  FI
 ```
 
 ### Instrument View
 
 ```
-SL  DT  NOT  C  A  T  A D S R  AR  MI  SO  VL
+SL  DT  NOT  C  A  T  A D S R  AR  MI  SO  VL  MO
 ```
 
 ### Column Descriptions
@@ -249,6 +250,7 @@ SL  DT  NOT  C  A  T  A D S R  AR  MI  SO  VL
 - **CO** (comb) – Comb filter effect
 - **VE** (reverb) – Reverb effect
 - **VL** (velocity) – Note velocity (0-F hex, affects volume and expression)
+- **MO** (modulate) – Modulation settings index for note randomization and scaling
 - **FI** (file index) – Sample file selection (sampler only)
 - **C** (chord) – Chord type: None(-), Major(M), minor(m), Dominant(d) (instrument only)
 - **A** (chord addition) – Chord addition: None(-), 7th(7), 9th(9), 4th(4) (instrument only)

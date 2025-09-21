@@ -119,6 +119,19 @@ func RenderModulateView(m *model.Model) string {
 	}
 	scaleRow := fmt.Sprintf("  %-12s %s", labelStyle.Render(scaleLabel), scaleCell)
 	content.WriteString(scaleRow)
+	content.WriteString("\n")
+
+	// Probability setting
+	probabilityLabel := "Probability:"
+	probabilityValue := fmt.Sprintf("%d%%", settings.Probability)
+	var probabilityCell string
+	if m.CurrentRow == 6 {
+		probabilityCell = selectedStyle.Render(probabilityValue)
+	} else {
+		probabilityCell = normalStyle.Render(probabilityValue)
+	}
+	probabilityRow := fmt.Sprintf("  %-12s %s", labelStyle.Render(probabilityLabel), probabilityCell)
+	content.WriteString(probabilityRow)
 	content.WriteString("\n\n")
 
 	// Footer with status

@@ -323,12 +323,13 @@ type TimestrechSettings struct {
 }
 
 type ModulateSettings struct {
-	Seed      int    `json:"seed"`      // Random seed: -1 for "none" (no randomization), 0 for "random" (time seeding), 1-128 for fixed seed
-	IRandom   int    `json:"irandom"`   // Random range: 0-128 (0 means no randomization)
-	Sub       int    `json:"sub"`       // Subtract value: 0-120
-	Add       int    `json:"add"`       // Add value: 0-120
-	ScaleRoot int    `json:"scaleRoot"` // Scale root note: 0-11 (C, C#, D, D#, E, F, F#, G, G#, A, A#, B)
-	Scale     string `json:"scale"`     // Scale selection: "all", "major", "minor", etc.
+	Seed        int    `json:"seed"`        // Random seed: -1 for "none" (no randomization), 0 for "random" (time seeding), 1-128 for fixed seed
+	IRandom     int    `json:"irandom"`     // Random range: 0-128 (0 means no randomization)
+	Sub         int    `json:"sub"`         // Subtract value: 0-120
+	Add         int    `json:"add"`         // Add value: 0-120
+	ScaleRoot   int    `json:"scaleRoot"`   // Scale root note: 0-11 (C, C#, D, D#, E, F, F#, G, G#, A, A#, B)
+	Scale       string `json:"scale"`       // Scale selection: "all", "major", "minor", etc.
+	Probability int    `json:"probability"` // Probability percentage: 0-100 (100 = always apply modulation)
 }
 
 type DuckingSettings struct {
@@ -438,12 +439,13 @@ const (
 type ModulateSettingsRow int
 
 const (
-	ModulateSettingsRowSeed      ModulateSettingsRow = iota // 0: Seed
-	ModulateSettingsRowIRandom                              // 1: IRandom
-	ModulateSettingsRowSub                                  // 2: Sub
-	ModulateSettingsRowAdd                                  // 3: Add
-	ModulateSettingsRowScaleRoot                            // 4: ScaleRoot
-	ModulateSettingsRowScale                                // 5: Scale
+	ModulateSettingsRowSeed        ModulateSettingsRow = iota // 0: Seed
+	ModulateSettingsRowIRandom                                // 1: IRandom
+	ModulateSettingsRowSub                                    // 2: Sub
+	ModulateSettingsRowAdd                                    // 3: Add
+	ModulateSettingsRowScaleRoot                              // 4: ScaleRoot
+	ModulateSettingsRowScale                                  // 5: Scale
+	ModulateSettingsRowProbability                            // 6: Probability
 )
 
 // DuckingSettingsRow represents different rows in the ducking settings view
