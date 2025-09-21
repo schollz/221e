@@ -79,13 +79,18 @@ Ensure the cursor is on this line and hit Ctrl+Enter. You should now hear a sine
 
 ## Run
 
-**Option 1: Automatic SuperCollider Management (Recommended)**
+**Option 1: Intelligent Auto-Detection (Recommended)**
 
-1. Run collidertracker (it will automatically start and manage SuperCollider):
+Simply run collidertracker - it will automatically detect if SuperCollider is already running with ColliderTracker code, or start a new instance if needed:
 
 ```bash
 ./collidertracker
 ```
+
+The application will:
+- Check for an existing SuperCollider instance running ColliderTracker (3 second detection period)
+- If found: Use the existing instance
+- If not found: Automatically start and manage SuperCollider
 
 _Note:_ On Windows, you may need to add SuperCollider to the list of approved programs. Run the following commands in an Administrator-level PowerShell:
 
@@ -96,8 +101,10 @@ Add-MpPreference -ExclusionProcess "C:\Program Files\SuperCollider-3.13.0\scsynt
 
 **Option 2: Manual SuperCollider Management**
 
+If you prefer complete manual control:
+
 1. Run SuperCollider and then open `collidertracker/internal/supercollider/collidertracker.scd` in SuperCollider. Then, in SuperCollider, goto "Language" -> "Evaluate File". SuperCollider should become Active.
-2. Run collidertracker with the `--skip-sc` flag:
+2. Run collidertracker with the `--skip-sc` flag to bypass all detection and management:
 
 ```bash
 ./collidertracker -s
@@ -110,7 +117,7 @@ Add-MpPreference -ExclusionProcess "C:\Program Files\SuperCollider-3.13.0\scsynt
 | `-p, --project <dir>` | `save`  | Project directory for songs and audio files                                            |
 | `--port <port>`       | `57120` | OSC port for SuperCollider communication                                               |
 | `-r, --record`        | `false` | Enable automatic session recording (entire session to SuperCollider recordings folder) |
-| `-s, --skip-sc`       | `false` | Skip SuperCollider management (assume SC running)                                      |
+| `-s, --skip-sc`       | `false` | Skip SuperCollider detection and management entirely                                   |
 | `-l, --log <file>`    | -       | Write debug logs to specified file                                                     |
 
 ## Keyboard — Quick Reference
