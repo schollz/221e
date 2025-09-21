@@ -541,7 +541,7 @@ func initialModel(oscPort int, saveFolder string, vimMode bool, dispatcher *osc.
 
 	return &TrackerModel{
 		model:         m,
-		splashState:   views.NewSplashState(3 * time.Second),
+		splashState:   views.NewSplashState(36 * time.Second / 10), // 3.6 seconds (20% slower)
 		showingSplash: true, // splash is ALWAYS shown until SC ready
 	}
 }

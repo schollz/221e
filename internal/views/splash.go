@@ -104,7 +104,7 @@ func RenderSplashScreen(termWidth, termHeight int, state *SplashState, version s
 		titleStyleEnhanced := titleStyle
 		if titleProgress > 0.8 {
 			// Add glow effect near completion
-			pulse := math.Sin(float64(termTime)/40.0)*0.3 + 0.7
+			pulse := math.Sin(float64(termTime)/44.0)*0.3 + 0.7
 			if pulse > 0.6 {
 				titleStyleEnhanced = titleStyleEnhanced.Foreground(lipgloss.Color("226")) // Yellow glow
 			}
@@ -133,7 +133,7 @@ func RenderSplashScreen(termWidth, termHeight int, state *SplashState, version s
 		displayText := fullText[:visibleChars]
 
 		// Add typing cursor effect
-		if subtitleProgress < 1.0 && int(float64(termTime)/300.0)%2 == 0 {
+		if subtitleProgress < 1.0 && int(float64(termTime)/330.0)%2 == 0 {
 			displayText += "▋"
 		}
 
@@ -163,8 +163,8 @@ func RenderSplashScreen(termWidth, termHeight int, state *SplashState, version s
 		// Matrix-style character morphing effect
 		if urlProgress < 1.0 && len(displayURL) < len(fullURL) {
 			morphChars := []string{"@", "#", "$", "%", "&", "*"}
-			morphChar := morphChars[int(float64(termTime)/80.0)%len(morphChars)]
-			if int(float64(termTime)/150.0)%3 == 0 {
+			morphChar := morphChars[int(float64(termTime)/88.0)%len(morphChars)]
+			if int(float64(termTime)/165.0)%3 == 0 {
 				displayURL += morphChar
 			}
 		}
@@ -216,7 +216,7 @@ func RenderSplashScreen(termWidth, termHeight int, state *SplashState, version s
 		baseText := "initializing SuperCollider"
 
 		// Animated dots
-		dotCount := int(float64(termTime)/200.0) % 4
+		dotCount := int(float64(termTime)/240.0) % 4
 		dots := strings.Repeat(".", dotCount)
 
 		// Progress bar effect
@@ -354,7 +354,7 @@ func renderMainConvergenceLine(centerX int, phase1, phase2, phase3, phase4, phas
 
 	// Initialize particles based on animation phase
 	for i := 0; i < particleCount; i++ {
-		seed := float64(i*7 + int(termTime/100)) // Evolving seed
+		seed := float64(i*7 + int(termTime/110)) // Evolving seed (10% slower)
 
 		// Phase 1: Scattered genesis
 		if phase1 < 1.0 {
@@ -366,7 +366,7 @@ func renderMainConvergenceLine(centerX int, phase1, phase2, phase3, phase4, phas
 			particles[i].Char = scatterChars[i%len(scatterChars)]
 
 			// Flickering effect
-			flicker := math.Sin(float64(termTime)/50.0 + seed)
+			flicker := math.Sin(float64(termTime)/55.0 + seed)
 			if flicker > 0.3 {
 				particles[i].Color = getPhaseColor(1, seed, termTime)
 			} else {
@@ -384,11 +384,11 @@ func renderMainConvergenceLine(centerX int, phase1, phase2, phase3, phase4, phas
 			currentX := particles[i].X + (targetX-particles[i].X)*easedPhase2
 
 			// Add orbital motion
-			orbit := math.Sin(float64(termTime)/80.0+seed) * (1.0 - easedPhase2) * 3
+			orbit := math.Sin(float64(termTime)/88.0+seed) * (1.0 - easedPhase2) * 3
 			currentX += orbit
 
 			particles[i].X = currentX
-			particles[i].Y = math.Sin(float64(termTime)/120.0+seed*2) * (1.0 - easedPhase2)
+			particles[i].Y = math.Sin(float64(termTime)/132.0+seed*2) * (1.0 - easedPhase2)
 			blockIndex := int(easedPhase2 * float64(len(blockChars)-1))
 			if blockIndex >= len(blockChars) {
 				blockIndex = len(blockChars) - 1
@@ -404,7 +404,7 @@ func renderMainConvergenceLine(centerX int, phase1, phase2, phase3, phase4, phas
 			infScale := 8.0 * phase3
 
 			// Infinity symbol parametric equations
-			t := angle + float64(termTime)/200.0*phase3
+			t := angle + float64(termTime)/220.0*phase3
 			infX := infScale * math.Cos(t) / (1 + math.Sin(t)*math.Sin(t))
 			infY := infScale * math.Sin(t) * math.Cos(t) / (1 + math.Sin(t)*math.Sin(t)) * 0.3
 
@@ -422,7 +422,7 @@ func renderMainConvergenceLine(centerX int, phase1, phase2, phase3, phase4, phas
 		if phase4 > 0 && phase3 >= 1.0 {
 			// Some particles create vertical streams
 			if i%3 == 0 {
-				particles[i].Y = math.Mod(float64(termTime)/30.0+seed*50, 6) - 3
+				particles[i].Y = math.Mod(float64(termTime)/33.0+seed*50, 6) - 3
 				if len(blockChars) > 0 {
 					particles[i].Char = blockChars[rand.Intn(len(blockChars))]
 				} else {
@@ -437,7 +437,7 @@ func renderMainConvergenceLine(centerX int, phase1, phase2, phase3, phase4, phas
 				particles[i].Color = "15" // Bright white
 
 				// Pulsing glow effect
-				pulse := math.Sin(float64(termTime)/50.0)*0.3 + 0.7
+				pulse := math.Sin(float64(termTime)/55.0)*0.3 + 0.7
 				if pulse > 0.8 {
 					particles[i].Color = "226" // Bright yellow
 				}
@@ -521,7 +521,7 @@ func renderSupportLine(centerX, lineIdx, maxLines int, phase1, phase2, phase3, p
 		// Create rain drops at various positions
 		rainCount := 5 + int(phase4*3)
 		for i := 0; i < rainCount; i++ {
-			seed := float64(i*11 + lineIdx*7 + int(termTime/150))
+			seed := float64(i*11 + lineIdx*7 + int(termTime/165))
 
 			// Rain position
 			rainX := int(math.Abs(math.Sin(seed)) * float64(centerX*2))
@@ -576,7 +576,7 @@ func renderSupportLine(centerX, lineIdx, maxLines int, phase1, phase2, phase3, p
 		trailChars := []string{"·", "•", "‧", "∘"}
 
 		for i := 0; i < 3; i++ {
-			seed := float64(i*13 + lineIdx*5 + int(termTime/200))
+			seed := float64(i*13 + lineIdx*5 + int(termTime/220))
 			trailX := int(float64(centerX) + math.Sin(seed)*float64(centerX)*0.7)
 
 			if trailX >= 0 && trailX < centerX*2 {
@@ -628,7 +628,7 @@ func bounceEaseOut(t float64) float64 {
 
 // getPhaseColor returns dynamic colors for different animation phases
 func getPhaseColor(phase int, seed float64, termTime int64) string {
-	timeOffset := float64(termTime) / 100.0
+	timeOffset := float64(termTime) / 110.0
 
 	switch phase {
 	case 1: // Scattered genesis - blues and purples
