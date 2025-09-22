@@ -113,6 +113,12 @@ If you prefer complete manual control:
 | `-s, --skip-sc`       | `false` | Skip SuperCollider detection and management entirely                                   |
 | `-l, --log <file>`    | -       | Write debug logs to specified file                                                     |
 
+## Tutorial
+
+
+<p align="center"> <a href="https://www.youtube.com/watch?v=pFGIcI3h3m0"> <img width="600" alt="vlcsnap-2025-08-23-18h24m04s244"src="https://github.com/user-attachments/assets/7d4c36c0-bd28-4611-a41b-ddf864af045c"/> </a>
+</p>
+
 ## Keyboard — Quick Reference
 
 ### Navigation Between Views
