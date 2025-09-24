@@ -452,7 +452,6 @@ func fileExists(filepath string) bool {
 	return !os.IsNotExist(err)
 }
 
-
 // findSuperColliderDir searches for a SuperCollider installation directory
 // in the given base directory, looking for folders that start with "SuperCollider"
 func findSuperColliderDir(baseDir string) string {

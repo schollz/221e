@@ -202,7 +202,7 @@ func restartWithProject() {
 				}
 				return
 			}
-			
+
 			// sclang is running - wait briefly to see if it has ColliderTracker loaded
 			log.Printf("Found sclang process, checking if ColliderTracker is loaded...")
 			timeout := time.NewTimer(1 * time.Second)
@@ -423,7 +423,7 @@ func runColliderTracker(cmd *cobra.Command, args []string) {
 				}
 				return
 			}
-			
+
 			// sclang is running - wait briefly to see if it has ColliderTracker loaded
 			log.Printf("Found sclang process, checking if ColliderTracker is loaded...")
 			timeout := time.NewTimer(1 * time.Second)
@@ -542,7 +542,7 @@ func initialModel(oscPort int, saveFolder string, vimMode bool, dispatcher *osc.
 	return &TrackerModel{
 		model:         m,
 		splashState:   views.NewSplashState(36 * time.Second / 10), // 3.6 seconds (20% slower)
-		showingSplash: true, // splash is ALWAYS shown until SC ready
+		showingSplash: true,                                        // splash is ALWAYS shown until SC ready
 	}
 }
 
