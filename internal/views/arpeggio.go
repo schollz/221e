@@ -27,13 +27,13 @@ func GetArpeggioStatusMessage(m *model.Model) string {
 	case 1: // CO (Count) column
 		countText := "--"
 		if currentRow.Count != -1 {
-			countText = fmt.Sprintf("%02X", currentRow.Count)
+			countText = fmt.Sprintf("%02d", currentRow.Count)
 		}
 		columnStatus = fmt.Sprintf("Count %s", countText)
 	case 2: // Divisor (/) column
 		divisorText := "--"
 		if currentRow.Divisor != -1 {
-			divisorText = fmt.Sprintf("%02X", currentRow.Divisor)
+			divisorText = fmt.Sprintf("%02d", currentRow.Divisor)
 		}
 		columnStatus = fmt.Sprintf("Divisor /%s", divisorText)
 	}
