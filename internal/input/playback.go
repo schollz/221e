@@ -133,8 +133,8 @@ func TogglePlaybackFromLastSongRow(m *model.Model) tea.Cmd {
 }
 
 func Tick(m *model.Model) tea.Cmd {
-	ms := rowDurationMS(m)
-	return tea.Tick(time.Duration(ms)*time.Millisecond, func(t time.Time) tea.Msg {
+	us := rowDurationMicroseconds(m)
+	return tea.Tick(time.Duration(us*1000), func(t time.Time) tea.Msg {
 		return TickMsg(t)
 	})
 }
