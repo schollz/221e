@@ -1238,28 +1238,28 @@ func isInstrumentTrack(m *model.Model, trackId int) bool {
 	return false // Invalid track defaults to Sampler
 }
 
-// rowDurationMS returns the per-row duration in milliseconds.
+// rowDurationMicroseconds returns the per-row duration in microseconds.
 // DT is read *row-locally* and never inherited.
 // New behavior:
 // - DT == -1 (--) -> behaves like DT == 1 (1 tick duration)
 // - DT == 0       -> skip row (duration irrelevant, handled by shouldEmitRow)
-// - DT > 0        -> hold for DT number of ticks (baseMs * DT)
-func rowDurationMS(m *model.Model) float64 {
+// - DT > 0        -> hold for DT number of ticks (baseUs * DT)
+func rowDurationMicroseconds(m *model.Model) float64 {
 	// Guard against invalid BPM/PPQ
 	if m.BPM <= 0 || m.PPQ <= 0 {
-		// Fallback to a sane default: 120 BPM, PPQ=2  => 250ms per row
-		return 250.0
+		// Fallback to a sane default: 120 BPM, PPQ=2  => 250ms (250000us) per row
+		return 250000.0
 	}
 
 	beatsPerSecond := float64(m.BPM) / 60.0
 	ticksPerSecond := beatsPerSecond * float64(m.PPQ)
-	baseMs := 1000.0 / ticksPerSecond
+	baseUs := 1000000.0 / ticksPerSecond
 
 	p := m.PlaybackPhrase
 	r := m.PlaybackRow
 	// Bounds checks (255 x 255 grid)
 	if p < 0 || p >= 255 || r < 0 || r >= 255 {
-		return baseMs
+		return baseUs
 	}
 
 	// Get the correct phrases data based on current track type
@@ -1267,13 +1267,13 @@ func rowDurationMS(m *model.Model) float64 {
 	dtRaw := (*phrasesData)[p][r][types.ColDeltaTime] // row-local DT
 	if dtRaw == -1 {
 		// -- behaves like 01 (1 tick)
-		return baseMs
+		return baseUs
 	} else if dtRaw == 0 {
 		// 00 means skip row, but we still return base duration for timing consistency
-		return baseMs
+		return baseUs
 	} else {
 		// DT > 0: hold for DT number of ticks
-		return baseMs * float64(dtRaw)
+		return baseUs * float64(dtRaw)
 	}
 }
 
