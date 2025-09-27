@@ -235,7 +235,7 @@ func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
 
 				// Calculate delta based on parameter type and input
 				var delta float32
-				
+
 				// Check if custom step sizes are defined
 				var coarseStep, fineStep float32
 				if param.CoarseStep != 0 {
@@ -248,7 +248,7 @@ func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
 						coarseStep = 0.16 // Default for float and hex
 					}
 				}
-				
+
 				if param.FineStep != 0 {
 					fineStep = param.FineStep
 				} else {
@@ -259,7 +259,7 @@ func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
 						fineStep = 0.01 // Default fine step for float and hex
 					}
 				}
-				
+
 				// Apply the step sizes based on control type
 				if baseDelta >= 1.0 || baseDelta <= -1.0 {
 					// Coarse control

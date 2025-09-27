@@ -365,15 +365,15 @@ const (
 type GlobalSettingsRow int
 
 const (
-	GlobalSettingsRowBPM          GlobalSettingsRow = iota // 0: BPM
-	GlobalSettingsRowPPQ                                   // 1: PPQ
-	GlobalSettingsRowPregainDB                             // 2: PregainDB
-	GlobalSettingsRowPostgainDB                            // 3: PostgainDB
-	GlobalSettingsRowBiasDB                                // 4: BiasDB
-	GlobalSettingsRowSaturationDB                          // 5: SaturationDB
-	GlobalSettingsRowDriveDB                               // 6: DriveDB
-	GlobalSettingsRowTapePercent                           // 7: TapePercent
-	GlobalSettingsRowShimmerPercent                        // 8: ShimmerPercent
+	GlobalSettingsRowBPM            GlobalSettingsRow = iota // 0: BPM
+	GlobalSettingsRowPPQ                                     // 1: PPQ
+	GlobalSettingsRowPregainDB                               // 2: PregainDB
+	GlobalSettingsRowPostgainDB                              // 3: PostgainDB
+	GlobalSettingsRowBiasDB                                  // 4: BiasDB
+	GlobalSettingsRowSaturationDB                            // 5: SaturationDB
+	GlobalSettingsRowDriveDB                                 // 6: DriveDB
+	GlobalSettingsRowTapePercent                             // 7: TapePercent
+	GlobalSettingsRowShimmerPercent                          // 8: ShimmerPercent
 )
 
 // InputSettingsRow represents different rows in the Input settings column
@@ -478,9 +478,9 @@ type MidiSettings struct {
 }
 
 type SoundMakerSettings struct {
-	Name       string            `json:"name"`       // SoundMaker name ("PolyPerc", "Infinite Pad", "DX7", etc.)
+	Name       string             `json:"name"`       // SoundMaker name ("PolyPerc", "Infinite Pad", "DX7", etc.)
 	Parameters map[string]float32 `json:"parameters"` // Key-value pairs for parameters (e.g. "preset": 5, "A": 128)
-	PatchName  string            `json:"patchName"`  // Patch name (used for DX7 when setting by name)
+	PatchName  string             `json:"patchName"`  // Patch name (used for DX7 when setting by name)
 }
 
 type ClipboardData struct {
