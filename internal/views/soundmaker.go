@@ -60,7 +60,11 @@ func GetSoundMakerStatusMessage(m *model.Model) string {
 					if value == -1 {
 						columnStatus = fmt.Sprintf("%s: --", param.DisplayName)
 					} else {
-						if param.Type == types.ParameterTypeHex {
+						// Use DisplayFormat if available, otherwise use default formatting
+						if param.DisplayFormat != "" {
+							formattedValue := fmt.Sprintf(param.DisplayFormat, value)
+							columnStatus = fmt.Sprintf("%s: %s", param.DisplayName, formattedValue)
+						} else if param.Type == types.ParameterTypeHex {
 							columnStatus = fmt.Sprintf("%s: %02X", param.DisplayName, int(value))
 						} else if param.Type == types.ParameterTypeFloat {
 							columnStatus = fmt.Sprintf("%s: %.2f", param.DisplayName, value)
@@ -150,7 +154,10 @@ func RenderSoundMakerView(m *model.Model) string {
 					if value == -1 {
 						valueStr = "--"
 					} else {
-						if param.Type == types.ParameterTypeHex {
+						// Use DisplayFormat if available, otherwise use default formatting
+						if param.DisplayFormat != "" {
+							valueStr = fmt.Sprintf(param.DisplayFormat, value)
+						} else if param.Type == types.ParameterTypeHex {
 							valueStr = fmt.Sprintf("%02X", int(value))
 						} else if param.Type == types.ParameterTypeFloat {
 							// Display float parameters directly

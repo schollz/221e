@@ -648,17 +648,18 @@ const (
 )
 
 type InstrumentParameterDef struct {
-	Key          string                  `json:"key"`          // Key for OSC sending (e.g. "preset", "cutoff")
-	DisplayName  string                  `json:"displayName"`  // Name shown in UI (e.g. "Preset", "Cutoff")
-	Type         InstrumentParameterType `json:"type"`         // Data type
-	MinValue     float32                 `json:"minValue"`     // Minimum value
-	MaxValue     float32                 `json:"maxValue"`     // Maximum value
-	DefaultValue float32                 `json:"defaultValue"` // Default value (-1 for "--")
-	Default      float32                 `json:"default"`      // Default value for new instances
-	Column       int                     `json:"column"`       // Which column to display in (0 or 1)
-	Order        int                     `json:"order"`        // Order within the column
-	CoarseStep   float32                 `json:"coarseStep"`   // Step size for coarse control (0 = use default)
-	FineStep     float32                 `json:"fineStep"`     // Step size for fine control (0 = use default)
+	Key           string                  `json:"key"`           // Key for OSC sending (e.g. "preset", "cutoff")
+	DisplayName   string                  `json:"displayName"`   // Name shown in UI (e.g. "Preset", "Cutoff")
+	Type          InstrumentParameterType `json:"type"`          // Data type
+	MinValue      float32                 `json:"minValue"`      // Minimum value
+	MaxValue      float32                 `json:"maxValue"`      // Maximum value
+	DefaultValue  float32                 `json:"defaultValue"`  // Default value (-1 for "--")
+	Default       float32                 `json:"default"`       // Default value for new instances
+	Column        int                     `json:"column"`        // Which column to display in (0 or 1)
+	Order         int                     `json:"order"`         // Order within the column
+	CoarseStep    float32                 `json:"coarseStep"`    // Step size for coarse control (0 = use default)
+	FineStep      float32                 `json:"fineStep"`      // Step size for fine control (0 = use default)
+	DisplayFormat string                  `json:"displayFormat"` // Display format string (e.g. "%.1f Hz", empty = use default)
 }
 
 type InstrumentDefinition struct {
@@ -784,37 +785,37 @@ var InstrumentRegistry = map[string]InstrumentDefinition{
 			{
 				Key: "vibrRate", DisplayName: "Vib Rate", Type: ParameterTypeFloat,
 				MinValue: 0.1, MaxValue: 100.0, DefaultValue: 6.0, Default: 6.0, Column: 0, Order: 0,
-				CoarseStep: 1.0, FineStep: 0.1,
+				CoarseStep: 1.0, FineStep: 0.1, DisplayFormat: "%.1f Hz",
 			},
 			{
 				Key: "vibrDepth", DisplayName: "Vib Depth", Type: ParameterTypeFloat,
 				MinValue: 0.0, MaxValue: 1.0, DefaultValue: 0.3, Default: 0.3, Column: 0, Order: 1,
-				CoarseStep: 0.1, FineStep: 0.01,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
 			},
 			{
 				Key: "drive", DisplayName: "Drive", Type: ParameterTypeFloat,
 				MinValue: 0.0, MaxValue: 10.0, DefaultValue: 1.5, Default: 1.5, Column: 0, Order: 2,
-				CoarseStep: 1.0, FineStep: 0.1,
+				CoarseStep: 1.0, FineStep: 0.1, DisplayFormat: "%.1f",
 			},
 			{
 				Key: "detune", DisplayName: "Detune", Type: ParameterTypeFloat,
 				MinValue: 0.0, MaxValue: 4.0, DefaultValue: 0.2, Default: 0.2, Column: 0, Order: 3,
-				CoarseStep: 0.1, FineStep: 0.01,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
 			},
 			{
 				Key: "spread", DisplayName: "Spread", Type: ParameterTypeFloat,
 				MinValue: 0.0, MaxValue: 1.0, DefaultValue: 0.6, Default: 0.6, Column: 1, Order: 0,
-				CoarseStep: 0.1, FineStep: 0.01,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
 			},
 			{
 				Key: "lpenv", DisplayName: "LP Env", Type: ParameterTypeFloat,
 				MinValue: 0.0, MaxValue: 9.0, DefaultValue: 7.0, Default: 7.0, Column: 1, Order: 1,
-				CoarseStep: 1.0, FineStep: 0.1,
+				CoarseStep: 1.0, FineStep: 0.1, DisplayFormat: "%.1f",
 			},
 			{
 				Key: "lpa", DisplayName: "LP Attack", Type: ParameterTypeFloat,
 				MinValue: 0.0, MaxValue: 10.0, DefaultValue: 1.0, Default: 1.0, Column: 1, Order: 2,
-				CoarseStep: 1.0, FineStep: 0.1,
+				CoarseStep: 1.0, FineStep: 0.1, DisplayFormat: "%.1f",
 			},
 		},
 	},
