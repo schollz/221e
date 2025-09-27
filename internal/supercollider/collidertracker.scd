@@ -8,6 +8,73 @@ s.waitForBoot({
 		~synthsPlaying = Dictionary.new();
 
 
+		SynthDef("SuperSaw",{
+			arg vibrRate = 6, vibrDepth = 0.3, drive = 1.5, detune = 0.2, spread = 0.6, lpenv = 0, lpa = 0;
+			var ducked;
+			var cutoff = \lowPassFilter.kr(20000);
+			var freq = \note.kr(60).min(127).max(0).midicps;
+			var env = EnvGen.ar(
+				Env.adsr(
+					\attack.kr(0.1),
+					\decay.kr(1.0),
+					\sustain.kr(0.7),
+					\release.kr(0.5)
+				),
+				1-EnvGen.kr(Env.new([0,0,1],[\duration.kr(1),0])),
+				doneAction:2,
+			);
+			var snd, sig, freqs, unison = 7;
+
+			// Unison voices with random phases
+			freqs = Array.fill(unison, { |i|
+				var det = ((i / (unison - 1)) - 0.5) * detune; // ±detune/2
+				(freq) * (1 + (LFTri.kr(vibrRate,Rand(0,1)).range(-1, 1) * (2 ** (vibrDepth / 12) - 1))) * (2 ** (det / 12));
+			});
+
+			sig = Mix.fill(unison, { |i|
+				var osc = SawDPW.ar(freqs[i], Rand(0, 1)); // random phase
+				Pan2.ar(osc, ((i % 2) * 2 - 1) * spread);
+			}) / sqrt(unison);
+
+			snd = MoogLadder.ar(sig * drive, 
+				10 + (XLine.kr(cutoff,((2**lpenv)*cutoff).min(18000).max(cutoff),\duration.kr(1)*lpa)*env)
+			) * (1 / drive);
+
+			snd = snd * env * \trackVolume.kr(0).dbamp * (1.0 / \noteSize.kr(1).sqrt)
+				* \velocity.kr(100).min(127).max(0).linlin(0,127,-24,24).dbamp;
+			snd = Balance2.ar(snd[0],snd[1],\pan.kr(0));
+			
+			// check if signal is ducked
+			// process: when the sidechain exceeds thresh, reduce 'snd' by slopeAbove
+			ducked = Compander.ar(
+				in:         snd,     // signal to be ducked
+				control:    LeakDC.ar(In.ar(\duckingBusIn.kr(0), 1)),    // external sidechain
+				thresh:     \duckingThresh.kr(0.02),  // start reducing above this
+				slopeBelow: 1,       // unchanged below threshold
+				slopeAbove: (1 - \duckingDepth.kr(0).clip(0, 0.99)).max(0.01),
+				clampTime:  \duckingAttack.kr(0.02),     // attack
+				relaxTime:  \duckingRelease.kr(0.20)      // release
+			);
+			// engage only for ducked voices (duckingType == 2). Writers and non-duckers pass through unchanged.
+			snd = Select.ar(\duckingType.kr(0),
+				[snd, snd, ducked]   // 0:not ducked, 1:writer, 2:ducked(reader)
+			);
+			// tiny floor to avoid denormals at extreme reductions:
+			snd = snd + (1e-6 * WhiteNoise.ar(1));
+			Out.ar(\duckingBusOut.kr(0),
+				Mix(snd) * \duckingDepth.kr(0).clip(0, 0.99) * Select.kr(\duckingType.kr(0), [
+					0,  // 0 = not ducking
+					1,  // 1 = is ducking (writer)
+					0   // 2 = not ducking
+				])
+			);
+
+			Out.ar(\trackOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
+			Out.ar(\effectDryOut.kr(0), snd*(1.0 - \effectReverb.kr(0)));
+			Out.ar(\effectCombOut.kr(0), snd*\effectComb.kr(0));
+			Out.ar(\effectReverbOut.kr(0), snd*\effectReverb.kr(0));
+		}).add;
+
 		SynthDef("MiPlaits",{
 			var ducked;
 
@@ -483,7 +550,7 @@ s.waitForBoot({
 			// sndWet = sndWet + PitchShift.ar(sndWet, 0.1, 8,0,1,0.125*shimmer/2);
 			snd = snd + Fverb.ar(sndWet[0],sndWet[1],200,
 				tail_density: LFNoise2.ar(1/3).range(50,90),
-				decay: LFNoise2.ar(1/3).range(50,70)
+				decay: LFNoise2.ar(1/3).range(50,90),
 			);
 
 			snd = RHPF.ar(snd,60,0.303);
@@ -975,7 +1042,23 @@ s.waitForBoot({
 
 		//Server.default.record;
 		["playing startupSound"].postln;
-		Synth.head(Server.default,"startupSound",[\out,~busDry]);
+		// Synth.head(Server.default,"startupSound",[\out,~busDry]);
+		[48,64,67,72].do({ |n|
+			Synth.head(Server.default,"SuperSaw",[
+				\note,n-12,\duration,4,\effectDryOut, ~busDry,\effectCombOut, ~busComb,\effectReverbOut, ~busReverb,
+				\attack, 3.0,
+				\release, 3.0,
+				\sustain, 1.0,
+				\effectReverb, 0.3,
+				\lowPassFilter, 200,
+				\lpa, 1,
+				\lpenv, 7.0,
+				\drive, 1.0,
+				\noteSize, 4,
+				\trackVolume, -12,
+			]);
+		});
+
 	}.play;
 });
 )
