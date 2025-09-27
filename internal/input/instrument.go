@@ -193,7 +193,7 @@ func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
 		}
 
 		// Use the available SoundMaker names
-		soundMakers := []string{"None", "PolyPerc", "DX7", "MiBraids", "MiPlaits"}
+		soundMakers := []string{"None", "PolyPerc", "DX7", "MiBraids", "MiPlaits", "SuperSaw"}
 
 		// Find current index
 		currentIndex := -1
@@ -235,39 +235,41 @@ func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
 
 				// Calculate delta based on parameter type and input
 				var delta int
-				if param.Type == types.ParameterTypeInt {
-					// For DX7 preset, use larger steps
-					if baseDelta >= 1.0 || baseDelta <= -1.0 {
-						// Coarse control
-						if baseDelta > 0 {
-							delta = 50
-						} else {
-							delta = -50
-						}
+				
+				// Check if custom step sizes are defined
+				var coarseStep, fineStep int
+				if param.CoarseStep != 0 {
+					coarseStep = param.CoarseStep
+				} else {
+					// Use default coarse steps based on parameter type
+					if param.Type == types.ParameterTypeInt {
+						coarseStep = 50 // Default for DX7 preset and similar
 					} else {
-						// Fine control
-						if baseDelta > 0 {
-							delta = 1
-						} else {
-							delta = -1
-						}
+						coarseStep = 16 // Default for float and hex
+					}
+				}
+				
+				if param.FineStep != 0 {
+					fineStep = param.FineStep
+				} else {
+					// Use default fine steps
+					fineStep = 1 // Default fine step for all types
+				}
+				
+				// Apply the step sizes based on control type
+				if baseDelta >= 1.0 || baseDelta <= -1.0 {
+					// Coarse control
+					if baseDelta > 0 {
+						delta = coarseStep
+					} else {
+						delta = -coarseStep
 					}
 				} else {
-					// For hex values, use standard steps
-					if baseDelta >= 1.0 || baseDelta <= -1.0 {
-						// Coarse control
-						if baseDelta > 0 {
-							delta = 16
-						} else {
-							delta = -16
-						}
+					// Fine control
+					if baseDelta > 0 {
+						delta = fineStep
 					} else {
-						// Fine control
-						if baseDelta > 0 {
-							delta = 1
-						} else {
-							delta = -1
-						}
+						delta = -fineStep
 					}
 				}
 

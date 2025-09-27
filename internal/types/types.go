@@ -654,8 +654,11 @@ type InstrumentParameterDef struct {
 	MinValue     int                     `json:"minValue"`     // Minimum value
 	MaxValue     int                     `json:"maxValue"`     // Maximum value
 	DefaultValue int                     `json:"defaultValue"` // Default value (-1 for "--")
+	Default      int                     `json:"default"`      // Default value for new instances
 	Column       int                     `json:"column"`       // Which column to display in (0 or 1)
 	Order        int                     `json:"order"`        // Order within the column
+	CoarseStep   int                     `json:"coarseStep"`   // Step size for coarse control (0 = use default)
+	FineStep     int                     `json:"fineStep"`     // Step size for fine control (0 = use default)
 }
 
 type InstrumentDefinition struct {
@@ -774,6 +777,47 @@ var InstrumentRegistry = map[string]InstrumentDefinition{
 			},
 		},
 	},
+	"SuperSaw": {
+		Name:        "SuperSaw",
+		Description: "stereo supersaw",
+		Parameters: []InstrumentParameterDef{
+			{
+				Key: "vibrRate", DisplayName: "Vib Rate", Type: ParameterTypeFloat,
+				MinValue: 100, MaxValue: 100000, DefaultValue: 6000, Default: 6000, Column: 0, Order: 0,
+				CoarseStep: 1000, FineStep: 100,
+			},
+			{
+				Key: "vibrDepth", DisplayName: "Vib Depth", Type: ParameterTypeFloat,
+				MinValue: 0, MaxValue: 1000, DefaultValue: 300, Default: 300, Column: 0, Order: 1,
+				CoarseStep: 100, FineStep: 10,
+			},
+			{
+				Key: "drive", DisplayName: "Drive", Type: ParameterTypeFloat,
+				MinValue: 0, MaxValue: 10000, DefaultValue: 1500, Default: 1500, Column: 0, Order: 2,
+				CoarseStep: 1000, FineStep: 100,
+			},
+			{
+				Key: "detune", DisplayName: "Detune", Type: ParameterTypeFloat,
+				MinValue: 0, MaxValue: 4000, DefaultValue: 200, Default: 200, Column: 0, Order: 3,
+				CoarseStep: 100, FineStep: 10,
+			},
+			{
+				Key: "spread", DisplayName: "Spread", Type: ParameterTypeFloat,
+				MinValue: 0, MaxValue: 1000, DefaultValue: 600, Default: 600, Column: 1, Order: 0,
+				CoarseStep: 100, FineStep: 10,
+			},
+			{
+				Key: "lpenv", DisplayName: "LP Env", Type: ParameterTypeFloat,
+				MinValue: 0, MaxValue: 9000, DefaultValue: 7000, Default: 7000, Column: 1, Order: 1,
+				CoarseStep: 1000, FineStep: 100,
+			},
+			{
+				Key: "lpa", DisplayName: "LP Attack", Type: ParameterTypeFloat,
+				MinValue: 0, MaxValue: 10000, DefaultValue: 1000, Default: 1000, Column: 1, Order: 2,
+				CoarseStep: 1000, FineStep: 100,
+			},
+		},
+	},
 }
 
 // Helper functions for the instrument framework
@@ -875,6 +919,10 @@ func (settings *SoundMakerSettings) GetParameterValue(key string) int {
 	// Return default value from instrument definition if available
 	if def, exists := GetInstrumentDefinition(settings.Name); exists {
 		if param, found := def.GetParameterByKey(key); found {
+			// Use Default field if set, otherwise fall back to DefaultValue
+			if param.Default != 0 {
+				return param.Default
+			}
 			return param.DefaultValue
 		}
 	}
@@ -899,7 +947,12 @@ func (settings *SoundMakerSettings) InitializeParameters() {
 
 		for _, param := range def.Parameters {
 			if _, exists := settings.Parameters[param.Key]; !exists {
-				settings.Parameters[param.Key] = param.DefaultValue
+				// Use Default field if set, otherwise fall back to DefaultValue
+				if param.Default != 0 {
+					settings.Parameters[param.Key] = param.Default
+				} else {
+					settings.Parameters[param.Key] = param.DefaultValue
+				}
 			}
 		}
 	}
