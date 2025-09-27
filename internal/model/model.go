@@ -1749,8 +1749,8 @@ func (m *Model) SendOSCDriveMessage() {
 func (m *Model) SendOSCInputLevelMessage() {
 	config := OSCMessageConfig{
 		Address:    "/set_track",
-		Parameters: []interface{}{int32(9), "trackVolume", m.InputLevelDB},
-		LogFormat:  "OSC input level message sent: /set_track 9 'trackVolume' %.1f",
+		Parameters: []interface{}{int32(8), "trackVolume", m.InputLevelDB},
+		LogFormat:  "OSC input level message sent: /set_track 8 'trackVolume' %.1f",
 		LogArgs:    []interface{}{m.InputLevelDB},
 	}
 
@@ -1763,8 +1763,8 @@ func (m *Model) SendOSCReverbSendMessage() {
 
 	config := OSCMessageConfig{
 		Address:    "/set_track",
-		Parameters: []interface{}{int32(9), "effectReverb", normalizedValue},
-		LogFormat:  "OSC reverb send message sent: /set_track 9 'effectReverb' %.3f (%.1f%%)",
+		Parameters: []interface{}{int32(8), "effectReverb", normalizedValue},
+		LogFormat:  "OSC reverb send message sent: /set_track 8 'effectReverb' %.3f (%.1f%%)",
 		LogArgs:    []interface{}{normalizedValue, m.ReverbSendPercent},
 	}
 
