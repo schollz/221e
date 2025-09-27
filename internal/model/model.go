@@ -1449,8 +1449,8 @@ func (m *Model) sendMIDIInstrumentMessage(params InstrumentOSCParams) {
 	// Calculate duration same as OSC message
 	duration := float64(params.DeltaTime) * float64(params.Gate) / 128.0
 
-	// Hard-coded velocity as requested
-	velocity := 100.0
+	// Use velocity from instrument parameters
+	velocity := float64(params.Velocity)
 
 	log.Printf("DEBUG: Sending MIDI messages for device=%s, channel=%d, notes=%v, velocity=%.0f, duration=%.3f",
 		midiSettings.Device, channel, params.Notes, velocity, duration)

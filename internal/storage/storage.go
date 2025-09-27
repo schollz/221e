@@ -88,6 +88,8 @@ func DoSave(m *model.Model) {
 		BiasDB:                     m.BiasDB,
 		SaturationDB:               m.SaturationDB,
 		DriveDB:                    m.DriveDB,
+		InputLevelDB:               m.InputLevelDB,
+		ReverbSendPercent:          m.ReverbSendPercent,
 		FileMetadata:               m.FileMetadata,
 		LastChainRow:               m.LastChainRow,
 		LastPhraseRow:              m.LastPhraseRow,
@@ -192,6 +194,8 @@ func LoadState(m *model.Model, oscPort int, saveFolder string) error {
 	m.BiasDB = saveData.BiasDB
 	m.SaturationDB = saveData.SaturationDB
 	m.DriveDB = saveData.DriveDB
+	m.InputLevelDB = saveData.InputLevelDB
+	m.ReverbSendPercent = saveData.ReverbSendPercent
 	m.FileMetadata = saveData.FileMetadata
 	m.LastChainRow = saveData.LastChainRow
 	m.LastPhraseRow = saveData.LastPhraseRow
@@ -294,6 +298,8 @@ func LoadState(m *model.Model, oscPort int, saveFolder string) error {
 	m.SendOSCBiasMessage()
 	m.SendOSCSaturationMessage()
 	m.SendOSCDriveMessage()
+	m.SendOSCInputLevelMessage()
+	m.SendOSCReverbSendMessage()
 
 	// Send track set levels to OSC on load
 	for track := 0; track < 8; track++ {

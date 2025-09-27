@@ -533,6 +533,8 @@ type SaveData struct {
 	BiasDB                     float32                 `json:"biasDB"`
 	SaturationDB               float32                 `json:"saturationDB"`
 	DriveDB                    float32                 `json:"driveDB"`
+	InputLevelDB               float32                 `json:"inputLevelDB"`
+	ReverbSendPercent          float32                 `json:"reverbSendPercent"`
 	FileMetadata               map[string]FileMetadata `json:"fileMetadata"`
 	LastChainRow               int                     `json:"lastChainRow"`
 	LastPhraseRow              int                     `json:"lastPhraseRow"`
