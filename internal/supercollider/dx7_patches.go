@@ -67,7 +67,7 @@ func SetDX7PatchByName(settings *types.SoundMakerSettings, patchName string) err
 		return err
 	}
 
-	settings.SetParameterValue("preset", index)
+	settings.SetParameterValue("preset", float32(index))
 	settings.PatchName = patchName
 	return nil
 }
@@ -82,7 +82,7 @@ func SetDX7PatchByIndex(settings *types.SoundMakerSettings, index int) error {
 		return err
 	}
 
-	settings.SetParameterValue("preset", index)
+	settings.SetParameterValue("preset", float32(index))
 	settings.PatchName = patchName
 	return nil
 }

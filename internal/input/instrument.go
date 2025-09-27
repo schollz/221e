@@ -234,18 +234,18 @@ func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
 				oldValue := settings.GetParameterValue(param.Key)
 
 				// Calculate delta based on parameter type and input
-				var delta int
+				var delta float32
 				
 				// Check if custom step sizes are defined
-				var coarseStep, fineStep int
+				var coarseStep, fineStep float32
 				if param.CoarseStep != 0 {
 					coarseStep = param.CoarseStep
 				} else {
 					// Use default coarse steps based on parameter type
 					if param.Type == types.ParameterTypeInt {
-						coarseStep = 50 // Default for DX7 preset and similar
+						coarseStep = 50.0 // Default for DX7 preset and similar
 					} else {
-						coarseStep = 16 // Default for float and hex
+						coarseStep = 0.16 // Default for float and hex
 					}
 				}
 				
@@ -253,7 +253,11 @@ func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
 					fineStep = param.FineStep
 				} else {
 					// Use default fine steps
-					fineStep = 1 // Default fine step for all types
+					if param.Type == types.ParameterTypeInt {
+						fineStep = 1.0 // Default fine step for int
+					} else {
+						fineStep = 0.01 // Default fine step for float and hex
+					}
 				}
 				
 				// Apply the step sizes based on control type
@@ -273,7 +277,7 @@ func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
 					}
 				}
 
-				var newValue int
+				var newValue float32
 				if oldValue == -1 {
 					// If currently "--", start from min or max
 					if delta > 0 {
@@ -297,7 +301,7 @@ func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
 				// Special handling for DX7 patch name updates
 				if param.Key == "preset" && settings.Name == "DX7" {
 					if newValue >= 0 {
-						if patchName, err := supercollider.GetDX7PatchName(newValue); err == nil {
+						if patchName, err := supercollider.GetDX7PatchName(int(newValue)); err == nil {
 							settings.PatchName = patchName
 						}
 					} else {
@@ -308,15 +312,15 @@ func ModifySoundMakerValue(m *model.Model, baseDelta float32) {
 				// Log the change
 				if newValue == -1 {
 					if oldValue == -1 {
-						log.Printf("Modified SoundMaker %02X %s: -- -> -- (delta: %d)", m.SoundMakerEditingIndex, param.DisplayName, delta)
+						log.Printf("Modified SoundMaker %02X %s: -- -> -- (delta: %f)", m.SoundMakerEditingIndex, param.DisplayName, delta)
 					} else {
-						log.Printf("Modified SoundMaker %02X %s: %d -> -- (delta: %d)", m.SoundMakerEditingIndex, param.DisplayName, oldValue, delta)
+						log.Printf("Modified SoundMaker %02X %s: %f -> -- (delta: %f)", m.SoundMakerEditingIndex, param.DisplayName, oldValue, delta)
 					}
 				} else {
 					if oldValue == -1 {
-						log.Printf("Modified SoundMaker %02X %s: -- -> %d (delta: %d)", m.SoundMakerEditingIndex, param.DisplayName, newValue, delta)
+						log.Printf("Modified SoundMaker %02X %s: -- -> %f (delta: %f)", m.SoundMakerEditingIndex, param.DisplayName, newValue, delta)
 					} else {
-						log.Printf("Modified SoundMaker %02X %s: %d -> %d (delta: %d)", m.SoundMakerEditingIndex, param.DisplayName, oldValue, newValue, delta)
+						log.Printf("Modified SoundMaker %02X %s: %f -> %f (delta: %f)", m.SoundMakerEditingIndex, param.DisplayName, oldValue, newValue, delta)
 					}
 				}
 			}

@@ -864,7 +864,7 @@ func (m *Model) initializeDefaultData() {
 	for i := 0; i < 255; i++ {
 		settings := types.SoundMakerSettings{
 			Name:       "None", // Default to "None"
-			Parameters: make(map[string]int),
+			Parameters: make(map[string]float32),
 			PatchName:  "",
 		}
 		// Initialize parameters for the default "None" instrument (no parameters)
@@ -1373,7 +1373,9 @@ func (m *Model) sendOSCInstrumentMessage(params InstrumentOSCParams) {
 					// Convert and append parameter value based on type
 					if value == -1 {
 						// Unset parameters send their default value or 0
-						if param.Type == types.ParameterTypeHex || param.Type == types.ParameterTypeFloat {
+						if param.Type == types.ParameterTypeHex {
+							msg.Append(float32(0.0))
+						} else if param.Type == types.ParameterTypeFloat {
 							msg.Append(float32(0.0))
 						} else {
 							// ParameterTypeInt - send 0 for unset values
@@ -1382,12 +1384,11 @@ func (m *Model) sendOSCInstrumentMessage(params InstrumentOSCParams) {
 					} else {
 						if param.Type == types.ParameterTypeHex {
 							// Normalize hex values (0-254) to float (0.0-1.0)
-							normalizedValue := float32(value) / 254.0
+							normalizedValue := value / 254.0
 							msg.Append(normalizedValue)
 						} else if param.Type == types.ParameterTypeFloat {
-							// Normalize float values (0-1000) to float (0.0-1.0)
-							normalizedValue := float32(value) / 1000.0
-							msg.Append(normalizedValue)
+							// Send float values directly, no normalization needed
+							msg.Append(value)
 						} else {
 							// ParameterTypeInt - send as int32
 							msg.Append(int32(value))

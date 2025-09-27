@@ -478,9 +478,9 @@ type MidiSettings struct {
 }
 
 type SoundMakerSettings struct {
-	Name       string         `json:"name"`       // SoundMaker name ("PolyPerc", "Infinite Pad", "DX7", etc.)
-	Parameters map[string]int `json:"parameters"` // Key-value pairs for parameters (e.g. "preset": 5, "A": 128)
-	PatchName  string         `json:"patchName"`  // Patch name (used for DX7 when setting by name)
+	Name       string            `json:"name"`       // SoundMaker name ("PolyPerc", "Infinite Pad", "DX7", etc.)
+	Parameters map[string]float32 `json:"parameters"` // Key-value pairs for parameters (e.g. "preset": 5, "A": 128)
+	PatchName  string            `json:"patchName"`  // Patch name (used for DX7 when setting by name)
 }
 
 type ClipboardData struct {
@@ -651,14 +651,14 @@ type InstrumentParameterDef struct {
 	Key          string                  `json:"key"`          // Key for OSC sending (e.g. "preset", "cutoff")
 	DisplayName  string                  `json:"displayName"`  // Name shown in UI (e.g. "Preset", "Cutoff")
 	Type         InstrumentParameterType `json:"type"`         // Data type
-	MinValue     int                     `json:"minValue"`     // Minimum value
-	MaxValue     int                     `json:"maxValue"`     // Maximum value
-	DefaultValue int                     `json:"defaultValue"` // Default value (-1 for "--")
-	Default      int                     `json:"default"`      // Default value for new instances
+	MinValue     float32                 `json:"minValue"`     // Minimum value
+	MaxValue     float32                 `json:"maxValue"`     // Maximum value
+	DefaultValue float32                 `json:"defaultValue"` // Default value (-1 for "--")
+	Default      float32                 `json:"default"`      // Default value for new instances
 	Column       int                     `json:"column"`       // Which column to display in (0 or 1)
 	Order        int                     `json:"order"`        // Order within the column
-	CoarseStep   int                     `json:"coarseStep"`   // Step size for coarse control (0 = use default)
-	FineStep     int                     `json:"fineStep"`     // Step size for fine control (0 = use default)
+	CoarseStep   float32                 `json:"coarseStep"`   // Step size for coarse control (0 = use default)
+	FineStep     float32                 `json:"fineStep"`     // Step size for fine control (0 = use default)
 }
 
 type InstrumentDefinition struct {
@@ -783,38 +783,38 @@ var InstrumentRegistry = map[string]InstrumentDefinition{
 		Parameters: []InstrumentParameterDef{
 			{
 				Key: "vibrRate", DisplayName: "Vib Rate", Type: ParameterTypeFloat,
-				MinValue: 100, MaxValue: 100000, DefaultValue: 6000, Default: 6000, Column: 0, Order: 0,
-				CoarseStep: 1000, FineStep: 100,
+				MinValue: 0.1, MaxValue: 100.0, DefaultValue: 6.0, Default: 6.0, Column: 0, Order: 0,
+				CoarseStep: 1.0, FineStep: 0.1,
 			},
 			{
 				Key: "vibrDepth", DisplayName: "Vib Depth", Type: ParameterTypeFloat,
-				MinValue: 0, MaxValue: 1000, DefaultValue: 300, Default: 300, Column: 0, Order: 1,
-				CoarseStep: 100, FineStep: 10,
+				MinValue: 0.0, MaxValue: 1.0, DefaultValue: 0.3, Default: 0.3, Column: 0, Order: 1,
+				CoarseStep: 0.1, FineStep: 0.01,
 			},
 			{
 				Key: "drive", DisplayName: "Drive", Type: ParameterTypeFloat,
-				MinValue: 0, MaxValue: 10000, DefaultValue: 1500, Default: 1500, Column: 0, Order: 2,
-				CoarseStep: 1000, FineStep: 100,
+				MinValue: 0.0, MaxValue: 10.0, DefaultValue: 1.5, Default: 1.5, Column: 0, Order: 2,
+				CoarseStep: 1.0, FineStep: 0.1,
 			},
 			{
 				Key: "detune", DisplayName: "Detune", Type: ParameterTypeFloat,
-				MinValue: 0, MaxValue: 4000, DefaultValue: 200, Default: 200, Column: 0, Order: 3,
-				CoarseStep: 100, FineStep: 10,
+				MinValue: 0.0, MaxValue: 4.0, DefaultValue: 0.2, Default: 0.2, Column: 0, Order: 3,
+				CoarseStep: 0.1, FineStep: 0.01,
 			},
 			{
 				Key: "spread", DisplayName: "Spread", Type: ParameterTypeFloat,
-				MinValue: 0, MaxValue: 1000, DefaultValue: 600, Default: 600, Column: 1, Order: 0,
-				CoarseStep: 100, FineStep: 10,
+				MinValue: 0.0, MaxValue: 1.0, DefaultValue: 0.6, Default: 0.6, Column: 1, Order: 0,
+				CoarseStep: 0.1, FineStep: 0.01,
 			},
 			{
 				Key: "lpenv", DisplayName: "LP Env", Type: ParameterTypeFloat,
-				MinValue: 0, MaxValue: 9000, DefaultValue: 7000, Default: 7000, Column: 1, Order: 1,
-				CoarseStep: 1000, FineStep: 100,
+				MinValue: 0.0, MaxValue: 9.0, DefaultValue: 7.0, Default: 7.0, Column: 1, Order: 1,
+				CoarseStep: 1.0, FineStep: 0.1,
 			},
 			{
 				Key: "lpa", DisplayName: "LP Attack", Type: ParameterTypeFloat,
-				MinValue: 0, MaxValue: 10000, DefaultValue: 1000, Default: 1000, Column: 1, Order: 2,
-				CoarseStep: 1000, FineStep: 100,
+				MinValue: 0.0, MaxValue: 10.0, DefaultValue: 1.0, Default: 1.0, Column: 1, Order: 2,
+				CoarseStep: 1.0, FineStep: 0.1,
 			},
 		},
 	},
@@ -907,7 +907,7 @@ func GetMiPlaitsEngineName(index int) string {
 // Helper functions for SoundMakerSettings with the new parameter framework
 
 // GetParameterValue gets a parameter value with fallback to default
-func (settings *SoundMakerSettings) GetParameterValue(key string) int {
+func (settings *SoundMakerSettings) GetParameterValue(key string) float32 {
 	if settings.Parameters == nil {
 		return -1
 	}
@@ -931,9 +931,9 @@ func (settings *SoundMakerSettings) GetParameterValue(key string) int {
 }
 
 // SetParameterValue sets a parameter value
-func (settings *SoundMakerSettings) SetParameterValue(key string, value int) {
+func (settings *SoundMakerSettings) SetParameterValue(key string, value float32) {
 	if settings.Parameters == nil {
-		settings.Parameters = make(map[string]int)
+		settings.Parameters = make(map[string]float32)
 	}
 	settings.Parameters[key] = value
 }
@@ -942,7 +942,7 @@ func (settings *SoundMakerSettings) SetParameterValue(key string, value int) {
 func (settings *SoundMakerSettings) InitializeParameters() {
 	if def, exists := GetInstrumentDefinition(settings.Name); exists {
 		if settings.Parameters == nil {
-			settings.Parameters = make(map[string]int)
+			settings.Parameters = make(map[string]float32)
 		}
 
 		for _, param := range def.Parameters {
