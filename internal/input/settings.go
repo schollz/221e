@@ -80,6 +80,28 @@ func ModifySettingsValue(m *model.Model, delta float32) {
 				-96, 32, "DriveDB",
 			)
 			modifyValueWithBounds(modifier, delta)
+
+		case types.GlobalSettingsRowTapePercent: // TapePercent
+			modifier := createFloatModifier(
+				func() float32 { return m.TapePercent },
+				func(v float32) {
+					m.TapePercent = v
+					m.SendOSCTapeMessage() // Send OSC message for tape change
+				},
+				0, 100, "TapePercent",
+			)
+			modifyValueWithBounds(modifier, delta)
+
+		case types.GlobalSettingsRowShimmerPercent: // ShimmerPercent
+			modifier := createFloatModifier(
+				func() float32 { return m.ShimmerPercent },
+				func(v float32) {
+					m.ShimmerPercent = v
+					m.SendOSCShimmerMessage() // Send OSC message for shimmer change
+				},
+				0, 300, "ShimmerPercent",
+			)
+			modifyValueWithBounds(modifier, delta)
 		}
 	} else if m.CurrentCol == 1 {
 		// Input column settings

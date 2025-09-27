@@ -67,6 +67,8 @@ type Model struct {
 	DriveDB               float32        // Drive in decibels (-96.0 to +32.0, default -6.0)
 	InputLevelDB          float32        // Input level in decibels (-48.0 to +24.0, default 0.0)
 	ReverbSendPercent     float32        // Reverb send percentage (0.0 to 100.0, default 0.0)
+	TapePercent           float32        // Tape percentage (0.0 to 100.0, default 0.0)
+	ShimmerPercent        float32        // Shimmer percentage (0.0 to 300.0, default 0.0)
 	PreviousView          types.ViewMode // Track the view we came from when entering Settings
 	// Playback state for inheriting values from previous rows
 	lastPlaybackNote     int    // Last non-null note value during playback
@@ -612,6 +614,8 @@ func NewModel(oscPort int, saveFolder string, vimMode bool) *Model {
 		DriveDB:           -6.0,  // Default drive (-6 dB)
 		InputLevelDB:      0.0,   // Default input level (0 dB)
 		ReverbSendPercent: 0.0,   // Default reverb send (0%)
+		TapePercent:       0.0,   // Default tape (0%)
+		ShimmerPercent:    0.0,   // Default shimmer (0%)
 		// Initialize playback inheritance values
 		lastPlaybackNote:     -1,
 		lastPlaybackDT:       -1,
@@ -1768,6 +1772,30 @@ func (m *Model) SendOSCReverbSendMessage() {
 		LogArgs:    []interface{}{normalizedValue, m.ReverbSendPercent},
 	}
 
+	m.sendOSCMessage(config)
+}
+
+func (m *Model) SendOSCTapeMessage() {
+	// Normalize percentage (0-100) to 0.0-1.0 for SuperCollider
+	normalizedValue := m.TapePercent / 100.0
+	config := OSCMessageConfig{
+		Address:    "/set",
+		Parameters: []interface{}{"tape", normalizedValue},
+		LogFormat:  "OSC tape message sent: /set 'tape' %.3f (%.1f%%)",
+		LogArgs:    []interface{}{normalizedValue, m.TapePercent},
+	}
+	m.sendOSCMessage(config)
+}
+
+func (m *Model) SendOSCShimmerMessage() {
+	// Normalize percentage (0-300) to 0.0-3.0 for SuperCollider
+	normalizedValue := m.ShimmerPercent / 100.0
+	config := OSCMessageConfig{
+		Address:    "/set",
+		Parameters: []interface{}{"shimmer", normalizedValue},
+		LogFormat:  "OSC shimmer message sent: /set 'shimmer' %.3f (%.1f%%)",
+		LogArgs:    []interface{}{normalizedValue, m.ShimmerPercent},
+	}
 	m.sendOSCMessage(config)
 }
 

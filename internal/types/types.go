@@ -372,6 +372,8 @@ const (
 	GlobalSettingsRowBiasDB                                // 4: BiasDB
 	GlobalSettingsRowSaturationDB                          // 5: SaturationDB
 	GlobalSettingsRowDriveDB                               // 6: DriveDB
+	GlobalSettingsRowTapePercent                           // 7: TapePercent
+	GlobalSettingsRowShimmerPercent                        // 8: ShimmerPercent
 )
 
 // InputSettingsRow represents different rows in the Input settings column
@@ -535,6 +537,8 @@ type SaveData struct {
 	DriveDB                    float32                 `json:"driveDB"`
 	InputLevelDB               float32                 `json:"inputLevelDB"`
 	ReverbSendPercent          float32                 `json:"reverbSendPercent"`
+	TapePercent                float32                 `json:"tapePercent"`
+	ShimmerPercent             float32                 `json:"shimmerPercent"`
 	FileMetadata               map[string]FileMetadata `json:"fileMetadata"`
 	LastChainRow               int                     `json:"lastChainRow"`
 	LastPhraseRow              int                     `json:"lastPhraseRow"`

@@ -90,6 +90,8 @@ func DoSave(m *model.Model) {
 		DriveDB:                    m.DriveDB,
 		InputLevelDB:               m.InputLevelDB,
 		ReverbSendPercent:          m.ReverbSendPercent,
+		TapePercent:                m.TapePercent,
+		ShimmerPercent:             m.ShimmerPercent,
 		FileMetadata:               m.FileMetadata,
 		LastChainRow:               m.LastChainRow,
 		LastPhraseRow:              m.LastPhraseRow,
@@ -196,6 +198,8 @@ func LoadState(m *model.Model, oscPort int, saveFolder string) error {
 	m.DriveDB = saveData.DriveDB
 	m.InputLevelDB = saveData.InputLevelDB
 	m.ReverbSendPercent = saveData.ReverbSendPercent
+	m.TapePercent = saveData.TapePercent
+	m.ShimmerPercent = saveData.ShimmerPercent
 	m.FileMetadata = saveData.FileMetadata
 	m.LastChainRow = saveData.LastChainRow
 	m.LastPhraseRow = saveData.LastPhraseRow

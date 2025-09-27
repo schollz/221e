@@ -55,6 +55,8 @@ func RenderSettingsView(m *model.Model) string {
 			{"Bias:", fmt.Sprintf("%.1f dB", m.BiasDB), 4},
 			{"Sat:", fmt.Sprintf("%.1f dB", m.SaturationDB), 5},
 			{"Drive:", fmt.Sprintf("%.1f dB", m.DriveDB), 6},
+			{"Tape:", fmt.Sprintf("%.1f%%", m.TapePercent), 7},
+			{"Shimmer:", fmt.Sprintf("%.1f%%", m.ShimmerPercent), 8},
 		}
 
 		// Input settings (column 1)

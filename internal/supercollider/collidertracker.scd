@@ -545,10 +545,10 @@ s.waitForBoot({
 				Pan2.ar(CombN.ar(sndComb[1], 0.02, Rand(0.01,0.06), Rand(1,2)),1,0.9));
 
 			// add in reverb
-			// sndWet = DelayN.ar(sndWet, 0.03, 0.03);
-			// sndWet = sndWet + PitchShift.ar(sndWet, 0.13, 2,0,1,1*shimmer/2);
-			// sndWet = sndWet + PitchShift.ar(sndWet, 0.1, 4,0,1,0.5*shimmer/2);
-			// sndWet = sndWet + PitchShift.ar(sndWet, 0.1, 8,0,1,0.125*shimmer/2);
+			sndWet = DelayN.ar(sndWet, 0.03, 0.03);
+			sndWet = sndWet + PitchShift.ar(sndWet, 0.13, 2,0,1,1*shimmer/2);
+			sndWet = sndWet + PitchShift.ar(sndWet, 0.1, 4,0,1,0.5*shimmer/2);
+			sndWet = sndWet + PitchShift.ar(sndWet, 0.1, 8,0,1,0.125*shimmer/2);
 			snd = snd + Fverb.ar(sndWet[0],sndWet[1],200,
 				tail_density: LFNoise2.ar(1/3).range(50,90),
 				decay: LFNoise2.ar(1/3).range(50,90),

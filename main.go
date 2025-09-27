@@ -154,6 +154,8 @@ func restartWithProject() {
 			tm.model.SendOSCDriveMessage()
 			tm.model.SendOSCInputLevelMessage()
 			tm.model.SendOSCReverbSendMessage()
+			tm.model.SendOSCTapeMessage()
+			tm.model.SendOSCShimmerMessage()
 
 			// Send track set levels too
 			for track := 0; track < 8; track++ {
@@ -375,6 +377,8 @@ func runColliderTracker(cmd *cobra.Command, args []string) {
 			tm.model.SendOSCDriveMessage()
 			tm.model.SendOSCInputLevelMessage()
 			tm.model.SendOSCReverbSendMessage()
+			tm.model.SendOSCTapeMessage()
+			tm.model.SendOSCShimmerMessage()
 
 			// Send track set levels too
 			for track := 0; track < 8; track++ {

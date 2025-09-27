@@ -910,10 +910,10 @@ func handleDown(m *model.Model) tea.Cmd {
 			m.CurrentRow = m.CurrentRow + 1
 		}
 	} else if m.ViewMode == types.SettingsView {
-		// Column 0 (Global): BPM to Drive, Column 1 (Input): InputLevelDB to ReverbSendPercent
+		// Column 0 (Global): BPM to Shimmer, Column 1 (Input): InputLevelDB to ReverbSendPercent
 		var maxRow int
 		if m.CurrentCol == 0 {
-			maxRow = int(types.GlobalSettingsRowDriveDB) // Global column: BPM(0) to Drive(6)
+			maxRow = int(types.GlobalSettingsRowShimmerPercent) // Global column: BPM(0) to Shimmer(8)
 		} else {
 			maxRow = int(types.InputSettingsRowReverbSendPercent) // Input column: InputLevelDB(0) to ReverbSendPercent(1)
 		}
@@ -1065,8 +1065,8 @@ func handleLeft(m *model.Model) tea.Cmd {
 		if m.CurrentCol > 0 { // Switch between Global (0) and Input (1) columns
 			m.CurrentCol = m.CurrentCol - 1
 			// Adjust row if it's beyond the bounds of the new column
-			if m.CurrentCol == 0 && m.CurrentRow > 6 {
-				m.CurrentRow = 6 // Global column max is 6
+			if m.CurrentCol == 0 && m.CurrentRow > int(types.GlobalSettingsRowShimmerPercent) {
+				m.CurrentRow = int(types.GlobalSettingsRowShimmerPercent) // Global column max is 8
 			}
 			storage.AutoSave(m)
 		}
