@@ -829,6 +829,33 @@ func GetInstrumentDefinition(name string) (InstrumentDefinition, bool) {
 	return def, exists
 }
 
+// GetAvailableSoundMakers returns a list of all available SoundMaker names from the InstrumentRegistry
+// The list is sorted alphabetically for consistent ordering
+func GetAvailableSoundMakers() []string {
+	soundMakers := make([]string, 0, len(InstrumentRegistry))
+	for name := range InstrumentRegistry {
+		soundMakers = append(soundMakers, name)
+	}
+	
+	// Sort alphabetically for consistent ordering
+	for i := 0; i < len(soundMakers)-1; i++ {
+		for j := i + 1; j < len(soundMakers); j++ {
+			if soundMakers[i] > soundMakers[j] {
+				soundMakers[i], soundMakers[j] = soundMakers[j], soundMakers[i]
+			}
+		}
+	}
+	
+	return soundMakers
+}
+
+// GetAvailableSoundMakersWithNone returns a list of all available SoundMaker names with "None" as the first option
+func GetAvailableSoundMakersWithNone() []string {
+	soundMakers := []string{"None"}
+	soundMakers = append(soundMakers, GetAvailableSoundMakers()...)
+	return soundMakers
+}
+
 // GetInstrumentParameterByKey returns a specific parameter definition by key
 func (def InstrumentDefinition) GetParameterByKey(key string) (InstrumentParameterDef, bool) {
 	for _, param := range def.Parameters {
