@@ -508,6 +508,7 @@ s.waitForBoot({
 			reverbAmt=0.1,
 			pregain=0.0,
 			postgain=0.0,
+			tape=0.0,
 			bias=6.0.neg,
 			saturation=6.0.neg,
 			drive=6.0.neg,
@@ -555,12 +556,12 @@ s.waitForBoot({
 
 			snd = RHPF.ar(snd,60,0.303);
 			snd = snd * Lag.kr(pregain).dbamp;
-			snd = AnalogTape.ar(snd,
+			snd = SelectX.ar(Lag.kr(tape),[snd,AnalogTape.ar(snd,
 				bias: Lag.kr(bias).dbamp,
 				saturation: Lag.kr(saturation).dbamp,
 				drive: Lag.kr(drive).dbamp,
 				oversample: 2,
-			);
+			)]);
 			snd = snd * Lag.kr(volumeDB).dbamp * Lag.kr(postgain).dbamp;
 
 			SendReply.kr(Impulse.kr(30),'/waveform',Normalizer.ar(LPF.ar(snd,60)));
