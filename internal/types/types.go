@@ -328,6 +328,7 @@ type ModulateSettings struct {
 	Sub         int    `json:"sub"`         // Subtract value: 0-120
 	Add         int    `json:"add"`         // Add value: 0-120
 	Increment   int    `json:"increment"`   // Increment value: 0-128 (added to note when increment counter > -1)
+	Wrap        int    `json:"wrap"`        // Wrap value: 0-128 (0 = none, wraps increment counter when exceeded)
 	ScaleRoot   int    `json:"scaleRoot"`   // Scale root note: 0-11 (C, C#, D, D#, E, F, F#, G, G#, A, A#, B)
 	Scale       string `json:"scale"`       // Scale selection: "all", "major", "minor", etc.
 	Probability int    `json:"probability"` // Probability percentage: 0-100 (100 = always apply modulation)
@@ -447,9 +448,10 @@ const (
 	ModulateSettingsRowSub                                    // 2: Sub
 	ModulateSettingsRowAdd                                    // 3: Add
 	ModulateSettingsRowIncrement                              // 4: Increment
-	ModulateSettingsRowScaleRoot                              // 5: ScaleRoot
-	ModulateSettingsRowScale                                  // 6: Scale
-	ModulateSettingsRowProbability                            // 7: Probability
+	ModulateSettingsRowWrap                                   // 5: Wrap
+	ModulateSettingsRowScaleRoot                              // 6: ScaleRoot
+	ModulateSettingsRowScale                                  // 7: Scale
+	ModulateSettingsRowProbability                            // 8: Probability
 )
 
 // DuckingSettingsRow represents different rows in the ducking settings view

@@ -653,7 +653,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 			
 			// Apply increment before other modulation operations if counter > -1
 			incrementCounter := m.IncrementCounters[trackId][phrase][row]
-			originalNote = modulation.ApplyIncrement(originalNote, incrementCounter, modulateSettings.Increment)
+			originalNote = modulation.ApplyIncrement(originalNote, incrementCounter, modulateSettings.Increment, modulateSettings.Wrap)
 
 			// Get track-specific RNG for modulation
 			var trackRng *rand.Rand
@@ -670,19 +670,21 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 				Sub:         modulateSettings.Sub,
 				Add:         modulateSettings.Add,
 				Increment:   modulateSettings.Increment,
+				Wrap:        modulateSettings.Wrap,
 				ScaleRoot:   modulateSettings.ScaleRoot,
 				Scale:       modulateSettings.Scale,
 				Probability: modulateSettings.Probability,
 			}, trackRng)
 			
 			// Apply the same logic for raw note
-			rawNoteWithIncrement := modulation.ApplyIncrement(rawNote, incrementCounter, modulateSettings.Increment)
+			rawNoteWithIncrement := modulation.ApplyIncrement(rawNote, incrementCounter, modulateSettings.Increment, modulateSettings.Wrap)
 			rawNoteModulated = modulation.ApplyModulation(rawNoteWithIncrement, modulation.ModulateSettings{
 				Seed:        modulateSettings.Seed,
 				IRandom:     modulateSettings.IRandom,
 				Sub:         modulateSettings.Sub,
 				Add:         modulateSettings.Add,
 				Increment:   modulateSettings.Increment,
+				Wrap:        modulateSettings.Wrap,
 				ScaleRoot:   modulateSettings.ScaleRoot,
 				Scale:       modulateSettings.Scale,
 				Probability: modulateSettings.Probability,
@@ -1221,7 +1223,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 			
 			for i, note := range midiNotes {
 				// Apply increment before other modulation operations if counter > -1
-				noteWithIncrement := modulation.ApplyIncrement(note, incrementCounter, modulateSettings.Increment)
+				noteWithIncrement := modulation.ApplyIncrement(note, incrementCounter, modulateSettings.Increment, modulateSettings.Wrap)
 				
 				modulatedNote := modulation.ApplyModulation(noteWithIncrement, modulation.ModulateSettings{
 					Seed:        modulateSettings.Seed,
@@ -1229,6 +1231,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 					Sub:         modulateSettings.Sub,
 					Add:         modulateSettings.Add,
 					Increment:   modulateSettings.Increment,
+					Wrap:        modulateSettings.Wrap,
 					ScaleRoot:   modulateSettings.ScaleRoot,
 					Scale:       modulateSettings.Scale,
 					Probability: modulateSettings.Probability,

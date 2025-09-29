@@ -13,6 +13,7 @@ func TestApplyIncrementIntegration(t *testing.T) {
 		originalNote     int
 		incrementCounter int
 		incrementValue   int
+		wrapValue        int
 		expected         int
 	}{
 		{
@@ -20,6 +21,7 @@ func TestApplyIncrementIntegration(t *testing.T) {
 			originalNote:     60,
 			incrementCounter: -1,
 			incrementValue:   10,
+			wrapValue:        0,
 			expected:         60,
 		},
 		{
@@ -27,6 +29,7 @@ func TestApplyIncrementIntegration(t *testing.T) {
 			originalNote:     60,
 			incrementCounter: 0,
 			incrementValue:   10,
+			wrapValue:        0,
 			expected:         60, // 60 + 0 = 60
 		},
 		{
@@ -34,6 +37,7 @@ func TestApplyIncrementIntegration(t *testing.T) {
 			originalNote:     40,
 			incrementCounter: 5,
 			incrementValue:   10,
+			wrapValue:        0,
 			expected:         45, // 40 + 5 = 45
 		},
 		{
@@ -41,16 +45,25 @@ func TestApplyIncrementIntegration(t *testing.T) {
 			originalNote:     60,
 			incrementCounter: 10,
 			incrementValue:   0,
+			wrapValue:        0,
 			expected:         60,
+		},
+		{
+			name:             "Test wrap functionality",
+			originalNote:     60,
+			incrementCounter: 10,
+			incrementValue:   5,
+			wrapValue:        7,
+			expected:         63, // 60 + (10 % 7) = 60 + 3 = 63
 		},
 	}
 	
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := modulation.ApplyIncrement(tt.originalNote, tt.incrementCounter, tt.incrementValue)
+			result := modulation.ApplyIncrement(tt.originalNote, tt.incrementCounter, tt.incrementValue, tt.wrapValue)
 			if result != tt.expected {
-				t.Errorf("ApplyIncrement(%d, %d, %d) = %d; want %d",
-					tt.originalNote, tt.incrementCounter, tt.incrementValue, result, tt.expected)
+				t.Errorf("ApplyIncrement(%d, %d, %d, %d) = %d; want %d",
+					tt.originalNote, tt.incrementCounter, tt.incrementValue, tt.wrapValue, result, tt.expected)
 			}
 		})
 	}

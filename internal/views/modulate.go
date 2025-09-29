@@ -101,6 +101,22 @@ func RenderModulateView(m *model.Model) string {
 	content.WriteString(incrementRow)
 	content.WriteString("\n")
 
+	// Wrap setting
+	wrapLabel := "Wrap:"
+	wrapValue := "none"
+	if settings.Wrap > 0 {
+		wrapValue = fmt.Sprintf("%d", settings.Wrap)
+	}
+	var wrapCell string
+	if m.CurrentRow == 5 {
+		wrapCell = selectedStyle.Render(wrapValue)
+	} else {
+		wrapCell = normalStyle.Render(wrapValue)
+	}
+	wrapRow := fmt.Sprintf("  %-12s %s", labelStyle.Render(wrapLabel), wrapCell)
+	content.WriteString(wrapRow)
+	content.WriteString("\n")
+
 	// ScaleRoot setting
 	scaleRootLabel := "ScaleRoot:"
 	noteNames := []string{"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"}
@@ -109,7 +125,7 @@ func RenderModulateView(m *model.Model) string {
 		scaleRootValue = noteNames[settings.ScaleRoot]
 	}
 	var scaleRootCell string
-	if m.CurrentRow == 5 {
+	if m.CurrentRow == 6 {
 		scaleRootCell = selectedStyle.Render(scaleRootValue)
 	} else {
 		scaleRootCell = normalStyle.Render(scaleRootValue)
@@ -125,7 +141,7 @@ func RenderModulateView(m *model.Model) string {
 		scaleValue = "all"
 	}
 	var scaleCell string
-	if m.CurrentRow == 6 {
+	if m.CurrentRow == 7 {
 		scaleCell = selectedStyle.Render(scaleValue)
 	} else {
 		scaleCell = normalStyle.Render(scaleValue)
@@ -138,7 +154,7 @@ func RenderModulateView(m *model.Model) string {
 	probabilityLabel := "Probability:"
 	probabilityValue := fmt.Sprintf("%d%%", settings.Probability)
 	var probabilityCell string
-	if m.CurrentRow == 7 {
+	if m.CurrentRow == 8 {
 		probabilityCell = selectedStyle.Render(probabilityValue)
 	} else {
 		probabilityCell = normalStyle.Render(probabilityValue)
