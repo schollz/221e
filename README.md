@@ -18,7 +18,7 @@ _IMPORTANT NOTE: this software is currently in development and is definetly unst
 
 **COMPATIBILITY WARNING**: Major version changes (X.0.0 -> Y.0.0) are not backward compatible. Save files from version X.0 cannot be used with version Y.0 and vice versa. Back up your projects before upgrading across major versions.
 
-This is a music tracker designed to be used with any terminal (Linux, macOS, Windows WSL/terminal). It is the first tracker that (to my knowledge) uses [SuperCollider](https://supercollider.github.io/downloads.html) as the sound engine, which allows for very flexible sound design and synthesis.
+This is a music tracker designed to be used with any terminal (Linux, macOS, Windows WSL/terminal). It is the first tracker (to my knowledge) that uses [SuperCollider](https://supercollider.github.io/downloads.html) as the sound engine, which allows for very flexible sound design and synthesis.
 
 ## Prerequisites
 
@@ -455,8 +455,6 @@ After building, verify the binary works:
 - [ChibiTracker](https://github.com/reduz/chibitracker)
 - [Propulse Tracker](https://github.com/hukkax/Propulse)
 - [Pata Tracker](https://pixwlk.itch.io/pata-tracker)
-- [Oxide Tracker](https://paranoidcactus.itch.io/oxidetracker)
-- [WaveTracker](https://squiggythings.itch.io/wavetracker)
 
 ## Classic Trackers & Clones
 
@@ -489,7 +487,6 @@ After building, verify the binary works:
 ## Yamaha / FM & Multi-Chip
 
 - [BambooTracker](https://bambootracker.github.io/BambooTracker/)
-- [klystrack](https://kometbomb.github.io/klystrack/) _(also listed under Chiptune)_
 - [Protrekkr](https://github.com/hitchhikr/protrekkr)
 - [Reality Adlib Tracker (RAD)](https://realityproductions.itch.io/rad)
 
@@ -503,8 +500,8 @@ After building, verify the binary works:
 
 - [Shield Tracker (sTracker)](https://bleep.toys/) · [Shortcuts](https://bleep.toys/stracker/keyboard_shortcuts.html)
 - [1tracker (1-bit ZX/retro)](https://randomflux.info/1bit/viewtopic.php?id=24&p=4)
-- [WaveTracker](https://squiggythings.itch.io/wavetracker) _(Itch.io, also listed under General)_
-- [Oxide Tracker](https://paranoidcactus.itch.io/oxidetracker) _(Itch.io, also listed under General)_
+- [WaveTracker](https://squiggythings.itch.io/wavetracker) 
+- [Oxide Tracker](https://paranoidcactus.itch.io/oxidetracker)
 
 ## Uninstalling ColliderTracker
 
