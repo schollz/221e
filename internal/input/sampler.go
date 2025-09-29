@@ -367,7 +367,26 @@ func ModifyModulateValue(m *model.Model, baseDelta float32) {
 		}
 		settings.Add = newAdd
 		log.Printf("Modified modulate %02X Add: %d -> %d (delta: %d)", m.ModulateEditingIndex, settings.Add-delta, settings.Add, delta)
-	} else if m.CurrentRow == 4 { // ScaleRoot
+	} else if m.CurrentRow == 4 { // Increment
+		// Use different increments: 5 for coarse, 1 for fine
+		var delta int
+		if baseDelta == 1.0 || baseDelta == -1.0 {
+			delta = int(baseDelta) * 5 // Coarse control: +/-5
+		} else if baseDelta == 0.05 || baseDelta == -0.05 {
+			delta = int(baseDelta / 0.05) // Fine control: +/-1
+		} else {
+			delta = int(baseDelta) // Fallback
+		}
+
+		newIncrement := settings.Increment + delta
+		if newIncrement < 0 {
+			newIncrement = 0
+		} else if newIncrement > 128 {
+			newIncrement = 128
+		}
+		settings.Increment = newIncrement
+		log.Printf("Modified modulate %02X Increment: %d -> %d (delta: %d)", m.ModulateEditingIndex, settings.Increment-delta, settings.Increment, delta)
+	} else if m.CurrentRow == 5 { // ScaleRoot
 		// Cycle through note names (C, C#, D, D#, E, F, F#, G, G#, A, A#, B)
 		noteNames := []string{"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"}
 		currentIndex := settings.ScaleRoot
@@ -388,7 +407,7 @@ func ModifyModulateValue(m *model.Model, baseDelta float32) {
 		oldNote := noteNames[currentIndex]
 		settings.ScaleRoot = newIndex
 		log.Printf("Modified modulate %02X ScaleRoot: %s -> %s", m.ModulateEditingIndex, oldNote, noteNames[newIndex])
-	} else if m.CurrentRow == 5 { // Scale
+	} else if m.CurrentRow == 6 { // Scale
 		// Cycle through available scales
 		availableScales := []string{"all", "major", "minor", "dorian", "mixolydian", "pentatonic", "blues", "chromatic"}
 		currentIndex := -1
@@ -417,7 +436,7 @@ func ModifyModulateValue(m *model.Model, baseDelta float32) {
 		oldScale := settings.Scale
 		settings.Scale = availableScales[newIndex]
 		log.Printf("Modified modulate %02X Scale: %s -> %s", m.ModulateEditingIndex, oldScale, settings.Scale)
-	} else if m.CurrentRow == 6 { // Probability
+	} else if m.CurrentRow == 7 { // Probability
 		// Use different increments: 10 for coarse, 1 for fine (based on Ctrl+Up/Down vs Ctrl+Left/Right)
 		var delta int
 		if baseDelta == 1.0 || baseDelta == -1.0 {

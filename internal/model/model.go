@@ -124,6 +124,8 @@ type Model struct {
 	SongPlaybackTicksLeft   [8]int  // Remaining ticks until next row advance for each track
 	// Effect step tracking - tracks how many times each step has been played for Every functionality
 	EffectStepCounter [8][255][255]int // [track][phrase][row] = step count for retrigger and timestretch Every logic
+	// Increment counter tracking - tracks increment counter values per track/phrase/row
+	IncrementCounters [8][255][255]int // [track][phrase][row] = increment counter (-1 means uninitialized/unused)
 	// Save folder configuration
 	SaveFolder string // Path to the save folder
 	// Recording state

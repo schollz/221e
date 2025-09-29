@@ -12,6 +12,7 @@ type ModulateSettings struct {
 	IRandom     int    `json:"irandom"`     // Random range: 0-128 (0 means no randomization)
 	Sub         int    `json:"sub"`         // Subtract value: 0-120
 	Add         int    `json:"add"`         // Add value: 0-120
+	Increment   int    `json:"increment"`   // Increment value: 0-128 (added to note when increment counter > -1)
 	ScaleRoot   int    `json:"scaleRoot"`   // Scale root note: 0-11 (C, C#, D, D#, E, F, F#, G, G#, A, A#, B)
 	Scale       string `json:"scale"`       // Scale selection: "all", "major", "minor", etc.
 	Probability int    `json:"probability"` // Probability percentage: 0-100 (100 = always apply modulation)
@@ -74,6 +75,19 @@ func GetScaleNames() []string {
 // GetNoteNames returns a list of all note names
 func GetNoteNames() []string {
 	return NoteNames
+}
+
+// ApplyIncrement applies increment to a note value based on increment counter
+// This should be called before other modulation operations
+func ApplyIncrement(originalNote int, incrementCounter int, incrementValue int) int {
+	if incrementCounter > -1 && incrementValue > 0 {
+		log.Printf("DEBUG: ApplyIncrement - originalNote=%d, incrementCounter=%d, incrementValue=%d", 
+			originalNote, incrementCounter, incrementValue)
+		result := originalNote + incrementCounter
+		log.Printf("DEBUG: ApplyIncrement - result=%d", result)
+		return result
+	}
+	return originalNote
 }
 
 // ApplyModulation applies modulation to a MIDI note value using the provided RNG
@@ -182,7 +196,8 @@ func NewModulateSettings() ModulateSettings {
 		IRandom:     0,
 		Sub:         0,
 		Add:         0,
-		ScaleRoot:   0, // Default to C
+		Increment:   0,  // Default increment value
+		ScaleRoot:   0,  // Default to C
 		Scale:       "all",
 		Probability: 100, // Default to always apply modulation
 	}
