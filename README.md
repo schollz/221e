@@ -229,6 +229,76 @@ ColliderTracker offers two types of recording:
 | **Arpeggio**    | Arpeggio pattern editor (Instrument tracks only)             |
 | **Modulate**    | Note modulation with randomization, scaling, and probability |
 
+## Modulation Settings
+
+The Modulation system provides powerful note transformation capabilities for both Instrument and Sampler tracks. Access it by navigating to a **MO** (Modulate) column value and pressing **Shift+Right**.
+
+### Overview
+
+Modulation settings allow you to:
+- Add controlled randomness to notes
+- Apply mathematical transformations (add/subtract)
+- Quantize notes to musical scales
+- Create incremental note sequences
+- Control probability of modulation effects
+
+### Parameters
+
+| Parameter     | Range     | Description |
+|---------------|-----------|-------------|
+| **Seed**      | none/random/1-128 | Random number generator seed:<br>• `none` = No randomization<br>• `random` = Time-based seed (different each time)<br>• `1-128` = Fixed seed for reproducible results |
+| **IRandom**   | 0-128     | Random variation range applied to notes (0 = no randomization) |
+| **Sub**       | 0-120     | Value subtracted from the note after randomization |
+| **Add**       | 0-120     | Value added to the note after subtraction |
+| **Increment** | 0-128     | Increment value applied based on playback counter |
+| **Wrap**      | 0-128     | Wrap point for increment counter (0 = no wrapping) |
+| **ScaleRoot** | C-B       | Root note of the scale (C, C#, D, etc.) |
+| **Scale**     | Various   | Musical scale for quantization:<br>• `all` = No scale quantization<br>• `major`, `minor`, `dorian`, `mixolydian`<br>• `pentatonic`, `blues`, `chromatic` |
+| **Probability** | 0-100%  | Chance that modulation will be applied (100% = always) |
+
+### Processing Order
+
+Modulation is applied in this sequence:
+1. **Increment** - Added based on playback counter (if active)
+2. **Random Variation** - Applied if IRandom > 0 and Seed is not "none"
+3. **Subtraction** - Sub value is subtracted
+4. **Addition** - Add value is added
+5. **Scale Quantization** - Note is quantized to nearest scale note (if not "all")
+
+### Usage Examples
+
+#### Basic Randomization
+- **Seed**: `random`, **IRandom**: `12`, **Sub**: `6`, **Add**: `0`
+- Adds ±6 semitones of random variation to notes
+
+#### Incremental Sequences  
+- **Increment**: `2`, **Wrap**: `12`
+- Each successive trigger moves the note up 2 semitones, wrapping after 12 semitones
+
+#### Scale Quantization
+- **ScaleRoot**: `C`, **Scale**: `major`, **Probability**: `75%`
+- 75% chance to quantize notes to C major scale
+
+#### Controlled Chaos
+- **Seed**: `42`, **IRandom**: `24`, **Sub**: `12`, **Add**: `5`, **Scale**: `minor`
+- Reproducible random variations within a minor scale
+
+### Track-Specific Behavior
+
+**Instrument Tracks**: Modulation applies to:
+- Individual notes when no chord/arpeggio is active
+- All chord notes when chords are used without arpeggio
+- All arpeggio notes (including root) when arpeggio is active
+
+**Sampler Tracks**: Modulation applies to the sample's playback pitch
+
+### Tips
+
+- Use **fixed seeds** (1-128) for reproducible "random" patterns
+- Set **Probability** < 100% to create organic, non-mechanical variations
+- Combine **Increment** with **Wrap** for cyclical melodic patterns
+- Use scale quantization to keep random variations musically coherent
+
 ## Smart 'C' Key Functionality
 
 The **C** key provides context-aware trigger and fill functionality across all views:
