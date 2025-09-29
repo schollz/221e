@@ -650,6 +650,10 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 		if rawModulate != -1 && rawModulate >= 0 && rawModulate < 255 && effectiveNote != -1 {
 			modulateSettings := (*GetModulateSettingsForTrack(m, trackId))[rawModulate]
 			originalNote := effectiveNote
+			
+			// Apply increment before other modulation operations if counter > -1
+			incrementCounter := m.IncrementCounters[trackId][phrase][row]
+			originalNote = modulation.ApplyIncrement(originalNote, incrementCounter, modulateSettings.Increment, modulateSettings.Wrap)
 
 			// Get track-specific RNG for modulation
 			var trackRng *rand.Rand
@@ -665,22 +669,28 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 				IRandom:     modulateSettings.IRandom,
 				Sub:         modulateSettings.Sub,
 				Add:         modulateSettings.Add,
+				Increment:   modulateSettings.Increment,
+				Wrap:        modulateSettings.Wrap,
 				ScaleRoot:   modulateSettings.ScaleRoot,
 				Scale:       modulateSettings.Scale,
 				Probability: modulateSettings.Probability,
 			}, trackRng)
-			// modulat rawNote
-			rawNoteModulated = modulation.ApplyModulation(rawNote, modulation.ModulateSettings{
+			
+			// Apply the same logic for raw note
+			rawNoteWithIncrement := modulation.ApplyIncrement(rawNote, incrementCounter, modulateSettings.Increment, modulateSettings.Wrap)
+			rawNoteModulated = modulation.ApplyModulation(rawNoteWithIncrement, modulation.ModulateSettings{
 				Seed:        modulateSettings.Seed,
 				IRandom:     modulateSettings.IRandom,
 				Sub:         modulateSettings.Sub,
 				Add:         modulateSettings.Add,
+				Increment:   modulateSettings.Increment,
+				Wrap:        modulateSettings.Wrap,
 				ScaleRoot:   modulateSettings.ScaleRoot,
 				Scale:       modulateSettings.Scale,
 				Probability: modulateSettings.Probability,
 			}, trackRng)
-			log.Printf("Applied modulation %02X: NN %02X -> %02X (Seed=%d, IRandom=%d, Sub=%d, Add=%d, Scale=%s)",
-				rawModulate, originalNote, modulatedNote, modulateSettings.Seed, modulateSettings.IRandom, modulateSettings.Sub, modulateSettings.Add, modulateSettings.Scale)
+			log.Printf("Applied modulation %02X: NN %02X -> %02X (Seed=%d, IRandom=%d, Sub=%d, Add=%d, Increment=%d, Scale=%s)",
+				rawModulate, effectiveNote, modulatedNote, modulateSettings.Seed, modulateSettings.IRandom, modulateSettings.Sub, modulateSettings.Add, modulateSettings.Increment, modulateSettings.Scale)
 			effectiveNote = modulatedNote
 		}
 	}
@@ -862,6 +872,17 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 	if m != nil && trackId >= 0 && trackId < 8 && phrase >= 0 && phrase < 255 && row >= 0 && row < 255 {
 		m.EffectStepCounter[trackId][phrase][row]++
 		log.Printf("DEBUG_EFFECTS: Incremented step counter for track=%d phrase=%d row=%d, count=%d", trackId, phrase, row, m.EffectStepCounter[trackId][phrase][row])
+		
+		// Handle increment counter logic
+		if rawModulate != -1 && rawModulate >= 0 && rawModulate < 255 {
+			modulateSettings := (*GetModulateSettingsForTrack(m, trackId))[rawModulate]
+			if modulateSettings.Increment > 0 {
+				// Add increment value to the counter
+				m.IncrementCounters[trackId][phrase][row] += modulateSettings.Increment
+				log.Printf("DEBUG_INCREMENT: Added increment %d to counter for track=%d phrase=%d row=%d, new counter=%d", 
+					modulateSettings.Increment, trackId, phrase, row, m.IncrementCounters[trackId][phrase][row])
+			}
+		}
 	} else {
 		log.Printf("WARNING: Invalid parameters for step counter - model=%v, trackId=%d, phrase=%d, row=%d", m != nil, trackId, phrase, row)
 	}
@@ -1198,18 +1219,25 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 				trackRng = rand.New(rand.NewSource(time.Now().UnixNano()))
 			}
 
+			incrementCounter := m.IncrementCounters[trackId][phrase][row]
+			
 			for i, note := range midiNotes {
-				modulatedNote := modulation.ApplyModulation(note, modulation.ModulateSettings{
+				// Apply increment before other modulation operations if counter > -1
+				noteWithIncrement := modulation.ApplyIncrement(note, incrementCounter, modulateSettings.Increment, modulateSettings.Wrap)
+				
+				modulatedNote := modulation.ApplyModulation(noteWithIncrement, modulation.ModulateSettings{
 					Seed:        modulateSettings.Seed,
 					IRandom:     modulateSettings.IRandom,
 					Sub:         modulateSettings.Sub,
 					Add:         modulateSettings.Add,
+					Increment:   modulateSettings.Increment,
+					Wrap:        modulateSettings.Wrap,
 					ScaleRoot:   modulateSettings.ScaleRoot,
 					Scale:       modulateSettings.Scale,
 					Probability: modulateSettings.Probability,
 				}, trackRng)
 				instrumentParams.Notes[i] = float32(modulatedNote)
-				log.Printf("Applied modulation to instrument note %d: %d -> %d (hasArpeggio=%v, hasChord=%v)", i, note, modulatedNote, hasArpeggio, hasChord)
+				log.Printf("Applied modulation to instrument note %d: %d -> %d (increment=%d, hasArpeggio=%v, hasChord=%v)", i, note, modulatedNote, modulateSettings.Increment, hasArpeggio, hasChord)
 			}
 		} else {
 			// No modulation - copy notes as-is
@@ -1448,6 +1476,16 @@ func stopPlayback(m *model.Model) {
 func startPlaybackWithConfig(m *model.Model, config PlaybackConfig) tea.Cmd {
 	m.IsPlaying = true
 	m.PlaybackMode = config.Mode
+	
+	// Initialize increment counters to -1 for all tracks/phrases/rows
+	for track := 0; track < 8; track++ {
+		for phrase := 0; phrase < 255; phrase++ {
+			for row := 0; row < 255; row++ {
+				m.IncrementCounters[track][phrase][row] = -1
+			}
+		}
+	}
+	log.Printf("DEBUG_INCREMENT: Initialized all increment counters to -1 for playback start")
 
 	if config.Mode == types.SongView {
 		// Song playback mode - reset single-track playback variables and initialize all tracks with data
@@ -1628,6 +1666,15 @@ func startPlaybackWithConfig(m *model.Model, config PlaybackConfig) tea.Cmd {
 
 // startPlaybackWithConfigFromCtrlSpace is specialized for Ctrl+Space recording context
 func startPlaybackWithConfigFromCtrlSpace(m *model.Model, config PlaybackConfig) tea.Cmd {
+	// Initialize increment counters to -1 for all tracks/phrases/rows
+	for track := 0; track < 8; track++ {
+		for phrase := 0; phrase < 255; phrase++ {
+			for row := 0; row < 255; row++ {
+				m.IncrementCounters[track][phrase][row] = -1
+			}
+		}
+	}
+	log.Printf("DEBUG_INCREMENT: Initialized all increment counters to -1 for Ctrl+Space playback start")
 	m.IsPlaying = true
 	m.PlaybackMode = config.Mode
 

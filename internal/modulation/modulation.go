@@ -12,6 +12,8 @@ type ModulateSettings struct {
 	IRandom     int    `json:"irandom"`     // Random range: 0-128 (0 means no randomization)
 	Sub         int    `json:"sub"`         // Subtract value: 0-120
 	Add         int    `json:"add"`         // Add value: 0-120
+	Increment   int    `json:"increment"`   // Increment value: 0-128 (added to note when increment counter > -1)
+	Wrap        int    `json:"wrap"`        // Wrap value: 0-128 (0 = none, wraps increment counter when exceeded)
 	ScaleRoot   int    `json:"scaleRoot"`   // Scale root note: 0-11 (C, C#, D, D#, E, F, F#, G, G#, A, A#, B)
 	Scale       string `json:"scale"`       // Scale selection: "all", "major", "minor", etc.
 	Probability int    `json:"probability"` // Probability percentage: 0-100 (100 = always apply modulation)
@@ -74,6 +76,29 @@ func GetScaleNames() []string {
 // GetNoteNames returns a list of all note names
 func GetNoteNames() []string {
 	return NoteNames
+}
+
+// ApplyIncrement applies increment to a note value based on increment counter
+// This should be called before other modulation operations
+func ApplyIncrement(originalNote int, incrementCounter int, incrementValue int, wrapValue int) int {
+	if incrementCounter > -1 && incrementValue > 0 {
+		log.Printf("DEBUG: ApplyIncrement - originalNote=%d, incrementCounter=%d, incrementValue=%d, wrapValue=%d", 
+			originalNote, incrementCounter, incrementValue, wrapValue)
+		
+		// Apply wrapping logic if wrap value is greater than 0
+		wrappedCounter := incrementCounter
+		if wrapValue > 0 && incrementCounter >= wrapValue {
+			// Subtract wrap value until counter is less than wrap value
+			wrappedCounter = incrementCounter % wrapValue
+			log.Printf("DEBUG: ApplyIncrement - applied wrapping: %d -> %d (wrap=%d)", 
+				incrementCounter, wrappedCounter, wrapValue)
+		}
+		
+		result := originalNote + wrappedCounter
+		log.Printf("DEBUG: ApplyIncrement - result=%d", result)
+		return result
+	}
+	return originalNote
 }
 
 // ApplyModulation applies modulation to a MIDI note value using the provided RNG
@@ -182,7 +207,9 @@ func NewModulateSettings() ModulateSettings {
 		IRandom:     0,
 		Sub:         0,
 		Add:         0,
-		ScaleRoot:   0, // Default to C
+		Increment:   0,  // Default increment value
+		Wrap:        0,  // Default wrap value (0 = none)
+		ScaleRoot:   0,  // Default to C
 		Scale:       "all",
 		Probability: 100, // Default to always apply modulation
 	}
