@@ -1435,6 +1435,9 @@ func handleC(m *model.Model) tea.Cmd {
 	} else if m.ViewMode == types.SoundMakerView {
 		// Play the last edited phrase row from Phrase view
 		EmitLastSelectedPhraseRowData(m)
+	} else if m.ViewMode == types.FileView || m.ViewMode == types.FileMetadataView {
+		// Play the last edited phrase row (same as sampler in phrase view)
+		EmitLastSelectedPhraseRowData(m)
 	}
 	return nil
 }
