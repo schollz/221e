@@ -88,8 +88,10 @@ func SelectFile(m *model.Model) {
 	if err == nil {
 		slices := int(2 * math.Round(beats))
 		m.FileMetadata[fullPath] = types.FileMetadata{
-			BPM:    float32(bpm),
-			Slices: slices,
+			BPM:         float32(bpm),
+			Slices:      slices,
+			Playthrough: 0, // Default: Sliced
+			SyncToBPM:   1, // Default: Yes
 		}
 	} else {
 		log.Printf("Could not get BPM for %s: %v", fullPath, err)

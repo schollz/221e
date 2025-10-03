@@ -99,7 +99,14 @@ func createIntModifier(getValue func() int, setValue func(int), min, max int, lo
 		GetValue: func() interface{} { return getValue() },
 		SetValue: func(v interface{}) { setValue(v.(int)) },
 		ApplyDelta: func(current interface{}, delta float32) interface{} {
-			return current.(int) + int(delta)
+			// Handle fine control (Ctrl+Left/Right): 0.05 or -0.05 should become +/-1
+			var intDelta int
+			if delta == 0.05 || delta == -0.05 {
+				intDelta = int(delta / 0.05) // Fine control: convert to +/-1
+			} else {
+				intDelta = int(delta) // Coarse control or other
+			}
+			return current.(int) + intDelta
 		},
 		ValidateAndClamp: func(value interface{}) interface{} {
 			v := value.(int)
@@ -652,7 +659,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 		if rawModulate != -1 && rawModulate >= 0 && rawModulate < 255 && effectiveNote != -1 {
 			modulateSettings := (*GetModulateSettingsForTrack(m, trackId))[rawModulate]
 			originalNote := effectiveNote
-			
+
 			// Apply increment before other modulation operations if counter > -1
 			incrementCounter := m.IncrementCounters[trackId][phrase][row]
 			originalNote = modulation.ApplyIncrement(originalNote, incrementCounter, modulateSettings.Increment, modulateSettings.Wrap)
@@ -677,7 +684,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 				Scale:       modulateSettings.Scale,
 				Probability: modulateSettings.Probability,
 			}, trackRng)
-			
+
 			// Apply the same logic for raw note
 			rawNoteWithIncrement := modulation.ApplyIncrement(rawNote, incrementCounter, modulateSettings.Increment, modulateSettings.Wrap)
 			rawNoteModulated = modulation.ApplyModulation(rawNoteWithIncrement, modulation.ModulateSettings{
@@ -835,9 +842,13 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 	fileMetadata, exists := m.FileMetadata[effectiveFilename]
 	sliceCount := 16
 	bpmSource := float32(120.0)
+	playthrough := 0 // Default: Sliced
+	syncToBPM := 1   // Default: Yes
 	if exists {
 		sliceCount = fileMetadata.Slices
 		bpmSource = fileMetadata.BPM
+		playthrough = fileMetadata.Playthrough
+		syncToBPM = fileMetadata.SyncToBPM
 	}
 	sliceNumber := rawNoteModulated % sliceCount
 
@@ -874,14 +885,14 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 	if m != nil && trackId >= 0 && trackId < 8 && phrase >= 0 && phrase < 255 && row >= 0 && row < 255 {
 		m.EffectStepCounter[trackId][phrase][row]++
 		log.Printf("DEBUG_EFFECTS: Incremented step counter for track=%d phrase=%d row=%d, count=%d", trackId, phrase, row, m.EffectStepCounter[trackId][phrase][row])
-		
+
 		// Handle increment counter logic
 		if rawModulate != -1 && rawModulate >= 0 && rawModulate < 255 {
 			modulateSettings := (*GetModulateSettingsForTrack(m, trackId))[rawModulate]
 			if modulateSettings.Increment > 0 {
 				// Add increment value to the counter
 				m.IncrementCounters[trackId][phrase][row] += modulateSettings.Increment
-				log.Printf("DEBUG_INCREMENT: Added increment %d to counter for track=%d phrase=%d row=%d, new counter=%d", 
+				log.Printf("DEBUG_INCREMENT: Added increment %d to counter for track=%d phrase=%d row=%d, new counter=%d",
 					modulateSettings.Increment, trackId, phrase, row, m.IncrementCounters[trackId][phrase][row])
 			}
 		}
@@ -1068,6 +1079,10 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 		oscParams.EffectReverb = float32(effectiveReverb) / 254.0
 	}
 
+	// Set file metadata parameters
+	oscParams.Playthrough = playthrough
+	oscParams.SyncToBPM = syncToBPM
+
 	// Set update flag if this is an update call
 	if shouldUpdate {
 		oscParams.Update = 1
@@ -1222,11 +1237,11 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 			}
 
 			incrementCounter := m.IncrementCounters[trackId][phrase][row]
-			
+
 			for i, note := range midiNotes {
 				// Apply increment before other modulation operations if counter > -1
 				noteWithIncrement := modulation.ApplyIncrement(note, incrementCounter, modulateSettings.Increment, modulateSettings.Wrap)
-				
+
 				modulatedNote := modulation.ApplyModulation(noteWithIncrement, modulation.ModulateSettings{
 					Seed:        modulateSettings.Seed,
 					IRandom:     modulateSettings.IRandom,
@@ -1478,7 +1493,7 @@ func stopPlayback(m *model.Model) {
 func startPlaybackWithConfig(m *model.Model, config PlaybackConfig) tea.Cmd {
 	m.IsPlaying = true
 	m.PlaybackMode = config.Mode
-	
+
 	// Initialize increment counters to -1 for all tracks/phrases/rows
 	for track := 0; track < 8; track++ {
 		for phrase := 0; phrase < 255; phrase++ {

@@ -960,6 +960,8 @@ type SamplerOSCParams struct {
 	EffectReverb          float32 // 0.0 .. 1.0
 	DuckingIndex          int     // Ducking settings index (DU parameter)
 	Velocity              int     // 0 .. 127 (0x00-0x7F)
+	Playthrough           int     // 0=Sliced, 1=Oneshot
+	SyncToBPM             int     // 0=No, 1=Yes
 	Update                int     // 1 if this is an update to a playing row, 0 otherwise
 }
 
@@ -1019,6 +1021,8 @@ func NewSamplerOSCParams(filename string, trackId int, sliceCount, sliceNumber i
 		EffectComb:            0,
 		EffectReverb:          0,
 		Velocity:              velocity,
+		Playthrough:           0,  // Default Sliced (0)
+		SyncToBPM:             1,  // Default Yes (1)
 		Update:                0,  // Default is not an update
 		DuckingIndex:          -1, // Default no ducking,
 	}
@@ -1055,6 +1059,8 @@ func NewSamplerOSCParamsWithRetrigger(filename string, trackId, sliceCount, slic
 		EffectComb:            0,
 		EffectReverb:          0,
 		Velocity:              velocity,
+		Playthrough:           0,         // Default Sliced (0)
+		SyncToBPM:             1,         // Default Yes (1)
 		DeltaTime:             deltaTime, // Delta time in seconds
 		Update:                0,         // Default is not an update
 		DuckingIndex:          -1,        // Default no ducking,
@@ -1659,6 +1665,12 @@ func (m *Model) SendOSCSamplerMessage(params SamplerOSCParams) {
 		msg.Append("duckingThresh")
 		msg.Append(float32(ds.Thresh))
 	}
+
+	// Add new file metadata parameters
+	msg.Append("playthrough")
+	msg.Append(int32(params.Playthrough))
+	msg.Append("synctobpm")
+	msg.Append(int32(params.SyncToBPM))
 
 	// Add update parameter when this is an update to a playing row
 	if params.Update == 1 {

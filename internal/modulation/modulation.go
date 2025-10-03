@@ -82,18 +82,18 @@ func GetNoteNames() []string {
 // This should be called before other modulation operations
 func ApplyIncrement(originalNote int, incrementCounter int, incrementValue int, wrapValue int) int {
 	if incrementCounter > -1 && incrementValue > 0 {
-		log.Printf("DEBUG: ApplyIncrement - originalNote=%d, incrementCounter=%d, incrementValue=%d, wrapValue=%d", 
+		log.Printf("DEBUG: ApplyIncrement - originalNote=%d, incrementCounter=%d, incrementValue=%d, wrapValue=%d",
 			originalNote, incrementCounter, incrementValue, wrapValue)
-		
+
 		// Apply wrapping logic if wrap value is greater than 0
 		wrappedCounter := incrementCounter
 		if wrapValue > 0 && incrementCounter >= wrapValue {
 			// Subtract wrap value until counter is less than wrap value
 			wrappedCounter = incrementCounter % wrapValue
-			log.Printf("DEBUG: ApplyIncrement - applied wrapping: %d -> %d (wrap=%d)", 
+			log.Printf("DEBUG: ApplyIncrement - applied wrapping: %d -> %d (wrap=%d)",
 				incrementCounter, wrappedCounter, wrapValue)
 		}
-		
+
 		result := originalNote + wrappedCounter
 		log.Printf("DEBUG: ApplyIncrement - result=%d", result)
 		return result
@@ -207,9 +207,9 @@ func NewModulateSettings() ModulateSettings {
 		IRandom:     0,
 		Sub:         0,
 		Add:         0,
-		Increment:   0,  // Default increment value
-		Wrap:        0,  // Default wrap value (0 = none)
-		ScaleRoot:   0,  // Default to C
+		Increment:   0, // Default increment value
+		Wrap:        0, // Default wrap value (0 = none)
+		ScaleRoot:   0, // Default to C
 		Scale:       "all",
 		Probability: 100, // Default to always apply modulation
 	}

@@ -297,8 +297,10 @@ func GetChordNotes(root int, ctype ChordType, add ChordAddition, transpose Chord
 }
 
 type FileMetadata struct {
-	BPM    float32 `json:"bpm"`    // Source BPM for the file
-	Slices int     `json:"slices"` // Number of slices in the file
+	BPM         float32 `json:"bpm"`         // Source BPM for the file
+	Slices      int     `json:"slices"`      // Number of slices in the file
+	Playthrough int     `json:"playthrough"` // 0=Sliced, 1=Oneshot
+	SyncToBPM   int     `json:"synctobpm"`   // 0=No, 1=Yes (default)
 }
 
 type RetriggerSettings struct {
@@ -400,8 +402,10 @@ const (
 type FileMetadataRow int
 
 const (
-	FileMetadataRowBPM    FileMetadataRow = iota // 0: BPM
-	FileMetadataRowSlices                        // 1: Slices
+	FileMetadataRowBPM         FileMetadataRow = iota // 0: BPM
+	FileMetadataRowSlices                             // 1: Slices
+	FileMetadataRowPlaythrough                        // 2: Playthrough
+	FileMetadataRowSyncToBPM                          // 3: Sync to BPM
 )
 
 // MidiSettingsRow represents different rows in the MIDI settings view
@@ -840,7 +844,7 @@ func GetAvailableSoundMakers() []string {
 	for name := range InstrumentRegistry {
 		soundMakers = append(soundMakers, name)
 	}
-	
+
 	// Sort alphabetically for consistent ordering
 	for i := 0; i < len(soundMakers)-1; i++ {
 		for j := i + 1; j < len(soundMakers); j++ {
@@ -849,7 +853,7 @@ func GetAvailableSoundMakers() []string {
 			}
 		}
 	}
-	
+
 	return soundMakers
 }
 

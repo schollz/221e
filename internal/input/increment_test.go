@@ -57,7 +57,7 @@ func TestApplyIncrementIntegration(t *testing.T) {
 			expected:         63, // 60 + (10 % 7) = 60 + 3 = 63
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := modulation.ApplyIncrement(tt.originalNote, tt.incrementCounter, tt.incrementValue, tt.wrapValue)

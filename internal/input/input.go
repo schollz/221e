@@ -921,7 +921,7 @@ func handleDown(m *model.Model) tea.Cmd {
 			m.CurrentRow = m.CurrentRow + 1
 		}
 	} else if m.ViewMode == types.FileMetadataView {
-		if m.CurrentRow < int(types.FileMetadataRowSlices) { // BPM(0) to Slices(1)
+		if m.CurrentRow < int(types.FileMetadataRowSyncToBPM) { // BPM(0) to SyncToBPM(3)
 			m.CurrentRow = m.CurrentRow + 1
 		}
 	} else if m.ViewMode == types.RetriggerView {
@@ -1754,7 +1754,7 @@ func handlePgDown(m *model.Model) tea.Cmd {
 		case types.ModulateView:
 			maxRow = int(types.ModulateSettingsRowProbability) // Seed(0) to Probability(6)
 		case types.FileMetadataView:
-			maxRow = int(types.FileMetadataRowSlices) // BPM(0) to Slices(1)
+			maxRow = int(types.FileMetadataRowSyncToBPM) // BPM(0) to SyncToBPM(3)
 		default:
 			maxRow = 254 // Default maximum
 		}
