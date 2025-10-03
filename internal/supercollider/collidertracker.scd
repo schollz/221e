@@ -335,7 +335,9 @@ s.waitForBoot({
 				var posA,posB;
 				var retrigTrig, retrigCount;
 				var frames=BufFrames.ir(buf);
-				var seconds=BufDur.ir(buf)*bpmSource/bpmTarget;
+				var syncBpm=(\synctobpm.ir(0) * bpmTarget/bpmSource) + (1 - \synctobpm.ir(0));
+				var seconds=BufDur.ir(buf) / syncBpm;
+				var secondsLeft = seconds;
 				var sliceSeconds = seconds / sliceCount;
 				var pos = 0.0;
 				var sliceTrigger = t_trig;
@@ -349,6 +351,11 @@ s.waitForBoot({
 				pos = Select.kr(effectReverse>0,[
 					sliceNum / sliceCount,
 					((sliceNum+1).mod(sliceCount))/sliceCount
+				]);
+				// compute seconds left 
+				secondsLeft = Select.kr(effectReverse > 0, [
+					(seconds * (1 - pos)), // forward: seconds to end
+					(seconds * pos)      // reverse: seconds to beginning
 				]);
 
 				// set effectLPFEnd to effectLPFStart if it is 0
@@ -375,7 +382,7 @@ s.waitForBoot({
 				sliceDurationBeats = Select.kr(sliceDurationBeats < 0.001, [sliceDurationBeats, (seconds/sliceCount)/(60/bpmSource)]);
 
 				// Calculate rate
-				rate = rate*BufRateScale.ir(buf)*bpmTarget/bpmSource;
+				rate = rate*BufRateScale.ir(buf)*syncBpm;
 				// Calculate pitch
 				pitch = pitch + (retrigNumTotal * retrigPitchChange.neg * finalPitchToStart);
 				rate = rate * (2 ** (pitch/12.0));
@@ -433,12 +440,21 @@ s.waitForBoot({
 
 				snd = snd * Lag.kr(volumeDB.dbamp,0.2);
 
+				// envelope
+				snd = snd * 
+					(
+						// playthrough = 0, sliced mode
+						((1 - \playthrough.ir(0)) *
+						EnvGen.ar(Env.new([0,1,1,0],[sliceAttackBeats,sliceDurationBeats,sliceReleaseBeats]*beatDuration,[-4,4]), sliceTrigger))
+						// playthrough = 1, playthrough mode
+						+ (\playthrough.ir(0) *
+						EnvGen.ar(Env.new([0,1,1,0],[0.001,secondsLeft.poll-(0.005),0.001],[-4,4]), 1, doneAction:2 * \playthrough.ir(0))
+						)
+					);
+
+
 				// full envelope
 				snd = snd * EnvGen.ar(Env.adsr(xfade,0.0,1.0,xfade,curve:\sine),gate,doneAction:2);
-
-				// slice envelope
-				snd = snd * EnvGen.ar(Env.new([0,1,1,0],[sliceAttackBeats,sliceDurationBeats,sliceReleaseBeats]*beatDuration,[-4,4]), sliceTrigger);
-
 
 				// filtering
 				snd = RLPF.ar(snd, XLine.kr(effectLPFStart, effectLPFEnd, effectLPFBeats*beatDuration), 0.303);
