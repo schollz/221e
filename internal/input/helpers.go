@@ -222,8 +222,8 @@ func ModifyValue(m *model.Model, delta int) {
 			}
 			(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newValue
 
-			// Auto-set DT=1 only when changing from no note (-1) to a note
-			if currentValue == -1 && newValue != -1 {
+			// Auto-set DT=1 only when changing from no note (-1) to a note AND DT is currently -1
+			if currentValue == -1 && newValue != -1 && (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColDeltaTime] == -1 {
 				(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColDeltaTime)] = 1
 			}
 		} else if phraseViewType == types.InstrumentPhraseView && colIndex == int(types.ColChord) {
@@ -359,10 +359,12 @@ func ModifyValue(m *model.Model, delta int) {
 
 		// Auto-enable playback on first note entry - use DT for both views
 		if colIndex == int(types.ColNote) {
-			if (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColDeltaTime] == -1 {
-				// Auto-set DT to 01 when a note is added (only if DT is currently -1/"--")
+			// Only auto-set DT when changing from no note (-1) to a note (not -1) AND DT is currently -1
+			if currentValue == -1 && (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColNote] != -1 &&
+				(*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColDeltaTime] == -1 {
+				// Auto-set DT to 01 when a note is added (only if note was -1 and DT is currently -1/"--")
 				(*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColDeltaTime] = 1
-				log.Printf("Auto-set DT=01 for phrase %d row %d due to note change", m.CurrentPhrase, m.CurrentRow)
+				log.Printf("Auto-set DT=01 for phrase %d row %d due to note change from -1 to note", m.CurrentPhrase, m.CurrentRow)
 			}
 		}
 	}
