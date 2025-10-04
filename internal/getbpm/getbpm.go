@@ -16,7 +16,8 @@ import (
 
 func GetBPM(name string) (beats float64, bpm float64, err error) {
 	beats, bpm, err = parseName(name)
-	if err != nil {
+	nonSixteenBeats := math.Mod(beats, 16) != 0
+	if err != nil || bpm < 100 || bpm > 200 || nonSixteenBeats {
 		beats, bpm, err = guessBPM(name)
 	}
 	return
