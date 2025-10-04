@@ -34,6 +34,13 @@ func TestLength(t *testing.T) {
 			samplerate: 0,
 			wantErr:    true,
 		},
+		{
+			name:       "Break120 wav file",
+			filename:   "Break120.wav",
+			samplerate: 44100,
+			numframes:  264600,
+			wantErr:   false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -84,6 +91,13 @@ func TestGetBPM(t *testing.T) {
 			expectedBPM:   0,
 			wantErr:       false,
 		},
+		{
+			name: "Break120.wav",
+			filename: "Break120.wav",
+			expectedBeats: 16,
+			expectedBPM: 160.0,
+			wantErr:false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -105,7 +119,7 @@ func TestGetBPM(t *testing.T) {
 
 			if tt.expectedBeats == 0 && tt.expectedBPM == 0 {
 				if beats == 0 || bpm == 0 {
-					t.Errorf("GetBPM() for strega.wav should guess beats and bpm, got beats=%v, bpm=%v", beats, bpm)
+					t.Errorf("GetBPM() for %s should guess beats and bpm, got beats=%v, bpm=%v", tt.filename, beats, bpm)
 				}
 			}
 		})
