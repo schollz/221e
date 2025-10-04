@@ -229,9 +229,11 @@ func ModifyValue(m *model.Model, delta int) {
 			}
 			(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newValue
 
-			// Auto-set DT=1 only when changing from no note (-1) to a note AND DT is currently -1
+			// Auto-set DT only when changing from no note (-1) to a note AND DT is currently -1
+			// Use the first non "--" DT value above current row, or default to 1 if none found
 			if currentValue == -1 && newValue != -1 && (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColDeltaTime] == -1 {
-				(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColDeltaTime)] = 1
+				dtValue := FindFirstNonEmptyDTAbove(phrasesData, m.CurrentPhrase, m.CurrentRow)
+				(*phrasesData)[m.CurrentPhrase][m.CurrentRow][int(types.ColDeltaTime)] = dtValue
 			}
 		} else if phraseViewType == types.InstrumentPhraseView && colIndex == int(types.ColChord) {
 			// Instrument view chord column: Cycle through chord types, stop at ends
@@ -369,9 +371,10 @@ func ModifyValue(m *model.Model, delta int) {
 			// Only auto-set DT when changing from no note (-1) to a note (not -1) AND DT is currently -1
 			if currentValue == -1 && (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColNote] != -1 &&
 				(*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColDeltaTime] == -1 {
-				// Auto-set DT to 01 when a note is added (only if note was -1 and DT is currently -1/"--")
-				(*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColDeltaTime] = 1
-				log.Printf("Auto-set DT=01 for phrase %d row %d due to note change from -1 to note", m.CurrentPhrase, m.CurrentRow)
+				// Auto-set DT using the first non "--" DT value above current row, or default to 01 if none found
+				dtValue := FindFirstNonEmptyDTAbove(phrasesData, m.CurrentPhrase, m.CurrentRow)
+				(*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.ColDeltaTime] = dtValue
+				log.Printf("Auto-set DT=%02X for phrase %d row %d due to note change from -1 to note", dtValue, m.CurrentPhrase, m.CurrentRow)
 			}
 		}
 	}
@@ -2626,6 +2629,21 @@ func GetEffectiveDTValue(dtValue int) string {
 // SetDTForPlayback sets DT to 01 (default playback value) for a row
 func SetDTForPlayback(phrasesData *[255][][]int, phrase, row int) {
 	(*phrasesData)[phrase][row][types.ColDeltaTime] = 1
+}
+
+// FindFirstNonEmptyDTAbove finds the first non "--" DT value above the current row
+// Returns the DT value if found, or 1 (default) if none found
+func FindFirstNonEmptyDTAbove(phrasesData *[255][][]int, phrase, currentRow int) int {
+	// Search upward from currentRow-1 to row 0
+	for row := currentRow - 1; row >= 0; row-- {
+		dtValue := (*phrasesData)[phrase][row][types.ColDeltaTime]
+		if dtValue != -1 {
+			// Found a non "--" DT value
+			return dtValue
+		}
+	}
+	// No non "--" DT found above, return default value of 1
+	return 1
 }
 
 // GetDTStatusMessage returns a status message for DT column
