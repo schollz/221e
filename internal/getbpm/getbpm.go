@@ -81,9 +81,9 @@ func guessBPM(fname string) (beats float64, bpm float64, err error) {
 	type guess struct {
 		diff, bpm, beats float64
 	}
-	guesses := make([]guess, 8000)
+	guesses := make([]guess, 80000)
 	i := 0
-	for beat := 1.0; beat < 34; beat++ {
+	for beat := 1.0; beat <= 128; beat++ {
 		for bp := 100.0; bp < 200; bp++ {
 			guesses[i] = guess{math.Abs(duration - beat*multiple*60.0/bp), bp, beat * multiple}
 			i++
@@ -92,7 +92,26 @@ func guessBPM(fname string) (beats float64, bpm float64, err error) {
 	guesses = guesses[:i]
 
 	sort.Slice(guesses, func(i, j int) bool {
-		return guesses[i].diff < guesses[j].diff
+		// Primary sort: by diff (smallest first)
+		if guesses[i].diff != guesses[j].diff {
+			return guesses[i].diff < guesses[j].diff
+		}
+		// Secondary sort: prefer beats that are powers of 2 (4, 8, 16, 32, 64, etc.)
+		// Check if beats is a power of 2: log2(beats) should be an integer
+		isPowerOfTwo := func(n float64) bool {
+			if n < 1 {
+				return false
+			}
+			log2 := math.Log2(n)
+			return math.Abs(log2-math.Round(log2)) < 1e-9
+		}
+		iPower := isPowerOfTwo(guesses[i].beats)
+		jPower := isPowerOfTwo(guesses[j].beats)
+		if iPower != jPower {
+			return iPower // true (power of 2) comes before false
+		}
+		// Tertiary sort: if both or neither are powers of 2, prefer smaller beats
+		return guesses[i].beats < guesses[j].beats
 	})
 
 	beats = guesses[0].beats
