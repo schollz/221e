@@ -655,19 +655,23 @@ const (
 	ParameterTypeFloat                                // Float values with custom range
 )
 
+// ParameterFormatter is a function type for custom parameter value formatting
+type ParameterFormatter func(value float32) string
+
 type InstrumentParameterDef struct {
-	Key           string                  `json:"key"`           // Key for OSC sending (e.g. "preset", "cutoff")
-	DisplayName   string                  `json:"displayName"`   // Name shown in UI (e.g. "Preset", "Cutoff")
-	Type          InstrumentParameterType `json:"type"`          // Data type
-	MinValue      float32                 `json:"minValue"`      // Minimum value
-	MaxValue      float32                 `json:"maxValue"`      // Maximum value
-	DefaultValue  float32                 `json:"defaultValue"`  // Default value (-1 for "--")
-	Default       float32                 `json:"default"`       // Default value for new instances
-	Column        int                     `json:"column"`        // Which column to display in (0 or 1)
-	Order         int                     `json:"order"`         // Order within the column
-	CoarseStep    float32                 `json:"coarseStep"`    // Step size for coarse control (0 = use default)
-	FineStep      float32                 `json:"fineStep"`      // Step size for fine control (0 = use default)
-	DisplayFormat string                  `json:"displayFormat"` // Display format string (e.g. "%.1f Hz", empty = use default)
+	Key              string                  `json:"key"`           // Key for OSC sending (e.g. "preset", "cutoff")
+	DisplayName      string                  `json:"displayName"`   // Name shown in UI (e.g. "Preset", "Cutoff")
+	Type             InstrumentParameterType `json:"type"`          // Data type
+	MinValue         float32                 `json:"minValue"`      // Minimum value
+	MaxValue         float32                 `json:"maxValue"`      // Maximum value
+	DefaultValue     float32                 `json:"defaultValue"`  // Default value (-1 for "--")
+	Default          float32                 `json:"default"`       // Default value for new instances
+	Column           int                     `json:"column"`        // Which column to display in (0 or 1)
+	Order            int                     `json:"order"`         // Order within the column
+	CoarseStep       float32                 `json:"coarseStep"`    // Step size for coarse control (0 = use default)
+	FineStep         float32                 `json:"fineStep"`      // Step size for fine control (0 = use default)
+	DisplayFormat    string                  `json:"displayFormat"` // Display format string (e.g. "%.1f Hz", empty = use default)
+	DisplayFormatter ParameterFormatter      `json:"-"`             // Custom formatter function (not serialized to JSON)
 }
 
 type InstrumentDefinition struct {
@@ -685,6 +689,11 @@ var InstrumentRegistry = map[string]InstrumentDefinition{
 			{
 				Key: "preset", DisplayName: "Preset", Type: ParameterTypeInt,
 				MinValue: 0, MaxValue: 1000, DefaultValue: -1, Column: 0, Order: 0,
+			},
+			{
+				Key: "monophonic", DisplayName: "Monophonic", Type: ParameterTypeInt,
+				MinValue: 0, MaxValue: 1, DefaultValue: 0, Default: 0, Column: 1, Order: 0,
+				DisplayFormatter: FormatYesNo,
 			},
 		},
 	},
@@ -707,6 +716,11 @@ var InstrumentRegistry = map[string]InstrumentDefinition{
 			{
 				Key: "D", DisplayName: "D", Type: ParameterTypeHex,
 				MinValue: 0, MaxValue: 254, DefaultValue: -1, Column: 1, Order: 1,
+			},
+			{
+				Key: "monophonic", DisplayName: "Monophonic", Type: ParameterTypeInt,
+				MinValue: 0, MaxValue: 1, DefaultValue: 0, Default: 0, Column: 1, Order: 2,
+				DisplayFormatter: FormatYesNo,
 			},
 		},
 	},
@@ -741,6 +755,11 @@ var InstrumentRegistry = map[string]InstrumentDefinition{
 			{
 				Key: "ws", DisplayName: "WS", Type: ParameterTypeFloat,
 				MinValue: 0, MaxValue: 1000, DefaultValue: -1, Column: 1, Order: 3,
+			},
+			{
+				Key: "monophonic", DisplayName: "Monophonic", Type: ParameterTypeInt,
+				MinValue: 0, MaxValue: 1, DefaultValue: 0, Default: 0, Column: 1, Order: 4,
+				DisplayFormatter: FormatYesNo,
 			},
 		},
 	},
@@ -784,6 +803,11 @@ var InstrumentRegistry = map[string]InstrumentDefinition{
 				Key: "lpg_colour", DisplayName: "LPG Color", Type: ParameterTypeFloat,
 				MinValue: 0, MaxValue: 1000, DefaultValue: -1, Column: 1, Order: 4,
 			},
+			{
+				Key: "monophonic", DisplayName: "Monophonic", Type: ParameterTypeInt,
+				MinValue: 0, MaxValue: 1, DefaultValue: 0, Default: 0, Column: 1, Order: 5,
+				DisplayFormatter: FormatYesNo,
+			},
 		},
 	},
 	"SuperSaw": {
@@ -825,6 +849,11 @@ var InstrumentRegistry = map[string]InstrumentDefinition{
 				MinValue: 0.0, MaxValue: 10.0, DefaultValue: 1.0, Default: 1.0, Column: 1, Order: 2,
 				CoarseStep: 1.0, FineStep: 0.1, DisplayFormat: "%.1f",
 			},
+			{
+				Key: "monophonic", DisplayName: "Monophonic", Type: ParameterTypeInt,
+				MinValue: 0, MaxValue: 1, DefaultValue: 0, Default: 0, Column: 1, Order: 3,
+				DisplayFormatter: FormatYesNo,
+			},
 		},
 	},
 	"TB303": {
@@ -861,11 +890,24 @@ var InstrumentRegistry = map[string]InstrumentDefinition{
 				MinValue: 0.0, MaxValue: 10.0, DefaultValue: 1.0, Default: 1.0, Column: 1, Order: 1,
 				CoarseStep: 1.0, FineStep: 0.1, DisplayFormat: "%.1f",
 			},
+			{
+				Key: "monophonic", DisplayName: "Monophonic", Type: ParameterTypeInt,
+				MinValue: 0, MaxValue: 1, DefaultValue: 0, Default: 0, Column: 1, Order: 2,
+				DisplayFormatter: FormatYesNo,
+			},
 		},
 	},
 }
 
 // Helper functions for the instrument framework
+
+// FormatYesNo formats a 0/1 value as "No"/"Yes"
+func FormatYesNo(value float32) string {
+	if value == 0 {
+		return "No"
+	}
+	return "Yes"
+}
 
 // GetInstrumentDefinition returns the definition for a given instrument name
 func GetInstrumentDefinition(name string) (InstrumentDefinition, bool) {

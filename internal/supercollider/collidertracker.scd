@@ -82,20 +82,23 @@ Routine{
     		var ducked;
     		var cutoff = \lowPassFilter.kr(20000);
     		var res = \resonance.kr(0.5).clip(0.1, 3.0);
-    		var freq = \note.kr(60).min(127).max(0).midicps;
+    		var freq = \note.kr(60).min(127).max(0).midicps.poll;
     		var glideFreq = Lag.kr(freq, \glide.kr(0.0).max(0.001));
     		var waveMix = Lag.kr(\mixWave.kr(0.5).clip(0,1));
 
-    		var env = EnvGen.ar(
-    			Env.adsr(
-    				\attack.kr(0.1),
-    				\decay.kr(1.0),
-    				\sustain.kr(0.7),
-    				\release.kr(0.5)
-    			),
-    			1-EnvGen.kr(Env.new([0,0,1],[\duration.kr(1),0])),
-    			doneAction:2,
-    		);
+    		// var env = EnvGen.ar(
+    		// 	Env.adsr(
+    		// 		\attack.kr(0.1),
+    		// 		\decay.kr(1.0),
+    		// 		\sustain.kr(0.7),
+    		// 		\release.kr(0.5)
+    		// 	),
+    		// 	1-EnvGen.kr(Env.new([0,0,1],[\duration.kr(1),0])),
+    		// 	doneAction:2,
+    		// );
+			var env = EnvGen.ar(
+				Env.perc(\attack.kr(0.1), \duration.kr(1)), t_trig, doneAction:2
+			);
     		// var env2 = EnvGen.ar(Env.perc(\attack.kr(0.1), \release.kr(0.5)), t_trig);
     		var fenv = EnvGen.kr(Env.perc(0.001,\envRelease.kr(0.2)*\duration.kr(1)), t_trig) * \envAmt.kr(1.0) * (1 + (\accent.kr(0) * 1.4));
 
@@ -721,6 +724,16 @@ Routine{
     		var notes = Array.new();
     		var nonNoteIndex = 4;
     		var keepSearching = true;
+			var polyphonic = true;
+			var monophonic = false;
+			var lastMessage = nil;
+			msg.do({ arg item, i;
+				if (lastMessage==\monophonic,{
+					polyphonic = (item<1);
+					monophonic = (item>0);
+				});
+				lastMessage = item;
+			});
     		// find where msg[4:] is not a float
     		msg[4..].do({ |v,i|
     			if (v.isNumber && keepSearching,{
@@ -736,16 +749,19 @@ Routine{
     		if (~synthsPlaying.at(track).isNil,{
     			~synthsPlaying.put(track, Dictionary.new());
     		});
+
     		// stop all currently playing synths for this track
-    		~synthsPlaying.at(track).values.do({
-    			arg syn;
-    			if (syn.isPlaying,{
-    				if (syn.notNil,{
-    					[syn,"stopped"].postln;
-    					syn.set(\gate,0);
-    				});
-    			});
-    		});
+			if (polyphonic, {
+				~synthsPlaying.at(track).values.do({
+					arg syn;
+					if (syn.isPlaying, {
+						if (syn.notNil,{
+							[syn,"stopped"].postln;
+							syn.set(\gate,0);
+						});
+					});
+				});
+			});
     		if (noteOn > 0,{
     			var args;
     			var dict = Dictionary.new;
@@ -756,7 +772,8 @@ Routine{
     				effectCombOut:   ~busComb,
     				effectReverbOut: ~busReverb,
     				trackId:         track,
-    				trackOut:        ~busTrack[track]
+    				trackOut:        ~busTrack[track],
+					t_trig:			1,
     			));
     			dict.putPairs(msg.copyToEnd(nonNoteIndex));
     			// round numbers to 1/128 in place
@@ -788,6 +805,18 @@ Routine{
     				var synthName = synName ++ "_" ++ n.asString;
     				// print out all the synthargs
     				synthArgs.do({ arg a,i; [i,a].postln; });
+					// if monophonic check to see if there is a synth playing just use that instead
+					if (monophonic, {
+						var playingSynth = ~synthsPlaying.at(track).values.detect { |syn| syn.notNil and: { syn.isPlaying } };
+						["monophonic", playingSynth].postln;	
+						if (playingSynth.notNil, {
+							["reused", playingSynth].postln;
+							playingSynth.set(*synthArgs);
+							^nil;
+						});
+					});
+					// play new synth
+					["playing",synthName].postln;
     				~synthsPlaying.at(track).put(synthName,
     					Synth.head(targetGroup,synthToPlay,synthArgs).onFree({
     						[synthName,"freed"].postln;
