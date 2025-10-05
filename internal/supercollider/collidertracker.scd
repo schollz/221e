@@ -96,8 +96,8 @@ Routine{
     			1-EnvGen.kr(Env.new([0,0,1],[\duration.kr(1),0])),
     			doneAction:2,
     		);
-    		var env2 = EnvGen.ar(Env.perc(\attack.kr(0.1), \release.kr(0.5)), t_trig);
-    		var fenv = EnvGen.kr(Env.perc(0.001,0.20), t_trig) * \envAmt.kr(1.0) * (1 + (\accent.kr(0) * 1.4));
+    		// var env2 = EnvGen.ar(Env.perc(\attack.kr(0.1), \release.kr(0.5)), t_trig);
+    		var fenv = EnvGen.kr(Env.perc(0.001,\envRelease.kr(0.2)*\duration.kr(1)), t_trig) * \envAmt.kr(1.0) * (1 + (\accent.kr(0) * 1.4));
 
 
     		osc = Mix([
@@ -116,7 +116,7 @@ Routine{
 
     		postDrive = HPF.ar(tanh(filt * (3 + \accent.kr(0))), 80);
 
-    		postDrive = postDrive * env * env2;
+    		postDrive = postDrive * env;
 
     		snd = postDrive * env * \trackVolume.kr(0).dbamp * (1.0 / \noteSize.kr(1).sqrt)
     			* \velocity.kr(100).min(127).max(0).linlin(0,127,-24,24).dbamp;

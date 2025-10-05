@@ -827,6 +827,42 @@ var InstrumentRegistry = map[string]InstrumentDefinition{
 			},
 		},
 	},
+	"TB303": {
+		Name:        "TB303",
+		Description: "Classic acid bassline synthesizer",
+		Parameters: []InstrumentParameterDef{
+			{
+				Key: "resonance", DisplayName: "Resonance", Type: ParameterTypeFloat,
+				MinValue: 0.1, MaxValue: 3.0, DefaultValue: 1.0, Default: 1.0, Column: 0, Order: 0,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
+			},
+			{
+				Key: "glide", DisplayName: "Glide", Type: ParameterTypeFloat,
+				MinValue: 0.0, MaxValue: 1.0, DefaultValue: 0.0, Default: 0.0, Column: 0, Order: 1,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
+			},
+			{
+				Key: "envAmt", DisplayName: "Env Amount", Type: ParameterTypeFloat,
+				MinValue: 0.0, MaxValue: 10.0, DefaultValue: 1.0, Default: 1.0, Column: 0, Order: 2,
+				CoarseStep: 1.0, FineStep: 0.1, DisplayFormat: "%.1f",
+			},
+			{
+				Key: "envRelease", DisplayName: "Env Release", Type: ParameterTypeFloat,
+				MinValue: 0.0, MaxValue: 2.0, DefaultValue: 0.5, Default: 0.5, Column: 0, Order: 3,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
+			},
+			{
+				Key: "mixWave", DisplayName: "Pulse/Saw", Type: ParameterTypeFloat,
+				MinValue: 0.0, MaxValue: 1.0, DefaultValue: 0.5, Default: 0.5, Column: 1, Order: 0,
+				CoarseStep: 0.1, FineStep: 0.01, DisplayFormat: "%.2f",
+			},
+			{
+				Key: "drive", DisplayName: "Drive", Type: ParameterTypeFloat,
+				MinValue: 0.0, MaxValue: 10.0, DefaultValue: 1.0, Default: 1.0, Column: 1, Order: 1,
+				CoarseStep: 1.0, FineStep: 0.1, DisplayFormat: "%.1f",
+			},
+		},
+	},
 }
 
 // Helper functions for the instrument framework
