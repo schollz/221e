@@ -1,0 +1,64 @@
+name: Auto Update Go Dependencies
+
+on:
+  schedule:
+    - cron: "0 3 * * 1"  # Every Monday at 3 AM UTC
+  workflow_dispatch:      # Allow manual runs
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-deps:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Needed for diff and PR creation
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Update dependencies
+        run: |
+          go get -u -v ./...
+          go mod tidy
+
+      - name: Run tests
+        run: |
+          go test -v ./...
+
+      - name: Check for changes
+        id: git_diff
+        run: |
+          if [[ -n "$(git status --porcelain)" ]]; then
+            echo "changes=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changes=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create Pull Request
+        if: steps.git_diff.outputs.changes == 'true'
+        id: cpr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "chore: update Go dependencies"
+          title: "chore: update Go dependencies"
+          body: "Automated dependency update via GitHub Actions"
+          branch: "auto-update-go-deps"
+          delete-branch: true
+          labels: dependencies, automated
+
+      - name: Auto-merge PR
+        if: steps.cpr.outputs.pull-request-number != ''
+        uses: peter-evans/enable-pull-request-automerge@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          pull-request-number: ${{ steps.cpr.outputs.pull-request-number }}
+          merge-method: squash
+
