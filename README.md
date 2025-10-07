@@ -608,6 +608,14 @@ If you used the recording feature (`-r` flag), recordings are saved to SuperColl
 - **Linux**: `~/SuperCollider/`
 - **Windows**: `%USERPROFILE%/Music/SuperCollider Recordings/`
 
+## Notes
+
+LOC: 
+
+```bash
+cloc --by-file --include-ext=go --not-match-f='dx7' internal
+```
+
 ## License
 
 MIT
