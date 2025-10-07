@@ -2575,6 +2575,46 @@ func FillSequentialPhrase(m *model.Model) {
 				(*phrasesData)[m.CurrentPhrase][row][colIndex] = -1 // Set to "--"
 			}
 		}
+	} else if colIndex == int(types.ColModulate) {
+		// Special Ctrl+F logic for MO (Modulate) column - similar to DT toggle behavior
+		currentValue := (*phrasesData)[m.CurrentPhrase][currentRow][colIndex]
+
+		if currentValue == -1 {
+			// Current cell is "--": Find last non-"--" value and copy it down
+			lastNonEmptyValue := -1
+			fillStartRow := 0
+
+			// Find the last non-"--" value going upward
+			for row := currentRow - 1; row >= 0; row-- {
+				cellValue := (*phrasesData)[m.CurrentPhrase][row][colIndex]
+				if cellValue != -1 {
+					lastNonEmptyValue = cellValue
+					fillStartRow = row + 1
+					break
+				}
+			}
+
+			// Only fill if we found a non-empty value
+			if lastNonEmptyValue != -1 {
+				// Fill from fillStartRow to currentRow with lastNonEmptyValue
+				for row := fillStartRow; row <= currentRow; row++ {
+					(*phrasesData)[m.CurrentPhrase][row][colIndex] = lastNonEmptyValue
+				}
+				log.Printf("Filled MO column from row %d to %d with value %02X", fillStartRow, currentRow, lastNonEmptyValue)
+			}
+		} else {
+			// Current cell is not "--": Clear current and all consecutive cells above with the same value
+			clearCount := 0
+			for row := currentRow; row >= 0; row-- {
+				cellValue := (*phrasesData)[m.CurrentPhrase][row][colIndex]
+				if cellValue != currentValue {
+					break // Stop at first cell that doesn't match current value
+				}
+				(*phrasesData)[m.CurrentPhrase][row][colIndex] = -1 // Set to "--"
+				clearCount++
+			}
+			log.Printf("Cleared %d MO cells with value %02X", clearCount, currentValue)
+		}
 	} else if colIndex == int(types.ColRetrigger) || colIndex == int(types.ColTimestretch) {
 		// RT and TS columns should keep the reference value constant
 		// Find the last non-null value and fill all cells with that same value
