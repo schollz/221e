@@ -111,8 +111,8 @@ type Model struct {
 	LastSongRow   int // Last selected row in song view
 	LastSongTrack int // Last selected track in song view
 	// Column mode state - for toggleable columns
-	SOColumnMode types.SOColumnMode // Current mode for SO/MI column (SO or MI mode)
-	MidiCCNumbers [9]int // MIDI CC numbers for the 9 CC columns (default 0-8, range 0-127)
+	SOColumnMode  types.SOColumnMode // Current mode for SO/MI column (SO or MI mode)
+	MidiCCNumbers [9]int             // MIDI CC numbers for the 9 CC columns (default 0-8, range 0-127)
 
 	// Song data structure (8 tracks × 16 rows)
 	SongData [8][16]int // [track][row] = chain ID (00-FE, -1 for empty)
@@ -1086,6 +1086,7 @@ type InstrumentOSCParams struct {
 	MidiSettingsIndex  int       // MIDI settings index (MI parameter)
 	SoundMakerIndex    int       // SoundMaker settings index (SO parameter)
 	DuckingIndex       int       // Ducking settings index (DU parameter)
+	MidiCC             [9]int    // MIDI CC values 0-8 (-1 = not set)
 	Update             int       // 1 if this is an update to a playing row, 0 otherwise
 }
 
@@ -1166,7 +1167,7 @@ func NewSamplerOSCParamsWithRetrigger(filename string, trackId, sliceCount, slic
 }
 
 // NewInstrumentOSCParams creates instrument parameters
-func NewInstrumentOSCParams(trackId int32, velocity float32, chordType, chordAddition, chordTransposition, gate int, deltaTime, attack, decay, sustain, release, pan, lowPassFilter, highPassFilter, effectComb, effectReverb float32, arpeggioIndex, midiSettingsIndex, soundMakerIndex, duckingIndex int) InstrumentOSCParams {
+func NewInstrumentOSCParams(trackId int32, velocity float32, chordType, chordAddition, chordTransposition, gate int, deltaTime, attack, decay, sustain, release, pan, lowPassFilter, highPassFilter, effectComb, effectReverb float32, arpeggioIndex, midiSettingsIndex, soundMakerIndex, duckingIndex int, midiCC [9]int) InstrumentOSCParams {
 	return InstrumentOSCParams{
 		TrackId:            trackId,
 		NoteOn:             1,
@@ -1189,6 +1190,7 @@ func NewInstrumentOSCParams(trackId int32, velocity float32, chordType, chordAdd
 		MidiSettingsIndex:  midiSettingsIndex,
 		SoundMakerIndex:    soundMakerIndex,
 		DuckingIndex:       duckingIndex,
+		MidiCC:             midiCC,
 		Update:             0, // Default is not an update
 	}
 }
@@ -1399,6 +1401,13 @@ func (m *Model) sendOSCInstrumentMessage(params InstrumentOSCParams) {
 		return // OSC not configured
 	}
 
+	// If MIDI is configured, skip OSC messages (MI mode takes precedence)
+	if params.MidiSettingsIndex != -1 {
+		log.Printf("DEBUG: sendOSCInstrumentMessage - MIDI is configured (MI mode), skipping OSC message")
+		m.sendMIDIInstrumentMessage(params)
+		return
+	}
+
 	// Check if SoundMaker is configured (SoundMakerIndex != -1 means a SoundMaker is selected)
 	if params.SoundMakerIndex > -1 {
 
@@ -1521,11 +1530,6 @@ func (m *Model) sendOSCInstrumentMessage(params InstrumentOSCParams) {
 			log.Printf("%s", msg)
 		}
 	}
-
-	// Also send MIDI message if configured
-	// TODO: remove this after debugging
-	m.sendMIDIInstrumentMessage(params)
-
 }
 
 // sendMIDIInstrumentMessage sends MIDI messages for the given instrument parameters if MIDI is configured
@@ -1566,8 +1570,29 @@ func (m *Model) sendMIDIInstrumentMessage(params InstrumentOSCParams) {
 	log.Printf("DEBUG: Sending MIDI messages for device=%s, channel=%d, notes=%v, velocity=%.0f, duration=%.3f",
 		midiSettings.Device, channel, params.Notes, velocity, duration)
 
-	// Send MIDI note-on for each note
+	// Send MIDI CC messages for each CC value that is not "--" (i.e., not -1)
+	// Use the MidiCCNumbers from the model to determine which CC number to use
+	for i := 0; i < 9; i++ {
+		if params.MidiCC[i] != -1 {
+			ccNumber := m.MidiCCNumbers[i]
+			ccValue := params.MidiCC[i]
+			err := midiplayer.ControlChange(midiSettings.Device, int(ccNumber), ccValue, channel)
+			if err != nil {
+				log.Printf("ERROR: Failed to send MIDI CC %d with value %d: %v", ccNumber, ccValue, err)
+			} else {
+				log.Printf("DEBUG: MIDI CC sent: device=%s, cc=%d, value=%d, channel=%d",
+					midiSettings.Device, ccNumber, ccValue, channel)
+			}
+		}
+	}
+
+	// Send MIDI note-on for each note (skip invalid notes like -1)
 	for _, note := range params.Notes {
+		// Skip invalid notes (e.g., when NOT column is not defined)
+		if note < 0 || note > 127 {
+			log.Printf("DEBUG: Skipping invalid MIDI note: %.1f", note)
+			continue
+		}
 		err := midiplayer.NoteOn(midiSettings.Device, float64(note), velocity, duration, channel)
 		if err != nil {
 			log.Printf("ERROR: Failed to send MIDI note-on for note %.1f: %v", note, err)

@@ -42,15 +42,15 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 		// Format each CC number with highlighting if on header row
 		highlightStyle := lipgloss.NewStyle().Background(lipgloss.Color("240")).Foreground(lipgloss.Color("15"))
 
-		cc0 := fmt.Sprintf("%02d", m.MidiCCNumbers[0])
-		cc1 := fmt.Sprintf("%02d", m.MidiCCNumbers[1])
-		cc2 := fmt.Sprintf("%02d", m.MidiCCNumbers[2])
-		cc3 := fmt.Sprintf("%02d", m.MidiCCNumbers[3])
-		cc4 := fmt.Sprintf("%02d", m.MidiCCNumbers[4])
-		cc5 := fmt.Sprintf("%02d", m.MidiCCNumbers[5])
-		cc6 := fmt.Sprintf("%02d", m.MidiCCNumbers[6])
-		cc7 := fmt.Sprintf("%02d", m.MidiCCNumbers[7])
-		cc8 := fmt.Sprintf("%02d", m.MidiCCNumbers[8])
+		cc0 := fmt.Sprintf("%02X", m.MidiCCNumbers[0])
+		cc1 := fmt.Sprintf("%02X", m.MidiCCNumbers[1])
+		cc2 := fmt.Sprintf("%02X", m.MidiCCNumbers[2])
+		cc3 := fmt.Sprintf("%02X", m.MidiCCNumbers[3])
+		cc4 := fmt.Sprintf("%02X", m.MidiCCNumbers[4])
+		cc5 := fmt.Sprintf("%02X", m.MidiCCNumbers[5])
+		cc6 := fmt.Sprintf("%02X", m.MidiCCNumbers[6])
+		cc7 := fmt.Sprintf("%02X", m.MidiCCNumbers[7])
+		cc8 := fmt.Sprintf("%02X", m.MidiCCNumbers[8])
 
 		// Highlight the selected column header if on header row
 		if m.CurrentRow == -1 {
@@ -976,6 +976,17 @@ func GetInstrumentPhraseStatusMessage(m *model.Model) string {
 			}
 		} else {
 			statusMsg = fmt.Sprintf("Ducking: %02X (sticky)", duckingValue)
+		}
+	} else if columnMapping != nil && columnMapping.DataColumnIndex >= int(types.ColMidiCC0) && columnMapping.DataColumnIndex <= int(types.ColMidiCC8) {
+		// Show MIDI CC info with controller number and decimal value
+		ccIndex := columnMapping.DataColumnIndex - int(types.ColMidiCC0)
+		ccValue := (*phrasesData)[m.CurrentPhrase][m.CurrentRow][types.PhraseColumn(columnMapping.DataColumnIndex)]
+		ccNumber := m.MidiCCNumbers[ccIndex]
+
+		if ccValue == -1 {
+			statusMsg = fmt.Sprintf("CC%d: -- (Controller=%d)", ccIndex, ccNumber)
+		} else {
+			statusMsg = fmt.Sprintf("CC%d: %02X (Controller=%d, Value=%d)", ccIndex, ccValue, ccNumber, ccValue)
 		}
 	} else {
 		// On other columns - show basic info

@@ -109,6 +109,7 @@ func (m *Player) NoteOn(note int, velocity int) (err error) {
 }
 
 func (m *Player) ControlChange(controller int, value int) (err error) {
+	log.Printf("[MIDIPLAYER] ControlChange called on %s: controller=%d, value=%d", m.Name, controller, value)
 	if m.opened {
 		err = m.Device.ControlChange(m.channel, uint8(controller), uint8(value))
 	}
@@ -310,6 +311,39 @@ func NoteOn(midiinstrument string, note float64, velocity float64, duration floa
 				noteInt, midiinstrument, channel)
 		}
 	}()
+
+	return nil
+}
+
+// ControlChange sends a MIDI Control Change message
+func ControlChange(midiinstrument string, controller int, value int, channel int) error {
+	// Early return for disabled MIDI to avoid initializing RtMidi
+	if midiinstrument == "None" || midiinstrument == "" {
+		return nil
+	}
+
+	gms := getGlobalState()
+
+	log.Printf("[MIDIPLAYER] ControlChange called: instrument=%s, controller=%d, value=%d, channel=%d",
+		midiinstrument, controller, value, channel)
+
+	// Get or create instrument
+	instrument, err := gms.getOrCreateInstrument(midiinstrument, channel)
+	if err != nil {
+		return fmt.Errorf("failed to get instrument %s: %v", midiinstrument, err)
+	}
+
+	gms.mu.Lock()
+	defer gms.mu.Unlock()
+
+	// Send control change
+	err = instrument.Player.ControlChange(controller, value)
+	if err != nil {
+		return fmt.Errorf("failed to send control change for controller %d: %v", controller, err)
+	}
+
+	log.Printf("[MIDIPLAYER] Control change sent: instrument=%s, controller=%d, value=%d",
+		midiinstrument, controller, value)
 
 	return nil
 }
