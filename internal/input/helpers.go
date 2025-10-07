@@ -461,6 +461,12 @@ func CopyLastRowWithIncrement(m *model.Model) {
 
 	log.Printf("copyLastRowWithIncrement called - currentRow: %d", m.CurrentRow)
 
+	// Check if we're on a header row (invalid row index)
+	if m.CurrentRow < 0 || m.CurrentRow >= 256 {
+		log.Printf("Cannot copy on header row (row %d)", m.CurrentRow)
+		return
+	}
+
 	// Get the appropriate phrases data based on view type
 	phrasesData := m.GetCurrentPhrasesData()
 	phraseViewType := m.GetPhraseViewType()
@@ -524,6 +530,11 @@ func CopyLastRowWithIncrement(m *model.Model) {
 // IsRowEmpty checks if the current row in phrase view is empty
 func IsRowEmpty(m *model.Model) bool {
 	if m.ViewMode != types.PhraseView {
+		return true
+	}
+
+	// Check if we're on a header row (invalid row index)
+	if m.CurrentRow < 0 || m.CurrentRow >= 256 {
 		return true
 	}
 
@@ -831,12 +842,24 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 	// For samplers, also check that we have a filename
 	needsFile := trackId >= 0 && trackId < 8 && m.TrackTypes[trackId] // Sampler tracks need files
 
+	// Check if any CC values are set for instrument tracks
+	hasCCValues := false
+	if isInstrumentTrack(m, trackId) {
+		for i := 0; i < 9; i++ {
+			if rowData[types.ColMidiCC0+types.PhraseColumn(i)] != -1 {
+				hasCCValues = true
+				break
+			}
+		}
+	}
+
 	// Unified DT-based playback condition: DT > 0 means play for both instruments and samplers
-	if !IsRowPlayable(rawDeltaTime) || rawNote == -1 || (needsFile && effectiveFilename == "none") {
+	// For instrument tracks, allow emission if CC values are set even without a note
+	if !IsRowPlayable(rawDeltaTime) || (rawNote == -1 && !hasCCValues) || (needsFile && effectiveFilename == "none") {
 		if !IsRowPlayable(rawDeltaTime) {
 			log.Printf("ROW_EMIT: skipped (DT<=0, value=%d)", rawDeltaTime)
-		} else if rawNote == -1 {
-			log.Printf("ROW_EMIT: skipped (NN==null)")
+		} else if rawNote == -1 && !hasCCValues {
+			log.Printf("ROW_EMIT: skipped (NN==null and no CC values)")
 		} else if needsFile && effectiveFilename == "none" {
 			log.Printf("ROW_EMIT: skipped (sampler track needs filename)")
 		}
@@ -1209,6 +1232,18 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 			effectReverb = float32(rawEffectReverb) / 254.0
 		}
 
+		// Extract MIDI CC values (only used when in MIDI mode)
+		var midiCC [9]int
+		midiCC[0] = rowData[types.ColMidiCC0]
+		midiCC[1] = rowData[types.ColMidiCC1]
+		midiCC[2] = rowData[types.ColMidiCC2]
+		midiCC[3] = rowData[types.ColMidiCC3]
+		midiCC[4] = rowData[types.ColMidiCC4]
+		midiCC[5] = rowData[types.ColMidiCC5]
+		midiCC[6] = rowData[types.ColMidiCC6]
+		midiCC[7] = rowData[types.ColMidiCC7]
+		midiCC[8] = rowData[types.ColMidiCC8]
+
 		instrumentParams := model.NewInstrumentOSCParams(
 			int32(trackId),
 			velocity,
@@ -1230,6 +1265,7 @@ func EmitRowDataFor(m *model.Model, phrase, row, trackId int, isUpdate ...bool) 
 			rawMidi,
 			rawSoundMaker,
 			rawEffectDucking,
+			midiCC,
 		)
 		// Generate chord notes and apply modulation according to user specification
 		midiNotes := types.GetChordNotes(rowData[types.ColNote], types.ChordType(rawChord), types.ChordAddition(rawChordAdd), types.ChordTransposition(rawChordTrans))
@@ -1421,6 +1457,23 @@ func shouldEmitRowForTrackAtPosition(m *model.Model, phrase, row, trackId int) b
 	if !IsRowPlayable(dtRaw) {
 		return false
 	}
+
+	// For instrument tracks, check if there are any CC values set
+	// If so, allow emission even without a note
+	if isInstrumentTrack(m, trackId) {
+		// Check if any CC values are set
+		ccCols := []types.PhraseColumn{
+			types.ColMidiCC0, types.ColMidiCC1, types.ColMidiCC2,
+			types.ColMidiCC3, types.ColMidiCC4, types.ColMidiCC5,
+			types.ColMidiCC6, types.ColMidiCC7, types.ColMidiCC8,
+		}
+		for _, ccCol := range ccCols {
+			if (*phrasesData)[phrase][row][ccCol] != -1 {
+				return true // Allow emission if any CC value is set
+			}
+		}
+	}
+
 	if nn == -1 {
 		return false
 	}

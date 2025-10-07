@@ -41,6 +41,13 @@ func CopyCellToClipboard(m *model.Model) {
 		log.Printf("Copied chain phrase value: %d", value)
 	} else if m.ViewMode == types.PhraseView {
 		// Copy from phrase view
+
+		// Check if we're on a header row (invalid row index)
+		if m.CurrentRow < 0 || m.CurrentRow >= 256 {
+			log.Printf("Cannot copy from header row (row %d)", m.CurrentRow)
+			return
+		}
+
 		phrasesData := m.GetCurrentPhrasesData()
 
 		// Use centralized column mapping system
@@ -154,6 +161,13 @@ func CutRowToClipboard(m *model.Model) {
 		log.Printf("Cut chain row %d", m.CurrentRow)
 	} else if m.ViewMode == types.PhraseView {
 		// Cut row from phrase view
+
+		// Check if we're on a header row (invalid row index)
+		if m.CurrentRow < 0 || m.CurrentRow >= 256 {
+			log.Printf("Cannot cut from header row (row %d)", m.CurrentRow)
+			return
+		}
+
 		phrasesData := m.GetCurrentPhrasesData()
 		rowData := make([]int, int(types.ColCount))
 		copy(rowData, (*phrasesData)[m.CurrentPhrase][m.CurrentRow])
@@ -278,6 +292,13 @@ func PasteCellFromClipboard(m *model.Model) {
 		}
 	} else if m.ViewMode == types.PhraseView {
 		// Paste to phrase view
+
+		// Check if we're on a header row (invalid row index)
+		if m.CurrentRow < 0 || m.CurrentRow >= 256 {
+			log.Printf("Cannot paste to header row (row %d)", m.CurrentRow)
+			return
+		}
+
 		phrasesData := m.GetCurrentPhrasesData()
 
 		// Use centralized column mapping system
@@ -442,6 +463,13 @@ func PasteRowFromClipboard(m *model.Model) {
 		log.Printf("Pasted chain row to row %d", m.CurrentRow)
 	} else if m.ViewMode == types.PhraseView && m.Clipboard.SourceView == types.PhraseView {
 		// Paste phrase row to phrase row
+
+		// Check if we're on a header row (invalid row index)
+		if m.CurrentRow < 0 || m.CurrentRow >= 256 {
+			log.Printf("Cannot paste to header row (row %d)", m.CurrentRow)
+			return
+		}
+
 		phrasesData := m.GetCurrentPhrasesData()
 		for i, value := range m.Clipboard.RowData {
 			(*phrasesData)[m.CurrentPhrase][m.CurrentRow][i] = value
