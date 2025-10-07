@@ -1937,6 +1937,92 @@ func (m *Model) SendOSCShimmerMessage() {
 	m.sendOSCMessage(config)
 }
 
+func (m *Model) SendDuckingToExternalInput(duckingIndex int) {
+	// Only send if in MI mode and ducking is active
+	if m.SOColumnMode != types.SOModeMIDI {
+		return
+	}
+
+	if duckingIndex < 0 || duckingIndex >= 255 {
+		return
+	}
+
+	ds := m.DuckingSettings[duckingIndex]
+
+	// Only send if ducking is active (Type != 0, meaning not "--")
+	if ds.Type == 0 {
+		return
+	}
+
+	// Send ducking parameters to track 8 (external input) using /set_track
+	if m.oscClient == nil {
+		return
+	}
+
+	// Send duckingType
+	config := OSCMessageConfig{
+		Address:    "/set_track",
+		Parameters: []interface{}{int32(8), "duckingType", int32(ds.Type)},
+		LogFormat:  "OSC ducking message sent to track 8: /set_track 8 'duckingType' %d",
+		LogArgs:    []interface{}{ds.Type},
+	}
+	m.sendOSCMessage(config)
+
+	// Send duckingBusIn
+	config = OSCMessageConfig{
+		Address:    "/set_track",
+		Parameters: []interface{}{int32(8), "duckingBusIn", int32(ds.Bus)},
+		LogFormat:  "OSC ducking message sent to track 8: /set_track 8 'duckingBusIn' %d",
+		LogArgs:    []interface{}{ds.Bus},
+	}
+	m.sendOSCMessage(config)
+
+	// Send duckingBusOut
+	config = OSCMessageConfig{
+		Address:    "/set_track",
+		Parameters: []interface{}{int32(8), "duckingBusOut", int32(ds.Bus)},
+		LogFormat:  "OSC ducking message sent to track 8: /set_track 8 'duckingBusOut' %d",
+		LogArgs:    []interface{}{ds.Bus},
+	}
+	m.sendOSCMessage(config)
+
+	// Send duckingDepth
+	config = OSCMessageConfig{
+		Address:    "/set_track",
+		Parameters: []interface{}{int32(8), "duckingDepth", float32(ds.Depth)},
+		LogFormat:  "OSC ducking message sent to track 8: /set_track 8 'duckingDepth' %.2f",
+		LogArgs:    []interface{}{ds.Depth},
+	}
+	m.sendOSCMessage(config)
+
+	// Send duckingAttack
+	config = OSCMessageConfig{
+		Address:    "/set_track",
+		Parameters: []interface{}{int32(8), "duckingAttack", float32(ds.Attack)},
+		LogFormat:  "OSC ducking message sent to track 8: /set_track 8 'duckingAttack' %.2f",
+		LogArgs:    []interface{}{ds.Attack},
+	}
+	m.sendOSCMessage(config)
+
+	// Send duckingRelease
+	config = OSCMessageConfig{
+		Address:    "/set_track",
+		Parameters: []interface{}{int32(8), "duckingRelease", float32(ds.Release)},
+		LogFormat:  "OSC ducking message sent to track 8: /set_track 8 'duckingRelease' %.2f",
+		LogArgs:    []interface{}{ds.Release},
+	}
+	m.sendOSCMessage(config)
+
+	// Send duckingThresh
+	config = OSCMessageConfig{
+		Address:    "/set_track",
+		Parameters: []interface{}{int32(8), "duckingThresh", float32(ds.Thresh)},
+		LogFormat:  "OSC ducking message sent to track 8: /set_track 8 'duckingThresh' %.2f",
+		LogArgs:    []interface{}{ds.Thresh},
+	}
+	m.sendOSCMessage(config)
+}
+
 func (m *Model) SendOSCTrackSetLevelMessage(trackNum int) {
 	if trackNum < 0 || trackNum >= 8 {
 		return

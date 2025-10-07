@@ -615,4 +615,7 @@ func ModifyDuckingValue(m *model.Model, baseDelta float32) {
 	// Store back the modified settings
 	m.DuckingSettings[m.DuckingEditingIndex] = settings
 	storage.AutoSave(m)
+
+	// Send ducking parameters to track 8 (external input) if in MI mode and ducking is active
+	m.SendDuckingToExternalInput(m.DuckingEditingIndex)
 }
