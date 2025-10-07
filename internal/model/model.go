@@ -110,6 +110,8 @@ type Model struct {
 	LastPhraseCol int // Last selected column in phrase view
 	LastSongRow   int // Last selected row in song view
 	LastSongTrack int // Last selected track in song view
+	// Column mode state - for toggleable columns
+	SOColumnMode types.SOColumnMode // Current mode for SO/MI column (SO or MI mode)
 
 	// Song data structure (8 tracks × 16 rows)
 	SongData [8][16]int // [track][row] = chain ID (00-FE, -1 for empty)
@@ -407,23 +409,26 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "AR",
 			}
-		case int(types.InstrumentColMI): // MI - MIDI column
-			return &ColumnMapping{
-				DataColumnIndex: int(types.ColMidi),
-				IsEditable:      true,
-				IsCopyable:      true,
-				IsPasteable:     true,
-				IsDeletable:     true,
-				DisplayName:     "MI",
-			}
-		case int(types.InstrumentColSO): // SO - SoundMaker column
-			return &ColumnMapping{
-				DataColumnIndex: int(types.ColSoundMaker),
-				IsEditable:      true,
-				IsCopyable:      true,
-				IsPasteable:     true,
-				IsDeletable:     true,
-				DisplayName:     "SO",
+		case int(types.InstrumentColSOMI): // SO/MI - SoundMaker/MIDI column (toggleable)
+			// Return data column based on current mode
+			if m.SOColumnMode == types.SOModeMIDI {
+				return &ColumnMapping{
+					DataColumnIndex: int(types.ColMidi),
+					IsEditable:      true,
+					IsCopyable:      true,
+					IsPasteable:     true,
+					IsDeletable:     true,
+					DisplayName:     "MI",
+				}
+			} else {
+				return &ColumnMapping{
+					DataColumnIndex: int(types.ColSoundMaker),
+					IsEditable:      true,
+					IsCopyable:      true,
+					IsPasteable:     true,
+					IsDeletable:     true,
+					DisplayName:     "SO",
+				}
 			}
 		case int(types.InstrumentColDU): // DU - Ducking column
 			return &ColumnMapping{

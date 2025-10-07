@@ -556,9 +556,9 @@ func handleShiftRight(m *model.Model) tea.Cmd {
 
 		// Check if we're in Instrument view - implement fallback navigation for non-navigable columns
 		if m.GetPhraseViewType() == types.InstrumentPhraseView {
-			// For columns that don't have their own Shift+Right navigation (all except MI, SO, and DU),
-			// check if MI or SO columns have effective (sticky) values and navigate to those views
-			if m.CurrentCol != int(types.InstrumentColMI) && m.CurrentCol != int(types.InstrumentColSO) && m.CurrentCol != int(types.InstrumentColDU) {
+			// For columns that don't have their own Shift+Right navigation (all except SO/MI and DU),
+			// check if SO/MI column has effective (sticky) values and navigate to the appropriate view
+			if m.CurrentCol != int(types.InstrumentColSOMI) && m.CurrentCol != int(types.InstrumentColDU) {
 				phrasesData := m.GetCurrentPhrasesData()
 
 				// Find effective (sticky) MI and SO values by looking backwards from current row
@@ -590,7 +590,7 @@ func handleShiftRight(m *model.Model) tea.Cmd {
 					return nil
 				}
 			}
-			return nil // No navigation for MI/SO columns or if no valid targets
+			return nil // No navigation for SO/MI column or if no valid targets
 		}
 
 		// Navigate to file view from any other column in phrase view
@@ -881,6 +881,28 @@ func handleUp(m *model.Model) tea.Cmd {
 				m.ScrollOffset = m.CurrentRow
 			}
 		}
+	} else if m.ViewMode == types.PhraseView {
+		// In Instrument view, allow going to row -1 (header) only when on SO/MI column
+		if m.GetPhraseViewType() == types.InstrumentPhraseView && m.CurrentCol == int(types.InstrumentColSOMI) {
+			if m.CurrentRow > -1 { // Allow going up to row -1 (header row for column mode switching)
+				m.CurrentRow = m.CurrentRow - 1
+				if m.CurrentRow >= 0 { // Only update LastPhraseRow for data rows, not header row
+					m.LastPhraseRow = m.CurrentRow
+				}
+				if m.CurrentRow < m.ScrollOffset && m.CurrentRow >= 0 {
+					m.ScrollOffset = m.CurrentRow
+				}
+			}
+		} else {
+			// For other columns, standard behavior
+			if m.CurrentRow > 0 {
+				m.CurrentRow = m.CurrentRow - 1
+				if m.CurrentRow < m.ScrollOffset {
+					m.ScrollOffset = m.CurrentRow
+				}
+				m.LastPhraseRow = m.CurrentRow
+			}
+		}
 	} else if m.CurrentRow > 0 {
 		m.CurrentRow = m.CurrentRow - 1
 		if m.CurrentRow < m.ScrollOffset {
@@ -889,8 +911,6 @@ func handleUp(m *model.Model) tea.Cmd {
 		// Update position tracking for view navigation
 		if m.ViewMode == types.ChainView {
 			m.LastChainRow = m.CurrentRow
-		} else if m.ViewMode == types.PhraseView {
-			m.LastPhraseRow = m.CurrentRow
 		}
 	}
 	storage.AutoSave(m)
@@ -991,6 +1011,32 @@ func handleDown(m *model.Model) tea.Cmd {
 				m.ScrollOffset = m.CurrentRow - visibleRows + 1
 			}
 		}
+	} else if m.ViewMode == types.PhraseView {
+		// In Instrument view, allow special behavior for SO/MI column header
+		if m.GetPhraseViewType() == types.InstrumentPhraseView && m.CurrentCol == int(types.InstrumentColSOMI) {
+			// If on header row (-1), go to row 0
+			if m.CurrentRow == -1 {
+				m.CurrentRow = 0
+				m.LastPhraseRow = 0
+			} else if m.CurrentRow < 254 { // Standard navigation for data rows
+				m.CurrentRow = m.CurrentRow + 1
+				visibleRows := m.GetVisibleRows()
+				if m.CurrentRow >= m.ScrollOffset+visibleRows {
+					m.ScrollOffset = m.CurrentRow - visibleRows + 1
+				}
+				m.LastPhraseRow = m.CurrentRow
+			}
+		} else {
+			// Standard navigation for other columns
+			if m.CurrentRow < 254 {
+				m.CurrentRow = m.CurrentRow + 1
+				visibleRows := m.GetVisibleRows()
+				if m.CurrentRow >= m.ScrollOffset+visibleRows {
+					m.ScrollOffset = m.CurrentRow - visibleRows + 1
+				}
+				m.LastPhraseRow = m.CurrentRow
+			}
+		}
 	} else if m.CurrentRow < 254 { // 0-254 (FE in hex)
 		m.CurrentRow = m.CurrentRow + 1
 		visibleRows := m.GetVisibleRows()
@@ -1000,8 +1046,6 @@ func handleDown(m *model.Model) tea.Cmd {
 		// Update position tracking for view navigation
 		if m.ViewMode == types.ChainView {
 			m.LastChainRow = m.CurrentRow
-		} else if m.ViewMode == types.PhraseView {
-			m.LastPhraseRow = m.CurrentRow
 		}
 	}
 	storage.AutoSave(m)
@@ -1171,6 +1215,15 @@ func handleCtrlUp(m *model.Model) tea.Cmd {
 			// Increment current cell value by 16 (0x10)
 			ModifySongValue(m, 16)
 		}
+	} else if m.ViewMode == types.PhraseView {
+		// In Instrument view, when on SO/MI column header, switch to MI mode
+		if m.GetPhraseViewType() == types.InstrumentPhraseView && m.CurrentCol == int(types.InstrumentColSOMI) && m.CurrentRow == -1 {
+			m.SOColumnMode = types.SOModeMIDI
+			storage.AutoSave(m)
+		} else {
+			// Normal value modification for other cases
+			ModifyValue(m, 16)
+		}
 	} else if m.ViewMode == types.SettingsView {
 		ModifySettingsValue(m, 1.0)
 	} else if m.ViewMode == types.FileMetadataView {
@@ -1208,6 +1261,15 @@ func handleCtrlDown(m *model.Model) tea.Cmd {
 			// Decrement current cell value by 16 (0x10)
 			ModifySongValue(m, -16)
 		}
+	} else if m.ViewMode == types.PhraseView {
+		// In Instrument view, when on SO/MI column header, switch to SO mode
+		if m.GetPhraseViewType() == types.InstrumentPhraseView && m.CurrentCol == int(types.InstrumentColSOMI) && m.CurrentRow == -1 {
+			m.SOColumnMode = types.SOModeSound
+			storage.AutoSave(m)
+		} else {
+			// Normal value modification for other cases
+			ModifyValue(m, -16)
+		}
 	} else if m.ViewMode == types.SettingsView {
 		ModifySettingsValue(m, -1.0)
 	} else if m.ViewMode == types.FileMetadataView {
@@ -1244,6 +1306,15 @@ func handleCtrlLeft(m *model.Model) tea.Cmd {
 		} else {
 			ModifySongValue(m, -1) // Fine decrement for song view
 		}
+	} else if m.ViewMode == types.PhraseView {
+		// In Instrument view, when on SO/MI column header, switch to SO mode
+		if m.GetPhraseViewType() == types.InstrumentPhraseView && m.CurrentCol == int(types.InstrumentColSOMI) && m.CurrentRow == -1 {
+			m.SOColumnMode = types.SOModeSound
+			storage.AutoSave(m)
+		} else {
+			// Normal value modification for other cases
+			ModifyValue(m, -1)
+		}
 	} else if m.ViewMode == types.SettingsView {
 		ModifySettingsValue(m, -0.05)
 	} else if m.ViewMode == types.FileMetadataView {
@@ -1279,6 +1350,15 @@ func handleCtrlRight(m *model.Model) tea.Cmd {
 			ToggleTrackType(m, m.CurrentCol)
 		} else {
 			ModifySongValue(m, 1) // Fine increment for song view
+		}
+	} else if m.ViewMode == types.PhraseView {
+		// In Instrument view, when on SO/MI column header, switch to MI mode
+		if m.GetPhraseViewType() == types.InstrumentPhraseView && m.CurrentCol == int(types.InstrumentColSOMI) && m.CurrentRow == -1 {
+			m.SOColumnMode = types.SOModeMIDI
+			storage.AutoSave(m)
+		} else {
+			// Normal value modification for other cases
+			ModifyValue(m, 1)
 		}
 	} else if m.ViewMode == types.FileView {
 		audio.PlayFile(m)
