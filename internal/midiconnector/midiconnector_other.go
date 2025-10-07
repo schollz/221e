@@ -117,6 +117,19 @@ func (d *Device) Close() (err error) {
 	return
 }
 
+func (d *Device) ControlChange(channel, controller, value uint8) (err error) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	if out, ok := devicesOpen[d.name]; ok {
+		err = out.Send([]byte{0xB0 | channel, controller, value})
+		if err != nil {
+			// Log MIDI errors instead of letting them print to stderr
+			log.Printf("MIDI ControlChange error for device %s: %v", d.name, err)
+		}
+	}
+	return
+}
+
 func (d *Device) NoteOn(channel, note, velocity uint8) (err error) {
 	mutex.Lock()
 	defer mutex.Unlock()
