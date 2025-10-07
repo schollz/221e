@@ -44,6 +44,13 @@ const (
 	RowMode
 )
 
+type SOColumnMode int
+
+const (
+	SOModeSound SOColumnMode = iota // SO column shows SoundMaker
+	SOModeMIDI                      // SO column shows MIDI
+)
+
 type PhraseColumn int
 
 const (
@@ -177,9 +184,8 @@ const (
 	InstrumentColLP    InstrumentUIColumn = 16 // LP - LowPass
 	InstrumentColHP    InstrumentUIColumn = 17 // HP - HighPass
 	InstrumentColAR    InstrumentUIColumn = 18 // AR - Arpeggio
-	InstrumentColMI    InstrumentUIColumn = 19 // MI - MIDI
-	InstrumentColSO    InstrumentUIColumn = 20 // SO - SoundMaker
-	InstrumentColDU    InstrumentUIColumn = 21 // DU - Ducking
+	InstrumentColSOMI  InstrumentUIColumn = 19 // SO/MI - SoundMaker/MIDI (toggleable)
+	InstrumentColDU    InstrumentUIColumn = 20 // DU - Ducking
 )
 
 // UI Column positions for Sampler Phrase View - to prevent hardcoding issues

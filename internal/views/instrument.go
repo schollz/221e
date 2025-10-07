@@ -30,7 +30,19 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 	var content strings.Builder
 
 	// Render header for Instrument view (row, playback, note, modulation, and chord columns)
-	columnHeader := "  SL  DT  NOT  MO  CAT  VE  GT A D S R   RE  CO  PA  LP  HP  AR  MI  SO  DU"
+	// SO/MI column displays dynamically based on mode
+	somiHeader := "SO"
+	if m.SOColumnMode == types.SOModeMIDI {
+		somiHeader = "MI"
+	}
+
+	// Highlight SO/MI column header if we're on header row (-1) and on that column
+	if m.CurrentRow == -1 && m.CurrentCol == int(types.InstrumentColSOMI) {
+		highlightStyle := lipgloss.NewStyle().Background(lipgloss.Color("240")).Foreground(lipgloss.Color("15"))
+		somiHeader = highlightStyle.Render(somiHeader)
+	}
+
+	columnHeader := "  SL  DT  NOT  MO  CAT  VE  GT A D S R   RE  CO  PA  LP  HP  AR  " + somiHeader + "  DU"
 	phrasesData := m.GetCurrentPhrasesData()
 	totalTicks := ticks.CalculatePhraseTicks(phrasesData, m.CurrentPhrase)
 	phraseHeader := fmt.Sprintf("Instrument %02X (%d ticks)", m.CurrentPhrase, totalTicks)
@@ -421,44 +433,30 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 			arpeggioCell = normalStyle.Render(fmt.Sprintf("%2s", arpeggioText))
 		}
 
-		// MIDI (MI) - display MIDI index
-		midiValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColMidi]
-		midiText := "--"
-		if midiValue != -1 {
-			midiText = fmt.Sprintf("%02X", midiValue)
+		// SO/MI (toggleable) - display SoundMaker or MIDI index based on mode
+		var somiValue int
+		var somiText string
+		if m.SOColumnMode == types.SOModeMIDI {
+			somiValue = (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColMidi]
+		} else {
+			somiValue = (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColSoundMaker]
+		}
+		somiText = "--"
+		if somiValue != -1 {
+			somiText = fmt.Sprintf("%02X", somiValue)
 		}
 
-		var midiCell string
-		if m.CurrentRow == dataIndex && m.CurrentCol == int(types.InstrumentColMI) { // Column 19 is the MI column
-			midiCell = selectedStyle.Render(fmt.Sprintf("%2s", midiText))
+		var somiCell string
+		if m.CurrentRow == dataIndex && m.CurrentCol == int(types.InstrumentColSOMI) { // Column 19 is the SO/MI column
+			somiCell = selectedStyle.Render(fmt.Sprintf("%2s", somiText))
 		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
-			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == int(types.InstrumentColMI)) {
-				midiCell = copiedStyle.Render(fmt.Sprintf("%2s", midiText))
+			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == int(types.InstrumentColSOMI)) {
+				somiCell = copiedStyle.Render(fmt.Sprintf("%2s", somiText))
 			} else {
-				midiCell = normalStyle.Render(fmt.Sprintf("%2s", midiText))
+				somiCell = normalStyle.Render(fmt.Sprintf("%2s", somiText))
 			}
 		} else {
-			midiCell = normalStyle.Render(fmt.Sprintf("%2s", midiText))
-		}
-
-		// SoundMaker (SO) - display SoundMaker index
-		soundMakerValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColSoundMaker]
-		soundMakerText := "--"
-		if soundMakerValue != -1 {
-			soundMakerText = fmt.Sprintf("%02X", soundMakerValue)
-		}
-
-		var soundMakerCell string
-		if m.CurrentRow == dataIndex && m.CurrentCol == int(types.InstrumentColSO) { // Column 20 is the SO column
-			soundMakerCell = selectedStyle.Render(fmt.Sprintf("%2s", soundMakerText))
-		} else if m.Clipboard.HasData && m.Clipboard.HighlightView == types.PhraseView && m.Clipboard.HighlightPhrase == m.CurrentPhrase && m.Clipboard.HighlightRow == dataIndex {
-			if m.Clipboard.Mode == types.RowMode || (m.Clipboard.Mode == types.CellMode && m.Clipboard.HighlightCol == int(types.InstrumentColSO)) {
-				soundMakerCell = copiedStyle.Render(fmt.Sprintf("%2s", soundMakerText))
-			} else {
-				soundMakerCell = normalStyle.Render(fmt.Sprintf("%2s", soundMakerText))
-			}
-		} else {
-			soundMakerCell = normalStyle.Render(fmt.Sprintf("%2s", soundMakerText))
+			somiCell = normalStyle.Render(fmt.Sprintf("%2s", somiText))
 		}
 
 		// Ducking (DU) - display ducking index
@@ -481,7 +479,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 			duckingCell = normalStyle.Render(fmt.Sprintf("%2s", duckingText))
 		}
 
-		row := fmt.Sprintf("%s %-3s  %s  %s  %s  %s%s%s  %s  %s %s%s%s%s  %s  %s  %s  %s  %s  %s  %s  %s  %s", arrow, sliceCell, dtCell, noteCell, modulateCell, chordCell, chordAddCell, chordTransCell, velocityCell, gateCell, attackCell, decayCell, sustainCell, releaseCell, reverbCell, combCell, panCell, lpCell, hpCell, arpeggioCell, midiCell, soundMakerCell, duckingCell)
+		row := fmt.Sprintf("%s %-3s  %s  %s  %s  %s%s%s  %s  %s %s%s%s%s  %s  %s  %s  %s  %s  %s  %s  %s", arrow, sliceCell, dtCell, noteCell, modulateCell, chordCell, chordAddCell, chordTransCell, velocityCell, gateCell, attackCell, decayCell, sustainCell, releaseCell, reverbCell, combCell, panCell, lpCell, hpCell, arpeggioCell, somiCell, duckingCell)
 		content.WriteString(row)
 		content.WriteString("\n")
 	}
@@ -496,6 +494,20 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 
 func GetInstrumentPhraseStatusMessage(m *model.Model) string {
 	var statusMsg string
+
+	// Handle header row (row -1) for SO/MI column mode switching
+	if m.CurrentRow == -1 {
+		if m.CurrentCol == int(types.InstrumentColSOMI) {
+			if m.SOColumnMode == types.SOModeMIDI {
+				statusMsg = "Column Mode: MI (MIDI) | Ctrl+Down/Left: Switch to SO"
+			} else {
+				statusMsg = "Column Mode: SO (SoundMaker) | Ctrl+Up/Right: Switch to MI"
+			}
+		} else {
+			statusMsg = "Header row"
+		}
+		return statusMsg
+	}
 
 	// Use centralized column mapping to determine current column
 	columnMapping := m.GetColumnMapping(m.CurrentCol)
@@ -852,8 +864,14 @@ func GetInstrumentPhraseStatusMessage(m *model.Model) string {
 		statusMsg += " | Stopped (SPACE to play)"
 	}
 
-	// Add context-sensitive Shift+Right action based on current column
-	if m.CurrentCol == int(types.InstrumentColDU) {
+	// Add context-sensitive Shift+Right action and column mode info based on current column
+	if m.CurrentCol == int(types.InstrumentColSOMI) {
+		if m.SOColumnMode == types.SOModeMIDI {
+			statusMsg += " | Shift+Right: MIDI Settings | Ctrl+Down/Left: Switch to SO | Shift+Left: Back to chain view"
+		} else {
+			statusMsg += " | Shift+Right: SoundMaker Settings | Ctrl+Up/Right: Switch to MI | Shift+Left: Back to chain view"
+		}
+	} else if m.CurrentCol == int(types.InstrumentColDU) {
 		statusMsg += " | Shift+Right: Ducking | Shift+Left: Back to chain view"
 	} else {
 		statusMsg += " | Shift+Left: Back to chain view"

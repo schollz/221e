@@ -21,8 +21,12 @@ func TestInstrumentModulationColumn(t *testing.T) {
 		t.Errorf("Expected InstrumentColVE to be at position 7, got %d", int(InstrumentColVE))
 	}
 
-	// Test that final column is at position 20
-	if int(InstrumentColSO) != 20 {
-		t.Errorf("Expected InstrumentColSO to be at position 20, got %d", int(InstrumentColSO))
+	// Test that SO/MI column is at position 19 and DU at position 20
+	if int(InstrumentColSOMI) != 19 {
+		t.Errorf("Expected InstrumentColSOMI to be at position 19, got %d", int(InstrumentColSOMI))
+	}
+
+	if int(InstrumentColDU) != 20 {
+		t.Errorf("Expected InstrumentColDU to be at position 20, got %d", int(InstrumentColDU))
 	}
 }
