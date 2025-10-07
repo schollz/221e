@@ -79,7 +79,6 @@ func getRecordingIndicator(m *model.Model) string {
 
 // RenderHeader renders the common waveform + header pattern used by all views
 func RenderHeader(m *model.Model, leftContent, rightContent string) string {
-	headerStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("15"))
 	var content strings.Builder
 
 	// Render waveform
@@ -111,8 +110,8 @@ func RenderHeader(m *model.Model, leftContent, rightContent string) string {
 
 	// Calculate available space for padding (account for container padding)
 	availableWidth := m.TermWidth - 4 // Container padding (2 on each side)
-	leftLen := len(leftContent)
-	rightLen := len(rightContent)
+	leftLen := lipgloss.Width(leftContent)
+	rightLen := lipgloss.Width(rightContent)
 	indicatorLen := 0
 	if recordingIndicator != "" {
 		indicatorLen = 2 // Space + circle
@@ -133,7 +132,7 @@ func RenderHeader(m *model.Model, leftContent, rightContent string) string {
 		fullHeader += " " + recordingIndicator
 	}
 
-	content.WriteString(headerStyle.Render(fullHeader))
+	content.WriteString(fullHeader)
 	content.WriteString("\n")
 
 	return content.String()

@@ -16,7 +16,7 @@ import (
 func RenderInstrumentPhraseView(m *model.Model) string {
 	// Styles
 	selectedStyle := lipgloss.NewStyle().Background(lipgloss.Color("7")).Foreground(lipgloss.Color("0")) // Lighter background, dark text
-	normalStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("15"))
+	normalStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("15")).Bold(true)                      // White text for normal cells
 	sliceStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
 	sliceDownbeatStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("7"))                          // Lighter gray for downbeats
 	playbackStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("10"))                              // Green
@@ -32,15 +32,17 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 	// Render header for Instrument view (row, playback, note, modulation, and chord columns)
 	// SO/MI column displays dynamically based on mode
 	// ADSR columns display as CC# in MI mode
-	somiHeader := "SO"
-	adsrHeader := "A D S R  "
-	effectHeader := " RE  CO  PA  LP  HP"
+	headerStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("15"))
+	highlightStyle := lipgloss.NewStyle().Background(lipgloss.Color("240")).Foreground(lipgloss.Color("15")).Bold(true)
+
+	somiHeader := headerStyle.Render("SO")
+	adsrHeader := headerStyle.Render("A D S R  ")
+	effectHeader := headerStyle.Render(" RE  CO  PA  LP  HP")
 
 	if m.SOColumnMode == types.SOModeMIDI {
-		somiHeader = "MI"
+		somiHeader = headerStyle.Render("MI")
 		// Change ADSR and effect columns to show CC numbers from MidiCCNumbers array
 		// Format each CC number with highlighting if on header row
-		highlightStyle := lipgloss.NewStyle().Background(lipgloss.Color("240")).Foreground(lipgloss.Color("15"))
 
 		cc0 := fmt.Sprintf("%02X", m.MidiCCNumbers[0])
 		cc1 := fmt.Sprintf("%02X", m.MidiCCNumbers[1])
@@ -52,27 +54,38 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 		cc7 := fmt.Sprintf("%02X", m.MidiCCNumbers[7])
 		cc8 := fmt.Sprintf("%02X", m.MidiCCNumbers[8])
 
-		// Highlight the selected column header if on header row
+		// Apply header style to all CC numbers first (white)
+		cc0 = headerStyle.Render(cc0)
+		cc1 = headerStyle.Render(cc1)
+		cc2 = headerStyle.Render(cc2)
+		cc3 = headerStyle.Render(cc3)
+		cc4 = headerStyle.Render(cc4)
+		cc5 = headerStyle.Render(cc5)
+		cc6 = headerStyle.Render(cc6)
+		cc7 = headerStyle.Render(cc7)
+		cc8 = headerStyle.Render(cc8)
+
+		// Then highlight the selected column header if on header row
 		if m.CurrentRow == -1 {
 			switch m.CurrentCol {
 			case int(types.InstrumentColATK):
-				cc0 = highlightStyle.Render(cc0)
+				cc0 = highlightStyle.Render(fmt.Sprintf("%02X", m.MidiCCNumbers[0]))
 			case int(types.InstrumentColDECAY):
-				cc1 = highlightStyle.Render(cc1)
+				cc1 = highlightStyle.Render(fmt.Sprintf("%02X", m.MidiCCNumbers[1]))
 			case int(types.InstrumentColSUS):
-				cc2 = highlightStyle.Render(cc2)
+				cc2 = highlightStyle.Render(fmt.Sprintf("%02X", m.MidiCCNumbers[2]))
 			case int(types.InstrumentColREL):
-				cc3 = highlightStyle.Render(cc3)
+				cc3 = highlightStyle.Render(fmt.Sprintf("%02X", m.MidiCCNumbers[3]))
 			case int(types.InstrumentColRE):
-				cc4 = highlightStyle.Render(cc4)
+				cc4 = highlightStyle.Render(fmt.Sprintf("%02X", m.MidiCCNumbers[4]))
 			case int(types.InstrumentColCO):
-				cc5 = highlightStyle.Render(cc5)
+				cc5 = highlightStyle.Render(fmt.Sprintf("%02X", m.MidiCCNumbers[5]))
 			case int(types.InstrumentColPA):
-				cc6 = highlightStyle.Render(cc6)
+				cc6 = highlightStyle.Render(fmt.Sprintf("%02X", m.MidiCCNumbers[6]))
 			case int(types.InstrumentColLP):
-				cc7 = highlightStyle.Render(cc7)
+				cc7 = highlightStyle.Render(fmt.Sprintf("%02X", m.MidiCCNumbers[7]))
 			case int(types.InstrumentColHP):
-				cc8 = highlightStyle.Render(cc8)
+				cc8 = highlightStyle.Render(fmt.Sprintf("%02X", m.MidiCCNumbers[8]))
 			}
 		}
 
@@ -83,14 +96,16 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 
 	// Highlight SO/MI column header if we're on header row (-1) and on that column
 	if m.CurrentRow == -1 && m.CurrentCol == int(types.InstrumentColSOMI) {
-		highlightStyle := lipgloss.NewStyle().Background(lipgloss.Color("240")).Foreground(lipgloss.Color("15"))
-		somiHeader = highlightStyle.Render(somiHeader)
+		somiHeader = highlightStyle.Render("SO")
+		if m.SOColumnMode == types.SOModeMIDI {
+			somiHeader = highlightStyle.Render("MI")
+		}
 	}
 
-	columnHeader := "  SL  DT  NOT  MO  CAT  VE  GT " + adsrHeader + effectHeader + "  AR  " + somiHeader + "  DU"
+	columnHeader := headerStyle.Render("  SL  DT  NOT  MO  CAT  VE  GT ") + adsrHeader + effectHeader + headerStyle.Render("  AR  ") + somiHeader + headerStyle.Render("  DU")
 	phrasesData := m.GetCurrentPhrasesData()
 	totalTicks := ticks.CalculatePhraseTicks(phrasesData, m.CurrentPhrase)
-	phraseHeader := fmt.Sprintf("Instrument %02X (%d ticks)", m.CurrentPhrase, totalTicks)
+	phraseHeader := headerStyle.Render(fmt.Sprintf("Instrument %02X (%d ticks)", m.CurrentPhrase, totalTicks))
 	content.WriteString(RenderHeader(m, columnHeader, phraseHeader))
 
 	// Data rows
