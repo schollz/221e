@@ -335,10 +335,37 @@ Routine{
     		effectReverb = 0.0, effectReverbOut,
     		effectComb = 0.0, effectCombOut
     		;
-    		var snd;
+    		var snd, ducked;
     		snd = SoundIn.ar([0,1]) * EnvGen.ar(Env.adsr(1.0,0.0,1.0,1.0),1);
     		snd = Balance2.ar(snd[0], snd[1], pan);
     		snd = snd * -10.dbamp * trackVolume.dbamp;
+
+    		// check if signal is ducked
+    		// process: when the sidechain exceeds thresh, reduce 'snd' by slopeAbove
+    		ducked = Compander.ar(
+    			in:         snd,     // signal to be ducked
+    			control:    LeakDC.ar(In.ar(\duckingBusIn.kr(0), 1)),    // external sidechain
+    			thresh:     \duckingThresh.kr(0.02),  // start reducing above this
+    			slopeBelow: 1,       // unchanged below threshold
+    			slopeAbove: (1 - \duckingDepth.kr(0).clip(0, 0.99)).max(0.01),
+    			clampTime:  \duckingAttack.kr(0.02),     // attack
+    			relaxTime:  \duckingRelease.kr(0.20)      // release
+    		);
+    		// engage only for ducked voices (duckingType == 2). Writers and non-duckers pass through unchanged.
+    		snd = Select.ar(\duckingType.kr(0),
+    			[snd, snd, ducked]   // 0:not ducked, 1:writer, 2:ducked(reader)
+    		);
+    		// tiny floor to avoid denormals at extreme reductions:
+    		snd = snd + (1e-6 * WhiteNoise.ar(1));
+    		Out.ar(\duckingBusOut.kr(0),
+    			Mix(snd) * \duckingDepth.kr(0).clip(0, 0.99) * Select.kr(\duckingType.kr(0), [
+    				0,  // 0 = not ducking
+    				1,  // 1 = is ducking (writer)
+    				0   // 2 = not ducking
+    			])
+    		);
+
+
     		Out.ar(trackOut, snd*(1.0 - effectReverb));
     		Out.ar(effectDryOut, snd*(1.0 - effectReverb));
     		Out.ar(effectCombOut, snd*effectComb);
