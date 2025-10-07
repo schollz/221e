@@ -882,15 +882,38 @@ func handleUp(m *model.Model) tea.Cmd {
 			}
 		}
 	} else if m.ViewMode == types.PhraseView {
-		// In Instrument view, allow going to row -1 (header) only when on SO/MI column
-		if m.GetPhraseViewType() == types.InstrumentPhraseView && m.CurrentCol == int(types.InstrumentColSOMI) {
-			if m.CurrentRow > -1 { // Allow going up to row -1 (header row for column mode switching)
-				m.CurrentRow = m.CurrentRow - 1
-				if m.CurrentRow >= 0 { // Only update LastPhraseRow for data rows, not header row
-					m.LastPhraseRow = m.CurrentRow
+		// In Instrument view, allow going to row -1 (header) for SO/MI column and CC columns (when in MI mode)
+		if m.GetPhraseViewType() == types.InstrumentPhraseView {
+			canGoToHeader := false
+			// SO/MI column can always go to header
+			if m.CurrentCol == int(types.InstrumentColSOMI) {
+				canGoToHeader = true
+			}
+			// CC columns can go to header only in MI mode
+			if m.SOColumnMode == types.SOModeMIDI {
+				if m.CurrentCol >= int(types.InstrumentColATK) && m.CurrentCol <= int(types.InstrumentColHP) {
+					canGoToHeader = true
 				}
-				if m.CurrentRow < m.ScrollOffset && m.CurrentRow >= 0 {
-					m.ScrollOffset = m.CurrentRow
+			}
+
+			if canGoToHeader {
+				if m.CurrentRow > -1 { // Allow going up to row -1 (header row)
+					m.CurrentRow = m.CurrentRow - 1
+					if m.CurrentRow >= 0 { // Only update LastPhraseRow for data rows, not header row
+						m.LastPhraseRow = m.CurrentRow
+					}
+					if m.CurrentRow < m.ScrollOffset && m.CurrentRow >= 0 {
+						m.ScrollOffset = m.CurrentRow
+					}
+				}
+			} else {
+				// For other columns, standard behavior
+				if m.CurrentRow > 0 {
+					m.CurrentRow = m.CurrentRow - 1
+					if m.CurrentRow < m.ScrollOffset {
+						m.ScrollOffset = m.CurrentRow
+					}
+					m.LastPhraseRow = m.CurrentRow
 				}
 			}
 		} else {
@@ -1216,10 +1239,20 @@ func handleCtrlUp(m *model.Model) tea.Cmd {
 			ModifySongValue(m, 16)
 		}
 	} else if m.ViewMode == types.PhraseView {
-		// In Instrument view, when on SO/MI column header, switch to MI mode
-		if m.GetPhraseViewType() == types.InstrumentPhraseView && m.CurrentCol == int(types.InstrumentColSOMI) && m.CurrentRow == -1 {
-			m.SOColumnMode = types.SOModeMIDI
-			storage.AutoSave(m)
+		if m.GetPhraseViewType() == types.InstrumentPhraseView && m.CurrentRow == -1 {
+			// Header row editing in Instrument view
+			if m.CurrentCol == int(types.InstrumentColSOMI) {
+				// Switch to MI mode
+				m.SOColumnMode = types.SOModeMIDI
+				storage.AutoSave(m)
+			} else if m.SOColumnMode == types.SOModeMIDI {
+				// Modify CC number for CC columns
+				ccIndex := getCCColumnIndex(m.CurrentCol)
+				if ccIndex != -1 {
+					m.MidiCCNumbers[ccIndex] = clampInt(m.MidiCCNumbers[ccIndex]+16, 0, 127)
+					storage.AutoSave(m)
+				}
+			}
 		} else {
 			// Normal value modification for other cases
 			ModifyValue(m, 16)
@@ -1262,10 +1295,20 @@ func handleCtrlDown(m *model.Model) tea.Cmd {
 			ModifySongValue(m, -16)
 		}
 	} else if m.ViewMode == types.PhraseView {
-		// In Instrument view, when on SO/MI column header, switch to SO mode
-		if m.GetPhraseViewType() == types.InstrumentPhraseView && m.CurrentCol == int(types.InstrumentColSOMI) && m.CurrentRow == -1 {
-			m.SOColumnMode = types.SOModeSound
-			storage.AutoSave(m)
+		if m.GetPhraseViewType() == types.InstrumentPhraseView && m.CurrentRow == -1 {
+			// Header row editing in Instrument view
+			if m.CurrentCol == int(types.InstrumentColSOMI) {
+				// Switch to SO mode
+				m.SOColumnMode = types.SOModeSound
+				storage.AutoSave(m)
+			} else if m.SOColumnMode == types.SOModeMIDI {
+				// Modify CC number for CC columns
+				ccIndex := getCCColumnIndex(m.CurrentCol)
+				if ccIndex != -1 {
+					m.MidiCCNumbers[ccIndex] = clampInt(m.MidiCCNumbers[ccIndex]-16, 0, 127)
+					storage.AutoSave(m)
+				}
+			}
 		} else {
 			// Normal value modification for other cases
 			ModifyValue(m, -16)
@@ -1307,10 +1350,20 @@ func handleCtrlLeft(m *model.Model) tea.Cmd {
 			ModifySongValue(m, -1) // Fine decrement for song view
 		}
 	} else if m.ViewMode == types.PhraseView {
-		// In Instrument view, when on SO/MI column header, switch to SO mode
-		if m.GetPhraseViewType() == types.InstrumentPhraseView && m.CurrentCol == int(types.InstrumentColSOMI) && m.CurrentRow == -1 {
-			m.SOColumnMode = types.SOModeSound
-			storage.AutoSave(m)
+		if m.GetPhraseViewType() == types.InstrumentPhraseView && m.CurrentRow == -1 {
+			// Header row editing in Instrument view
+			if m.CurrentCol == int(types.InstrumentColSOMI) {
+				// Switch to SO mode
+				m.SOColumnMode = types.SOModeSound
+				storage.AutoSave(m)
+			} else if m.SOColumnMode == types.SOModeMIDI {
+				// Modify CC number for CC columns
+				ccIndex := getCCColumnIndex(m.CurrentCol)
+				if ccIndex != -1 {
+					m.MidiCCNumbers[ccIndex] = clampInt(m.MidiCCNumbers[ccIndex]-1, 0, 127)
+					storage.AutoSave(m)
+				}
+			}
 		} else {
 			// Normal value modification for other cases
 			ModifyValue(m, -1)
@@ -1352,10 +1405,20 @@ func handleCtrlRight(m *model.Model) tea.Cmd {
 			ModifySongValue(m, 1) // Fine increment for song view
 		}
 	} else if m.ViewMode == types.PhraseView {
-		// In Instrument view, when on SO/MI column header, switch to MI mode
-		if m.GetPhraseViewType() == types.InstrumentPhraseView && m.CurrentCol == int(types.InstrumentColSOMI) && m.CurrentRow == -1 {
-			m.SOColumnMode = types.SOModeMIDI
-			storage.AutoSave(m)
+		if m.GetPhraseViewType() == types.InstrumentPhraseView && m.CurrentRow == -1 {
+			// Header row editing in Instrument view
+			if m.CurrentCol == int(types.InstrumentColSOMI) {
+				// Switch to MI mode
+				m.SOColumnMode = types.SOModeMIDI
+				storage.AutoSave(m)
+			} else if m.SOColumnMode == types.SOModeMIDI {
+				// Modify CC number for CC columns
+				ccIndex := getCCColumnIndex(m.CurrentCol)
+				if ccIndex != -1 {
+					m.MidiCCNumbers[ccIndex] = clampInt(m.MidiCCNumbers[ccIndex]+1, 0, 127)
+					storage.AutoSave(m)
+				}
+			}
 		} else {
 			// Normal value modification for other cases
 			ModifyValue(m, 1)
@@ -1958,4 +2021,41 @@ func handleCtrlO(m *model.Model) tea.Cmd {
 	// Save current state before exiting
 	storage.AutoSave(m)
 	return tea.Quit
+}
+
+// getCCColumnIndex returns the index (0-8) of the CC column, or -1 if not a CC column
+func getCCColumnIndex(col int) int {
+	switch col {
+	case int(types.InstrumentColATK):
+		return 0
+	case int(types.InstrumentColDECAY):
+		return 1
+	case int(types.InstrumentColSUS):
+		return 2
+	case int(types.InstrumentColREL):
+		return 3
+	case int(types.InstrumentColRE):
+		return 4
+	case int(types.InstrumentColCO):
+		return 5
+	case int(types.InstrumentColPA):
+		return 6
+	case int(types.InstrumentColLP):
+		return 7
+	case int(types.InstrumentColHP):
+		return 8
+	default:
+		return -1
+	}
+}
+
+// clampInt clamps an integer value between min and max
+func clampInt(value, min, max int) int {
+	if value < min {
+		return min
+	}
+	if value > max {
+		return max
+	}
+	return value
 }

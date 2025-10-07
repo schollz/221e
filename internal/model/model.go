@@ -112,6 +112,7 @@ type Model struct {
 	LastSongTrack int // Last selected track in song view
 	// Column mode state - for toggleable columns
 	SOColumnMode types.SOColumnMode // Current mode for SO/MI column (SO or MI mode)
+	MidiCCNumbers [9]int // MIDI CC numbers for the 9 CC columns (default 0-8, range 0-127)
 
 	// Song data structure (8 tracks × 16 rows)
 	SongData [8][16]int // [track][row] = chain ID (00-FE, -1 for empty)
@@ -748,6 +749,8 @@ func NewModel(oscPort int, saveFolder string, vimMode bool) *Model {
 		LastPhraseCol: 0,
 		LastSongRow:   0,
 		LastSongTrack: 0,
+		// Initialize MIDI CC numbers to defaults (0-8)
+		MidiCCNumbers: [9]int{0, 1, 2, 3, 4, 5, 6, 7, 8},
 		// Set save folder
 		SaveFolder: saveFolder,
 		// Initialize recording state
