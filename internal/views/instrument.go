@@ -31,9 +31,17 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 
 	// Render header for Instrument view (row, playback, note, modulation, and chord columns)
 	// SO/MI column displays dynamically based on mode
+	// ADSR columns display as CC# in MI mode
 	somiHeader := "SO"
+	adsrHeader := "A D S R  "
+	effectHeader := " RE  CO  PA  LP  HP"
+
 	if m.SOColumnMode == types.SOModeMIDI {
 		somiHeader = "MI"
+		// Change ADSR and effect columns to show CC numbers
+		// the spacing is important here to keep alignment
+		adsrHeader = "00010203  "
+		effectHeader = "04  05  06  07  08"
 	}
 
 	// Highlight SO/MI column header if we're on header row (-1) and on that column
@@ -42,7 +50,7 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 		somiHeader = highlightStyle.Render(somiHeader)
 	}
 
-	columnHeader := "  SL  DT  NOT  MO  CAT  VE  GT A D S R   RE  CO  PA  LP  HP  AR  " + somiHeader + "  DU"
+	columnHeader := "  SL  DT  NOT  MO  CAT  VE  GT " + adsrHeader + effectHeader + "  AR  " + somiHeader + "  DU"
 	phrasesData := m.GetCurrentPhrasesData()
 	totalTicks := ticks.CalculatePhraseTicks(phrasesData, m.CurrentPhrase)
 	phraseHeader := fmt.Sprintf("Instrument %02X (%d ticks)", m.CurrentPhrase, totalTicks)
@@ -233,8 +241,13 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 			gateCell = normalStyle.Render(fmt.Sprintf("%2s", gateText))
 		}
 
-		// Attack (A) - display attack value
-		attackValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColAttack]
+		// Attack (A) or MIDI CC 0 - display based on mode
+		var attackValue int
+		if m.SOColumnMode == types.SOModeMIDI {
+			attackValue = (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColMidiCC0]
+		} else {
+			attackValue = (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColAttack]
+		}
 		attackText := "--"
 		if attackValue != -1 {
 			attackText = fmt.Sprintf("%02X", attackValue)
@@ -253,8 +266,13 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 			attackCell = normalStyle.Render(fmt.Sprintf("%2s", attackText))
 		}
 
-		// Decay (D) - display decay value
-		decayValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColDecay]
+		// Decay (D) or MIDI CC 1 - display based on mode
+		var decayValue int
+		if m.SOColumnMode == types.SOModeMIDI {
+			decayValue = (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColMidiCC1]
+		} else {
+			decayValue = (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColDecay]
+		}
 		decayText := "--"
 		if decayValue != -1 {
 			decayText = fmt.Sprintf("%02X", decayValue)
@@ -273,8 +291,13 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 			decayCell = normalStyle.Render(fmt.Sprintf("%2s", decayText))
 		}
 
-		// Sustain (S) - display sustain value
-		sustainValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColSustain]
+		// Sustain (S) or MIDI CC 2 - display based on mode
+		var sustainValue int
+		if m.SOColumnMode == types.SOModeMIDI {
+			sustainValue = (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColMidiCC2]
+		} else {
+			sustainValue = (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColSustain]
+		}
 		sustainText := "--"
 		if sustainValue != -1 {
 			sustainText = fmt.Sprintf("%02X", sustainValue)
@@ -293,8 +316,13 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 			sustainCell = normalStyle.Render(fmt.Sprintf("%2s", sustainText))
 		}
 
-		// Release (R) - display release value
-		releaseValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColRelease]
+		// Release (R) or MIDI CC 3 - display based on mode
+		var releaseValue int
+		if m.SOColumnMode == types.SOModeMIDI {
+			releaseValue = (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColMidiCC3]
+		} else {
+			releaseValue = (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColRelease]
+		}
 		releaseText := "--"
 		if releaseValue != -1 {
 			releaseText = fmt.Sprintf("%02X", releaseValue)
@@ -313,8 +341,13 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 			releaseCell = normalStyle.Render(fmt.Sprintf("%2s", releaseText))
 		}
 
-		// Reverb (RE) - display reverb value
-		reverbValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColEffectReverb]
+		// Reverb (RE) or MIDI CC 4 - display based on mode
+		var reverbValue int
+		if m.SOColumnMode == types.SOModeMIDI {
+			reverbValue = (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColMidiCC4]
+		} else {
+			reverbValue = (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColEffectReverb]
+		}
 		reverbText := "--"
 		if reverbValue != -1 {
 			reverbText = fmt.Sprintf("%02X", reverbValue)
@@ -333,8 +366,13 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 			reverbCell = normalStyle.Render(fmt.Sprintf("%2s", reverbText))
 		}
 
-		// Comb (CO) - display comb value
-		combValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColEffectComb]
+		// Comb (CO) or MIDI CC 5 - display based on mode
+		var combValue int
+		if m.SOColumnMode == types.SOModeMIDI {
+			combValue = (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColMidiCC5]
+		} else {
+			combValue = (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColEffectComb]
+		}
 		combText := "--"
 		if combValue != -1 {
 			combText = fmt.Sprintf("%02X", combValue)
@@ -353,8 +391,13 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 			combCell = normalStyle.Render(fmt.Sprintf("%2s", combText))
 		}
 
-		// Pan (PA) - display pan value
-		panValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColPan]
+		// Pan (PA) or MIDI CC 6 - display based on mode
+		var panValue int
+		if m.SOColumnMode == types.SOModeMIDI {
+			panValue = (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColMidiCC6]
+		} else {
+			panValue = (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColPan]
+		}
 		panText := "--"
 		if panValue != -1 {
 			panText = fmt.Sprintf("%02X", panValue)
@@ -373,8 +416,13 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 			panCell = normalStyle.Render(fmt.Sprintf("%2s", panText))
 		}
 
-		// LowPass (LP) - display low pass filter value
-		lpValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColLowPassFilter]
+		// LowPass (LP) or MIDI CC 7 - display based on mode
+		var lpValue int
+		if m.SOColumnMode == types.SOModeMIDI {
+			lpValue = (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColMidiCC7]
+		} else {
+			lpValue = (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColLowPassFilter]
+		}
 		lpText := "--"
 		if lpValue != -1 {
 			lpText = fmt.Sprintf("%02X", lpValue)
@@ -393,8 +441,13 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 			lpCell = normalStyle.Render(fmt.Sprintf("%2s", lpText))
 		}
 
-		// HighPass (HP) - display high pass filter value
-		hpValue := (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColHighPassFilter]
+		// HighPass (HP) or MIDI CC 8 - display based on mode
+		var hpValue int
+		if m.SOColumnMode == types.SOModeMIDI {
+			hpValue = (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColMidiCC8]
+		} else {
+			hpValue = (*phrasesData)[m.CurrentPhrase][dataIndex][types.ColHighPassFilter]
+		}
 		hpText := "--"
 		if hpValue != -1 {
 			hpText = fmt.Sprintf("%02X", hpValue)

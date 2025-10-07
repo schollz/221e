@@ -319,7 +319,17 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "GT",
 			}
-		case int(types.InstrumentColATK): // A - attack column
+		case int(types.InstrumentColATK): // A - attack column or MIDI CC 0
+			if m.SOColumnMode == types.SOModeMIDI {
+				return &ColumnMapping{
+					DataColumnIndex: int(types.ColMidiCC0),
+					IsEditable:      true,
+					IsCopyable:      true,
+					IsPasteable:     true,
+					IsDeletable:     true,
+					DisplayName:     "00",
+				}
+			}
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColAttack),
 				IsEditable:      true,
@@ -328,7 +338,17 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "A",
 			}
-		case int(types.InstrumentColDECAY): // D - decay column
+		case int(types.InstrumentColDECAY): // D - decay column or MIDI CC 1
+			if m.SOColumnMode == types.SOModeMIDI {
+				return &ColumnMapping{
+					DataColumnIndex: int(types.ColMidiCC1),
+					IsEditable:      true,
+					IsCopyable:      true,
+					IsPasteable:     true,
+					IsDeletable:     true,
+					DisplayName:     "01",
+				}
+			}
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColDecay),
 				IsEditable:      true,
@@ -337,7 +357,17 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "D",
 			}
-		case int(types.InstrumentColSUS): // S - sustain column
+		case int(types.InstrumentColSUS): // S - sustain column or MIDI CC 2
+			if m.SOColumnMode == types.SOModeMIDI {
+				return &ColumnMapping{
+					DataColumnIndex: int(types.ColMidiCC2),
+					IsEditable:      true,
+					IsCopyable:      true,
+					IsPasteable:     true,
+					IsDeletable:     true,
+					DisplayName:     "02",
+				}
+			}
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColSustain),
 				IsEditable:      true,
@@ -346,7 +376,17 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "S",
 			}
-		case int(types.InstrumentColREL): // R - release column
+		case int(types.InstrumentColREL): // R - release column or MIDI CC 3
+			if m.SOColumnMode == types.SOModeMIDI {
+				return &ColumnMapping{
+					DataColumnIndex: int(types.ColMidiCC3),
+					IsEditable:      true,
+					IsCopyable:      true,
+					IsPasteable:     true,
+					IsDeletable:     true,
+					DisplayName:     "03",
+				}
+			}
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColRelease),
 				IsEditable:      true,
@@ -355,7 +395,17 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "R",
 			}
-		case int(types.InstrumentColRE): // RE - reverb column
+		case int(types.InstrumentColRE): // RE - reverb column or MIDI CC 4
+			if m.SOColumnMode == types.SOModeMIDI {
+				return &ColumnMapping{
+					DataColumnIndex: int(types.ColMidiCC4),
+					IsEditable:      true,
+					IsCopyable:      true,
+					IsPasteable:     true,
+					IsDeletable:     true,
+					DisplayName:     "04",
+				}
+			}
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColEffectReverb),
 				IsEditable:      true,
@@ -364,7 +414,17 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "RE",
 			}
-		case int(types.InstrumentColCO): // CO - comb column
+		case int(types.InstrumentColCO): // CO - comb column or MIDI CC 5
+			if m.SOColumnMode == types.SOModeMIDI {
+				return &ColumnMapping{
+					DataColumnIndex: int(types.ColMidiCC5),
+					IsEditable:      true,
+					IsCopyable:      true,
+					IsPasteable:     true,
+					IsDeletable:     true,
+					DisplayName:     "05",
+				}
+			}
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColEffectComb),
 				IsEditable:      true,
@@ -373,7 +433,17 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "CO",
 			}
-		case int(types.InstrumentColPA): // PA - pan column
+		case int(types.InstrumentColPA): // PA - pan column or MIDI CC 6
+			if m.SOColumnMode == types.SOModeMIDI {
+				return &ColumnMapping{
+					DataColumnIndex: int(types.ColMidiCC6),
+					IsEditable:      true,
+					IsCopyable:      true,
+					IsPasteable:     true,
+					IsDeletable:     true,
+					DisplayName:     "06",
+				}
+			}
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColPan),
 				IsEditable:      true,
@@ -382,7 +452,17 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "PA",
 			}
-		case int(types.InstrumentColLP): // LP - low pass filter column
+		case int(types.InstrumentColLP): // LP - low pass filter column or MIDI CC 7
+			if m.SOColumnMode == types.SOModeMIDI {
+				return &ColumnMapping{
+					DataColumnIndex: int(types.ColMidiCC7),
+					IsEditable:      true,
+					IsCopyable:      true,
+					IsPasteable:     true,
+					IsDeletable:     true,
+					DisplayName:     "07",
+				}
+			}
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColLowPassFilter),
 				IsEditable:      true,
@@ -391,7 +471,17 @@ func (m *Model) GetColumnMapping(uiColumn int) *ColumnMapping {
 				IsDeletable:     true,
 				DisplayName:     "LP",
 			}
-		case int(types.InstrumentColHP): // HP - high pass filter column
+		case int(types.InstrumentColHP): // HP - high pass filter column or MIDI CC 8
+			if m.SOColumnMode == types.SOModeMIDI {
+				return &ColumnMapping{
+					DataColumnIndex: int(types.ColMidiCC8),
+					IsEditable:      true,
+					IsCopyable:      true,
+					IsPasteable:     true,
+					IsDeletable:     true,
+					DisplayName:     "08",
+				}
+			}
 			return &ColumnMapping{
 				DataColumnIndex: int(types.ColHighPassFilter),
 				IsEditable:      true,

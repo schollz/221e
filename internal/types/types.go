@@ -80,7 +80,17 @@ const (
 	ColSustain                                // Column 23: Sustain (Instrument view only: 00-FE, 0.0-1.0 linear, default -1, sticky)
 	ColRelease                                // Column 24: Release (Instrument view only: 00-FE, 0.02-30s exponential, default -1, sticky)
 	ColVelocity                               // Column 25: Velocity (VE) (00-7F, 0-127)
-	ColCount                                  // Total number of columns
+	// MIDI CC columns (Instrument view only, visible when SO/MI column is in MI mode)
+	ColMidiCC0 // Column 26: MIDI CC 0 (00-7F, 0-127)
+	ColMidiCC1 // Column 27: MIDI CC 1 (00-7F, 0-127)
+	ColMidiCC2 // Column 28: MIDI CC 2 (00-7F, 0-127)
+	ColMidiCC3 // Column 29: MIDI CC 3 (00-7F, 0-127)
+	ColMidiCC4 // Column 30: MIDI CC 4 (00-7F, 0-127)
+	ColMidiCC5 // Column 31: MIDI CC 5 (00-7F, 0-127)
+	ColMidiCC6 // Column 32: MIDI CC 6 (00-7F, 0-127)
+	ColMidiCC7 // Column 33: MIDI CC 7 (00-7F, 0-127)
+	ColMidiCC8 // Column 34: MIDI CC 8 (00-7F, 0-127)
+	ColCount   // Total number of columns
 )
 
 // ChordType represents different chord types for instrument tracks
@@ -576,6 +586,7 @@ type SaveData struct {
 	TrackSetLevels             [9]float32              `json:"trackSetLevels"`
 	TrackTypes                 [9]bool                 `json:"trackTypes"`
 	CurrentMixerTrack          int                     `json:"currentMixerTrack"`
+	SOColumnMode               SOColumnMode            `json:"soColumnMode"`
 }
 
 const SaveFile = "tracker-save.json"

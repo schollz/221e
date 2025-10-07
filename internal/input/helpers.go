@@ -342,6 +342,22 @@ func ModifyValue(m *model.Model, delta int) {
 				newValue = 127
 			}
 			(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newValue
+		} else if colIndex >= int(types.ColMidiCC0) && colIndex <= int(types.ColMidiCC8) {
+			// MIDI CC columns: special handling to limit to 0x7F (127)
+			var newValue int
+			if currentValue == -1 {
+				// First edit on an empty cell: initialize to 00 and DO NOT apply delta
+				newValue = 0
+			} else {
+				newValue = currentValue + delta
+			}
+
+			if newValue < 0 {
+				newValue = 0
+			} else if newValue > 127 { // Limit MIDI CC to 0x7F (127)
+				newValue = 127
+			}
+			(*phrasesData)[m.CurrentPhrase][m.CurrentRow][colIndex] = newValue
 		} else {
 			// All other hex-ish columns (NN, DT, GT, RT, TS, CO, FI index) - check for virtual defaults
 			virtualDefault := types.GetVirtualDefault(types.PhraseColumn(colIndex))

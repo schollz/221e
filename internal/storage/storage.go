@@ -114,6 +114,7 @@ func DoSave(m *model.Model) {
 		CurrentMixerTrack:          m.CurrentMixerTrack,
 		DuckingSettings:            m.DuckingSettings,
 		DuckingEditingIndex:        m.DuckingEditingIndex,
+		SOColumnMode:               m.SOColumnMode,
 	}
 
 	data, err := json.Marshal(saveData)
@@ -260,6 +261,7 @@ func LoadState(m *model.Model, oscPort int, saveFolder string) error {
 	m.TrackSetLevels = saveData.TrackSetLevels
 	m.TrackTypes = saveData.TrackTypes
 	m.CurrentMixerTrack = saveData.CurrentMixerTrack
+	m.SOColumnMode = saveData.SOColumnMode
 
 	// Bulk-assign arrays
 	m.ChainsData = saveData.ChainsData
@@ -285,6 +287,12 @@ func LoadState(m *model.Model, oscPort int, saveFolder string) error {
 		log.Printf("Resolved SamplerPhrasesFiles: %v", resolvedPaths)
 		m.SamplerPhrasesFiles = append([]string(nil), resolvedPaths...)
 	}
+
+	// Migrate old save files to support new MIDI CC columns
+	// Expand column arrays if they're smaller than current ColCount
+	migratePhrasesDataColumns(&m.InstrumentPhrasesData)
+	migratePhrasesDataColumns(&m.SamplerPhrasesData)
+	migratePhrasesDataColumns(&m.PhrasesData)
 
 	// Restore phrase file list
 	m.PhrasesFiles = append([]string(nil), saveData.PhrasesFiles...)
@@ -592,6 +600,31 @@ func LoadMetadataFromSaveFolder(saveFolder string, fileMetadata map[string]types
 	}
 
 	return nil
+}
+
+// migratePhrasesDataColumns expands column arrays to support new columns added in updates
+func migratePhrasesDataColumns(phrasesData *[255][][]int) {
+	for p := 0; p < 255; p++ {
+		if phrasesData[p] == nil {
+			continue
+		}
+		for r := 0; r < len(phrasesData[p]); r++ {
+			if phrasesData[p][r] == nil {
+				continue
+			}
+			currentLen := len(phrasesData[p][r])
+			if currentLen < int(types.ColCount) {
+				// Expand array and preserve existing data
+				newRow := make([]int, int(types.ColCount))
+				copy(newRow, phrasesData[p][r])
+				// Initialize new columns to -1
+				for i := currentLen; i < int(types.ColCount); i++ {
+					newRow[i] = -1
+				}
+				phrasesData[p][r] = newRow
+			}
+		}
+	}
 }
 
 // SaveMetadataForFile saves metadata for a specific file if it exists in the FileMetadata map
