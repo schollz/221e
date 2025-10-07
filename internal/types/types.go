@@ -587,6 +587,7 @@ type SaveData struct {
 	TrackTypes                 [9]bool                 `json:"trackTypes"`
 	CurrentMixerTrack          int                     `json:"currentMixerTrack"`
 	SOColumnMode               SOColumnMode            `json:"soColumnMode"`
+	MidiCCNumbers              [9]int                  `json:"midiCCNumbers"`
 }
 
 const SaveFile = "tracker-save.json"

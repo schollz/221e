@@ -115,6 +115,7 @@ func DoSave(m *model.Model) {
 		DuckingSettings:            m.DuckingSettings,
 		DuckingEditingIndex:        m.DuckingEditingIndex,
 		SOColumnMode:               m.SOColumnMode,
+		MidiCCNumbers:              m.MidiCCNumbers,
 	}
 
 	data, err := json.Marshal(saveData)
@@ -262,6 +263,16 @@ func LoadState(m *model.Model, oscPort int, saveFolder string) error {
 	m.TrackTypes = saveData.TrackTypes
 	m.CurrentMixerTrack = saveData.CurrentMixerTrack
 	m.SOColumnMode = saveData.SOColumnMode
+
+	// Load MIDI CC numbers with defaults (0-8) for backward compatibility
+	if saveData.MidiCCNumbers == [9]int{} {
+		// Initialize with defaults 0-8
+		for i := 0; i < 9; i++ {
+			m.MidiCCNumbers[i] = i
+		}
+	} else {
+		m.MidiCCNumbers = saveData.MidiCCNumbers
+	}
 
 	// Bulk-assign arrays
 	m.ChainsData = saveData.ChainsData

@@ -38,10 +38,47 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 
 	if m.SOColumnMode == types.SOModeMIDI {
 		somiHeader = "MI"
-		// Change ADSR and effect columns to show CC numbers
+		// Change ADSR and effect columns to show CC numbers from MidiCCNumbers array
+		// Format each CC number with highlighting if on header row
+		highlightStyle := lipgloss.NewStyle().Background(lipgloss.Color("240")).Foreground(lipgloss.Color("15"))
+
+		cc0 := fmt.Sprintf("%02d", m.MidiCCNumbers[0])
+		cc1 := fmt.Sprintf("%02d", m.MidiCCNumbers[1])
+		cc2 := fmt.Sprintf("%02d", m.MidiCCNumbers[2])
+		cc3 := fmt.Sprintf("%02d", m.MidiCCNumbers[3])
+		cc4 := fmt.Sprintf("%02d", m.MidiCCNumbers[4])
+		cc5 := fmt.Sprintf("%02d", m.MidiCCNumbers[5])
+		cc6 := fmt.Sprintf("%02d", m.MidiCCNumbers[6])
+		cc7 := fmt.Sprintf("%02d", m.MidiCCNumbers[7])
+		cc8 := fmt.Sprintf("%02d", m.MidiCCNumbers[8])
+
+		// Highlight the selected column header if on header row
+		if m.CurrentRow == -1 {
+			switch m.CurrentCol {
+			case int(types.InstrumentColATK):
+				cc0 = highlightStyle.Render(cc0)
+			case int(types.InstrumentColDECAY):
+				cc1 = highlightStyle.Render(cc1)
+			case int(types.InstrumentColSUS):
+				cc2 = highlightStyle.Render(cc2)
+			case int(types.InstrumentColREL):
+				cc3 = highlightStyle.Render(cc3)
+			case int(types.InstrumentColRE):
+				cc4 = highlightStyle.Render(cc4)
+			case int(types.InstrumentColCO):
+				cc5 = highlightStyle.Render(cc5)
+			case int(types.InstrumentColPA):
+				cc6 = highlightStyle.Render(cc6)
+			case int(types.InstrumentColLP):
+				cc7 = highlightStyle.Render(cc7)
+			case int(types.InstrumentColHP):
+				cc8 = highlightStyle.Render(cc8)
+			}
+		}
+
 		// the spacing is important here to keep alignment
-		adsrHeader = "00010203  "
-		effectHeader = "04  05  06  07  08"
+		adsrHeader = cc0 + cc1 + cc2 + cc3 + "  "
+		effectHeader = cc4 + "  " + cc5 + "  " + cc6 + "  " + cc7 + "  " + cc8
 	}
 
 	// Highlight SO/MI column header if we're on header row (-1) and on that column
@@ -548,13 +585,51 @@ func RenderInstrumentPhraseView(m *model.Model) string {
 func GetInstrumentPhraseStatusMessage(m *model.Model) string {
 	var statusMsg string
 
-	// Handle header row (row -1) for SO/MI column mode switching
+	// Handle header row (row -1) for SO/MI column mode switching and CC number editing
 	if m.CurrentRow == -1 {
 		if m.CurrentCol == int(types.InstrumentColSOMI) {
 			if m.SOColumnMode == types.SOModeMIDI {
 				statusMsg = "Column Mode: MI (MIDI) | Ctrl+Down/Left: Switch to SO"
 			} else {
 				statusMsg = "Column Mode: SO (SoundMaker) | Ctrl+Up/Right: Switch to MI"
+			}
+		} else if m.SOColumnMode == types.SOModeMIDI {
+			// Check if on a CC column
+			ccIndex := -1
+			ccName := ""
+			switch m.CurrentCol {
+			case int(types.InstrumentColATK):
+				ccIndex = 0
+				ccName = "Attack/CC0"
+			case int(types.InstrumentColDECAY):
+				ccIndex = 1
+				ccName = "Decay/CC1"
+			case int(types.InstrumentColSUS):
+				ccIndex = 2
+				ccName = "Sustain/CC2"
+			case int(types.InstrumentColREL):
+				ccIndex = 3
+				ccName = "Release/CC3"
+			case int(types.InstrumentColRE):
+				ccIndex = 4
+				ccName = "Reverb/CC4"
+			case int(types.InstrumentColCO):
+				ccIndex = 5
+				ccName = "Comb/CC5"
+			case int(types.InstrumentColPA):
+				ccIndex = 6
+				ccName = "Pan/CC6"
+			case int(types.InstrumentColLP):
+				ccIndex = 7
+				ccName = "LowPass/CC7"
+			case int(types.InstrumentColHP):
+				ccIndex = 8
+				ccName = "HighPass/CC8"
+			}
+			if ccIndex != -1 {
+				statusMsg = fmt.Sprintf("%s CC#: %d | Ctrl+Up: +16, Ctrl+Right: +1, Ctrl+Down: -16, Ctrl+Left: -1", ccName, m.MidiCCNumbers[ccIndex])
+			} else {
+				statusMsg = "Header row"
 			}
 		} else {
 			statusMsg = "Header row"
