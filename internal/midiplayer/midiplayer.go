@@ -108,6 +108,13 @@ func (m *Player) NoteOn(note int, velocity int) (err error) {
 	return
 }
 
+func (m *Player) ControlChange(controller int, value int) (err error) {
+	if m.opened {
+		err = m.Device.ControlChange(m.channel, uint8(controller), uint8(value))
+	}
+	return
+}
+
 func (m *Player) NoteOff(note int) (err error) {
 	if m.opened {
 		err = m.Device.NoteOff(m.channel, uint8(note))

@@ -75,6 +75,20 @@ func (d *Device) Close() (err error) {
 	return
 }
 
+func (d *Device) ControlChange(channel, controller, value uint8) (err error) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	if hmo, ok := devicesOpen[d.name]; ok {
+		ccMessage := uint32(0xB0 | channel) // Control Change message for the specified channel
+		ccMessage |= uint32(controller) << 8
+		ccMessage |= uint32(value) << 16
+		if midiOutShortMsg(hmo, ccMessage) != 0 {
+			err = fmt.Errorf("failed to send Control Change message")
+		}
+	}
+	return
+}
+
 func (d *Device) NoteOn(channel, note, velocity uint8) (err error) {
 	mutex.Lock()
 	defer mutex.Unlock()
