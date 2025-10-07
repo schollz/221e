@@ -2542,7 +2542,70 @@ func FillSequentialPhrase(m *model.Model) {
 	}
 
 	// Handle different column types
-	if colIndex == int(types.ColDeltaTime) {
+	if colIndex == int(types.ColNote) {
+		// Special Ctrl+F logic for NN (Note) column
+		// Find the fill range - start at the first "--" cell at or above current position
+		fillStartRow := currentRow
+		for row := currentRow; row >= 0; row-- {
+			if (*phrasesData)[m.CurrentPhrase][row][types.ColNote] == -1 {
+				fillStartRow = row
+			} else {
+				break
+			}
+		}
+
+		// Get the last non-null note value before the fill range (this is the starting note)
+		lastNote := -1
+		for row := fillStartRow - 1; row >= 0; row-- {
+			noteValue := (*phrasesData)[m.CurrentPhrase][row][types.ColNote]
+			if noteValue != -1 {
+				lastNote = noteValue
+				break
+			}
+		}
+
+		// If no previous note found, we can't fill - need a starting point
+		if lastNote == -1 {
+			log.Printf("No previous note found to use as starting point for NN fill")
+			return
+		}
+
+		// Fill each cell in the range
+		currentNote := lastNote
+		for row := fillStartRow; row <= currentRow; row++ {
+			// Get DT value for this row (use effective/sticky value)
+			dtValue := (*phrasesData)[m.CurrentPhrase][row][types.ColDeltaTime]
+
+			// If no DT in current row, search backwards for last non-null DT
+			if dtValue == -1 {
+				dtValue = 1 // Default to 1
+				for searchRow := row - 1; searchRow >= 0; searchRow-- {
+					searchDT := (*phrasesData)[m.CurrentPhrase][searchRow][types.ColDeltaTime]
+					if searchDT != -1 {
+						dtValue = searchDT
+						break
+					}
+				}
+				// Fill in the DT value that we're using
+				(*phrasesData)[m.CurrentPhrase][row][types.ColDeltaTime] = dtValue
+			}
+
+			// Calculate new note value based on DT
+			currentNote = currentNote + dtValue
+
+			// Clamp to valid MIDI range (0-127)
+			if currentNote > 127 {
+				currentNote = 127
+			} else if currentNote < 0 {
+				currentNote = 0
+			}
+
+			// Set the note value
+			(*phrasesData)[m.CurrentPhrase][row][types.ColNote] = currentNote
+		}
+
+		log.Printf("Filled NN column from row %d to %d, starting note=%d", fillStartRow, currentRow, lastNote)
+	} else if colIndex == int(types.ColDeltaTime) {
 		// Special Ctrl+F logic for DT column
 		currentValue := (*phrasesData)[m.CurrentPhrase][currentRow][colIndex]
 
