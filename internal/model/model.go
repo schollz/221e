@@ -851,6 +851,16 @@ func (m *Model) initializeDefaultData() {
 			m.InstrumentPhrasesData[p][i][types.ColEffectReverb] = -1   // Reverb effect (-1 means no effect)
 			m.InstrumentPhrasesData[p][i][types.ColEffectDucking] = -1  // Ducking effect (-1 means no effect)
 			m.InstrumentPhrasesData[p][i][types.ColVelocity] = -1       // Velocity (-1 displays "--", behaves as 64)
+			// Initialize MIDI CC columns (for MI mode, default to undefined)
+			m.InstrumentPhrasesData[p][i][types.ColMidiCC0] = -1 // MIDI CC 0 (-1 displays "--", no emission)
+			m.InstrumentPhrasesData[p][i][types.ColMidiCC1] = -1 // MIDI CC 1 (-1 displays "--", no emission)
+			m.InstrumentPhrasesData[p][i][types.ColMidiCC2] = -1 // MIDI CC 2 (-1 displays "--", no emission)
+			m.InstrumentPhrasesData[p][i][types.ColMidiCC3] = -1 // MIDI CC 3 (-1 displays "--", no emission)
+			m.InstrumentPhrasesData[p][i][types.ColMidiCC4] = -1 // MIDI CC 4 (-1 displays "--", no emission)
+			m.InstrumentPhrasesData[p][i][types.ColMidiCC5] = -1 // MIDI CC 5 (-1 displays "--", no emission)
+			m.InstrumentPhrasesData[p][i][types.ColMidiCC6] = -1 // MIDI CC 6 (-1 displays "--", no emission)
+			m.InstrumentPhrasesData[p][i][types.ColMidiCC7] = -1 // MIDI CC 7 (-1 displays "--", no emission)
+			m.InstrumentPhrasesData[p][i][types.ColMidiCC8] = -1 // MIDI CC 8 (-1 displays "--", no emission)
 			// Other columns can stay -1 (unused for instruments)
 		}
 	}
